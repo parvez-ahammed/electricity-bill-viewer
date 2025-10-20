@@ -1,0 +1,50 @@
+services:
+    db:
+        image: postgres:17.2-alpine
+        container_name: ${PROJECT_NAME}-db
+        networks:
+            - neatify-net
+        ports:
+            - '${DB_PORT}:5432'
+        environment:
+            - POSTGRES_USER=${DB_USER}
+            - POSTGRES_PASSWORD=${DB_PASSWORD}
+            - POSTGRES_DB=${DB_NAME}
+        volumes:
+            - db-data:/var/lib/postgresql/data
+        healthcheck:
+            test: ['CMD', 'pg_isready', '-U', '${DB_USER}', '-d', '${DB_NAME}']
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+    app:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: ${PROJECT_NAME}-app
+        networks:
+            - neatify-net
+        ports:
+            - '${PORT}:3000'
+            - '9091:9091'
+        environment:
+            - DB_HOST=db
+            - DB_PORT=${DB_PORT}
+            - DB_USER=${DB_USER}
+            - DB_PASSWORD=${DB_PASSWORD}
+            - DB_NAME=${DB_NAME}
+        volumes:
+            - .:/app
+            - /app/node_modules
+        depends_on:
+            db:
+                condition: service_healthy
+
+networks:
+    neatify-net:
+        driver: bridge
+
+volumes:
+    db-data:
+        driver: local

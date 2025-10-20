@@ -1,0 +1,138 @@
+{
+    "common": {
+        "loading": "Laster...",
+        "cta": {
+            "returnHome": "Gå tilbake til hjem",
+            "goBack": "Gå tilbake",
+            "login": "Logg inn",
+            "signup": "Registrer deg",
+            "close": "Lukk",
+            "clear": "Tøm"
+        },
+        "info": {
+            "noResultFound": "Ingen resultater funnet.",
+            "search": "Søk..."
+        }
+    },
+    "auth": {
+        "message": {
+            "loginSuccess": "Innlogging vellykket",
+            "loginFailed": "Innlogging mislyktes",
+            "signupSuccess": "Registrering vellykket",
+            "signupFailed": "Registrering mislyktes"
+        },
+        "formLabel": {
+            "email": "E-post",
+            "password": "Passord",
+            "confirmPassword": "Bekreft passord",
+            "username": "Brukernavn",
+            "name": "Navn"
+        },
+        "info": {
+            "loggingIn": "Logger inn...",
+            "signingUp": "Registrerer...",
+            "welcomeBack": "Velkommen tilbake!",
+            "loginToAccount": "Logg inn på kontoen din",
+            "dontHaveAccount": "Har du ikke en konto?",
+            "welcomeToApp": "Velkommen til App!",
+            "signUpToGetStarted": "Registrer deg for å komme i gang!",
+            "alreadyHaveAccount": "Har du allerede en konto?"
+        }
+    },
+    "navbar": {
+        "cta": {
+            "profile": "Profil",
+            "logout": "Logge ut",
+            "login": "Logg inn",
+            "jumpTo": "Hopp til",
+            "createAccount": "Opprett konto"
+        },
+        "info": {
+            "typeToSearch": "Skriv for å søke etter brukere",
+            "noResultFound": "Ingen resultater funnet for ",
+            "searchUsers": "Søk etter brukere..."
+        }
+    },
+    "user": {
+        "message": {},
+        "formLabel": {
+            "email": "E-post",
+            "username": "Brukernavn",
+            "name": "Navn",
+            "bio": "Biografi",
+            "location": "Sted",
+            "website": "Nettside",
+            "role": "Rolle",
+            "search": "Søk",
+            "currentPassword": "Nåværende passord",
+            "newPassword": "Nytt passord",
+            "confirmPassword": "Bekreft nytt passord"
+        },
+        "info": {
+            "followers": "Følgere",
+            "following": "Følger",
+            "adminSettings": "Admininnstillinger",
+            "adminSettingsDesc": "Administrer brukere, roller og innstillinger",
+            "editProfile": "Rediger profil",
+            "editProfileDesc": "Gjør endringer i profilinformasjonen din.",
+            "saving": "Lagrer...",
+            "loading": "Laster...",
+            "admin": "Administrator",
+            "adminDesc": "Full tilgang til alle funksjoner og innstillinger",
+            "author": "Forfatter",
+            "authorDesc": "Standard brukerkonto",
+            "contact": "Kontakt",
+            "joined": "Ble med:",
+            "bio": "Biografi:",
+            "users": "Brukere",
+            "usersDesc": "Administrer brukerkontoer, roller og tillatelser",
+            "userRoles": "Brukerroller",
+            "userRolesDesc": "Administrer brukerroller og tillatelser",
+            "dashboard": "Dashboard",
+            "profileNotFound": "Profil ikke funnet",
+            "profileNotFoundDesc": "Profilen du leter etter finnes ikke.",
+            "updatePassword": "Oppdater passord",
+            "updating": "Oppdaterer...",
+            "updatePasswordDesc": "Oppdater passordet ditt for å sikre kontoen din."
+        },
+        "cta": {
+            "roles": "Roller",
+            "users": "Brukere",
+            "saveChanges": "Lagre endringer",
+            "nextPage": "Neste side",
+            "previousPage": "Forrige side",
+            "updatePassword": "Oppdater passord",
+            "delete": "Slett",
+            "cancel": "Avbryt",
+            "confirm": "Bekreft"
+        },
+        "alert": {
+            "deleteTitle": "Er du sikker?",
+            "deleteDescription": "Denne handlingen kan ikke angres. Dette vil permanent slette brukeren.",
+            "updateTitle": "Er du sikker?",
+            "updateDescription": "Denne handlingen kan ikke angres. Dette vil oppdatere brukerens informasjon."
+        },
+        "tooltip": {},
+        "table": {
+            "header": {
+                "name": "Navn",
+                "email": "E-post",
+                "role": "Rolle",
+                "joined": "Ble med",
+                "actions": "Handlinger",
+                "edit": "Rediger",
+                "delete": "Slett",
+                "deleteUser": "Slett bruker",
+                "deleteUserDesc": "Er du sikker på at du vil slette denne brukeren?",
+                "cancel": "Avbryt",
+                "confirm": "Bekreft"
+            },
+            "info": {
+                "loading": "Laster inn brukere...",
+                "error": "Kunne ikke laste inn brukere",
+                "notAvailable": "Ingen brukere tilgjengelig",
+                "noUsersFound": "Ingen brukere funnet"
+            }
+        }
+    }
+}

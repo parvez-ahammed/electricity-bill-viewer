@@ -1,0 +1,27 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "esModuleInterop": true,
+        "target": "es6",
+        "moduleResolution": "node",
+        "sourceMap": true,
+        "outDir": "dist",
+        "baseUrl": "./",
+        "paths": {
+            "@routes/*": ["src/routes/*"],
+            "@configs/*": ["src/configs/*"],
+            "@controllers/*": ["src/controllers/*"],
+            "@services/*": ["src/services/implementations/*"],
+            "@repositories/*": ["src/repositories/*"],
+            "@middlewares/*": ["src/middlewares/*"],
+            "@interfaces/*": ["src/interfaces/*"],
+            "@dtos/*": ["src/dtos/*"],
+            "@helpers/*": ["src/helpers/*"],
+            "@utility/*": ["src/utility/*"]
+        },
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true
+    },
+    "include": ["src/**/*.ts"],
+    "lib": ["es2015"]
+}

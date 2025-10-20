@@ -1,0 +1,46 @@
+name: Node.js CI
+
+on:
+    pull_request:
+        branches:
+            - develop
+env:
+    NODE_VERSION: '20.x'
+    PROJECT_NAME: ${{ secrets.PROJECT_NAME }}
+    PORT: ${{ secrets.PORT }}
+    JWT_SECRET: ${{ secrets.JWT_SECRET }}
+    JWT_EXPIRES_IN: ${{ secrets.JWT_EXPIRES_IN }}
+    RATE_LIMIT_WINDOW_MS: ${{ secrets.RATE_LIMIT_WINDOW_MS }}
+    RATE_LIMIT_MAX: ${{ secrets.RATE_LIMIT_MAX }}
+    DB_USER: ${{ secrets.DB_USER }}
+    DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+    DB_NAME: ${{ secrets.DB_NAME }}
+    DB_PORT: ${{ secrets.DB_PORT }}
+    DB_HOST: ${{ secrets.DB_HOST }}
+    DB_SSLMODE: ${{ secrets.DB_SSLMODE }}
+    DB_TIMEZONE: ${{ secrets.DB_TIMEZONE }}
+    PGADMIN_DEFAULT_EMAIL: ${{ secrets.PGADMIN_DEFAULT_EMAIL }}
+    PGADMIN_DEFAULT_PASSWORD: ${{ secrets.PGADMIN_DEFAULT_PASSWORD }}
+    PGADMIN_PORT: ${{ secrets.PGADMIN_PORT }}
+    LOKI_PORT: ${{ secrets.LOKI_PORT }}
+    GRAFANA_PORT: ${{ secrets.GRAFANA_PORT }}
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v3
+
+            - name: Setup Node.js version
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: 'npm'
+
+            - name: Install dependencies
+              run: npm install
+
+            - name: Run build
+              run: npm run build
