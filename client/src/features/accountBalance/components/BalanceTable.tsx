@@ -2,6 +2,7 @@ import { Table, TableBody } from "@/components/ui/table";
 
 import { PostBalanceDetails } from "../constants/balance.constant";
 
+import { BalanceCardView } from "./BalanceCardView";
 import { BalanceTableHeader } from "./BalanceTableHeader";
 import { BalanceTableRow } from "./BalanceTableRow";
 
@@ -21,17 +22,33 @@ export const BalanceTable = ({ accountsData }: BalanceTableProps) => {
     }
 
     return (
-        <Table>
-            <BalanceTableHeader />
-            <TableBody>
+        <>
+            {/* Mobile Card View */}
+            <div className="block space-y-4 md:hidden">
                 {accountsData.map((account, index) => (
-                    <BalanceTableRow
+                    <BalanceCardView
                         key={`${account.accountId}-${index}`}
                         account={account}
                         index={index}
                     />
                 ))}
-            </TableBody>
-        </Table>
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden w-full overflow-x-auto md:block">
+                <Table className="table-fixed">
+                    <BalanceTableHeader />
+                    <TableBody>
+                        {accountsData.map((account, index) => (
+                            <BalanceTableRow
+                                key={`${account.accountId}-${index}`}
+                                account={account}
+                                index={index}
+                            />
+                        ))}
+                    </TableBody>
+                </Table>
+            </div>
+        </>
     );
 };

@@ -1,0 +1,21 @@
+{
+  "name": "electricity-bill-scripts",
+  "version": "1.0.0",
+  "description": "Test scripts for DPDC and NESCO electricity providers",
+  "main": "index.js",
+  "scripts": {
+    "dpdc": "node dpdc.js",
+    "nesco": "node nesco.js"
+  },
+  "keywords": [
+    "electricity",
+    "dpdc",
+    "nesco",
+    "bangladesh"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.4.5"
+  }
+}

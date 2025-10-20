@@ -1,5 +1,6 @@
 import authRouter from '@routes/v1/AuthRoute';
 import userRouter from '@routes/v1/UserRoute';
+import electricityRouter from '@routes/v1/electricity.routes';
 import Router from 'express';
 import httpStatus from 'http-status';
 
@@ -19,6 +20,10 @@ const defaultRoutes = [
     {
         prefix: '/auth',
         router: authRouter,
+    },
+    {
+        prefix: '/electricity',
+        router: electricityRouter,
     },
 ];
 

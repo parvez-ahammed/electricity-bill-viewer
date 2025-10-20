@@ -16,4 +16,8 @@ export const API_ENDPOINTS = {
         USERNAME: (username: string) =>
             `${API_PATH}/users/username/${username}`,
     },
+    ELECTRICITY: {
+        USAGE: `${API_PATH}/electricity/usage`,
+        SINGLE: `${API_PATH}/electricity/single`,
+    },
 };

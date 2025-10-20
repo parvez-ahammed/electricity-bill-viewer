@@ -18,6 +18,16 @@ const envSchema = z
             .enum(['true', 'false'])
             .transform((val) => val === 'true')
             .default('false'),
+
+        // DPDC Service Configuration
+        DPDC_CLIENT_ID: z.string().optional().default('auth-ui'),
+        DPDC_CLIENT_SECRET: z.string().optional(),
+        DPDC_TENANT_CODE: z.string().optional().default('DPDC'),
+        DPDC_COOKIE: z.string().optional(),
+
+        // NESCO Service Configuration
+        NESCO_COOKIE: z.string().optional(),
+        NESCO_CSRF_TOKEN: z.string().optional(),
     })
     .passthrough();
 
@@ -40,4 +50,18 @@ export const appConfig = {
     frontendUrl: parsedEnv.data.FRONTEND_URL,
     geminiApiKey: parsedEnv.data.GEMINI_API_KEY,
     enableLatencyLogger: parsedEnv.data.ENABLE_LATENCY_LOGGER,
+
+    // DPDC Configuration
+    dpdc: {
+        clientId: parsedEnv.data.DPDC_CLIENT_ID,
+        clientSecret: parsedEnv.data.DPDC_CLIENT_SECRET,
+        tenantCode: parsedEnv.data.DPDC_TENANT_CODE,
+        cookie: parsedEnv.data.DPDC_COOKIE,
+    },
+
+    // NESCO Configuration
+    nesco: {
+        cookie: parsedEnv.data.NESCO_COOKIE,
+        csrfToken: parsedEnv.data.NESCO_CSRF_TOKEN,
+    },
 };

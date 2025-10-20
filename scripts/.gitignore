@@ -1,0 +1,13 @@
+# Environment variables
+.env
+
+# Node modules (if any)
+node_modules/
+
+# Output files
+*.html
+nesco_response.html
+dpdc_response.json
+
+# Logs
+*.log
