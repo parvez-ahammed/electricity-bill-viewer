@@ -28,6 +28,13 @@ const envSchema = z
         // NESCO Service Configuration
         NESCO_COOKIE: z.string().optional(),
         NESCO_CSRF_TOKEN: z.string().optional(),
+
+        // Telegram Bot Configuration
+        TELEGRAM_BOT_TOKEN: z.string().optional(),
+        TELEGRAM_CHAT_ID: z.string().optional(),
+
+        // Electricity Credentials for automated reports
+        ELECTRICITY_CREDENTIALS: z.string().optional(),
     })
     .passthrough();
 
@@ -64,4 +71,13 @@ export const appConfig = {
         cookie: parsedEnv.data.NESCO_COOKIE,
         csrfToken: parsedEnv.data.NESCO_CSRF_TOKEN,
     },
+
+    // Telegram Configuration
+    telegram: {
+        botToken: parsedEnv.data.TELEGRAM_BOT_TOKEN,
+        chatId: parsedEnv.data.TELEGRAM_CHAT_ID,
+    },
+
+    // Electricity Credentials
+    electricityCredentials: parsedEnv.data.ELECTRICITY_CREDENTIALS,
 };

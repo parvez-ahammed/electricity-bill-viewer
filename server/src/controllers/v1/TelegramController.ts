@@ -1,0 +1,107 @@
+import { ResponseBuilder } from '@helpers/ResponseBuilder';
+import { Request, Response } from 'express';
+import { TelegramService } from '../../services/implementations/TelegramService';
+
+export class TelegramController {
+    private telegramService: TelegramService | null;
+
+    constructor() {
+        try {
+            this.telegramService = new TelegramService();
+        } catch (error) {
+            // Service will be null if not configured
+            this.telegramService = null;
+            console.warn(
+                'Telegram service not configured:',
+                error instanceof Error ? error.message : 'Unknown error'
+            );
+        }
+    }
+
+    /**
+     * GET /api/v1/telegram/send-balances
+     * Sends electricity account balances to configured Telegram chat
+     */
+    sendBalances = async (req: Request, res: Response): Promise<void> => {
+        try {
+            if (!this.telegramService) {
+                new ResponseBuilder(res)
+                    .setStatus(500)
+                    .setMessage(
+                        'Telegram service not configured. Please set TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, and ELECTRICITY_CREDENTIALS environment variables.'
+                    )
+                    .sendError();
+                return;
+            }
+
+            const result = await this.telegramService.sendAccountBalances();
+
+            if (result.success) {
+                new ResponseBuilder(res)
+                    .setStatus(200)
+                    .setMessage(result.message)
+                    .setData(result)
+                    .send();
+            } else {
+                new ResponseBuilder(res)
+                    .setStatus(500)
+                    .setMessage(result.error || result.message)
+                    .setData(result)
+                    .sendError();
+            }
+        } catch (error: unknown) {
+            const errorMessage =
+                error instanceof Error ? error.message : 'Unknown error';
+            new ResponseBuilder(res)
+                .setStatus(500)
+                .setMessage(
+                    `Failed to send balances to Telegram: ${errorMessage}`
+                )
+                .sendError();
+        }
+    };
+
+    /**
+     * GET /api/v1/telegram/test
+     * Tests Telegram bot configuration by sending a test message
+     */
+    testConnection = async (req: Request, res: Response): Promise<void> => {
+        try {
+            if (!this.telegramService) {
+                new ResponseBuilder(res)
+                    .setStatus(500)
+                    .setMessage(
+                        'Telegram service not configured. Please set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID environment variables.'
+                    )
+                    .sendError();
+                return;
+            }
+
+            const testMessage = `🤖 <b>Telegram Bot Test</b>\n\n✅ Connection successful!\n📅 ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Dhaka' })}`;
+
+            const sent = await this.telegramService.sendMessage(testMessage);
+
+            if (sent) {
+                new ResponseBuilder(res)
+                    .setStatus(200)
+                    .setMessage('Test message sent to Telegram successfully')
+                    .setData({ sent: true })
+                    .send();
+            } else {
+                new ResponseBuilder(res)
+                    .setStatus(500)
+                    .setMessage('Failed to send test message to Telegram')
+                    .sendError();
+            }
+        } catch (error: unknown) {
+            const errorMessage =
+                error instanceof Error ? error.message : 'Unknown error';
+            new ResponseBuilder(res)
+                .setStatus(500)
+                .setMessage(
+                    `Failed to test Telegram connection: ${errorMessage}`
+                )
+                .sendError();
+        }
+    };
+}
