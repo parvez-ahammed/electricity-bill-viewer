@@ -177,79 +177,99 @@ function extractAccountData(html) {
     }
   };
 
-  const consumerNameMatch = html.match(
-    /<label[^>]*>Consumer Name<\/label>[\s\S]*?<input[^>]*value="([^"]*)"[^>]*>/i
+  // Extract data by finding all disabled input fields and analyzing their values
+  // This approach works regardless of language (English/Bangla)
+
+  const allInputs = html.match(/<input[^>]*>/gi) || [];
+  const disabledInputs = allInputs.filter(input => input.includes('disabled'));
+
+  const extractedValues = [];
+  disabledInputs.forEach(input => {
+    const valueMatch = input.match(/value="([^"]*)"/i);
+    if (valueMatch && valueMatch[1].trim()) {
+      extractedValues.push(valueMatch[1].trim());
+    }
+  });
+
+  // Filter out empty values and analyze patterns
+  const cleanValues = extractedValues.filter(val => val && val.length > 0);
+
+  // Extract customer name (typically the first text value that's not a number)
+  const nameCandidate = cleanValues.find(val =>
+    /^[A-Z\s]+$/.test(val) && val.length > 3 && !val.includes('PARA') && !val.includes('ROAD') && !val.includes('BAZAR')
   );
-  if (consumerNameMatch) {
-    accountData.customerName = consumerNameMatch[1].trim();
+  if (nameCandidate) {
+    accountData.customerName = nameCandidate;
   }
 
-  const consumerNumberMatch = html.match(
-    /<label[^>]*>Consumer No\.<\/label>[\s\S]*?<input[^>]*value="([^"]*)"[^>]*>/i
+  // Extract address (look for location patterns)
+  const addressCandidate = cleanValues.find(val =>
+    /^[A-Z\s]+(PARA|ROAD|STREET|BAZAR|MARKET|WARD)/.test(val) ||
+    (val.includes('SARDAR') && val.includes('PARA'))
   );
-  if (consumerNumberMatch) {
-    accountData.customerNumber = consumerNumberMatch[1].trim();
-    accountData.rawData.consumerNumber = consumerNumberMatch[1].trim();
+  if (addressCandidate) {
+    accountData.location = addressCandidate;
   }
 
-  const meterNumberMatch = html.match(
-    /<label[^>]*>Meter No\.<\/label>[\s\S]*?<input[^>]*value="([^"]*)"[^>]*>/i
+  // Extract mobile number (look for phone patterns)
+  const mobileCandidate = cleanValues.find(val =>
+    /^\+880\s*\d+\*+\d+$/.test(val) || /^\d{11}$/.test(val) || /^\+\d+\s*\d+\*+\d+$/.test(val)
   );
-  if (meterNumberMatch) {
-    accountData.accountId = meterNumberMatch[1].trim();
-    accountData.rawData.meterNumber = meterNumberMatch[1].trim();
+  if (mobileCandidate) {
+    accountData.mobileNumber = mobileCandidate;
   }
 
-  const addressMatch = html.match(
-    /<label[^>]*>Address<\/label>[\s\S]*?<input[^>]*value="([^"]*)"[^>]*>/i
+  // Extract consumer number (should match the input customer number)
+  const consumerCandidate = cleanValues.find(val =>
+    val === CONFIG.CUSTOMER_NUMBER.trim() || val.replace(/\s/g, '') === CONFIG.CUSTOMER_NUMBER.replace(/\s/g, '')
   );
-  if (addressMatch) {
-    accountData.location = addressMatch[1].trim();
+  if (consumerCandidate) {
+    accountData.customerNumber = consumerCandidate;
+    accountData.rawData.consumerNumber = consumerCandidate;
   }
 
-  const mobileMatch = html.match(
-    /<label[^>]*>Mobile<\/label>[\s\S]*?<input[^>]*value="([^"]*)"[^>]*>/i
+  // Extract meter number (long numeric string, different from consumer number)
+  const meterCandidate = cleanValues.find(val =>
+    /^\d{10,}$/.test(val) && val !== accountData.customerNumber
   );
-  if (mobileMatch) {
-    accountData.mobileNumber = mobileMatch[1].trim();
+  if (meterCandidate) {
+    accountData.accountId = meterCandidate;
+    accountData.rawData.meterNumber = meterCandidate;
   }
 
-  const emailMatch = html.match(
-    /<label[^>]*>Email<\/label>[\s\S]*?<input[^>]*value="([^"]*)"[^>]*>/i
+  // Extract connection status
+  const statusCandidate = cleanValues.find(val =>
+    /^(Active|Inactive|Connected|Disconnected)$/i.test(val)
   );
-  if (emailMatch) {
-    accountData.rawData.email = emailMatch[1].trim();
+  if (statusCandidate) {
+    accountData.connectionStatus = statusCandidate;
   }
 
-  const minRechargeMatch = html.match(
-    /<label[^>]*>Minimum Recharge Amount[\s\S]*?<\/label>[\s\S]*?<input[^>]*value="([^"]*)"[^>]*>/i
-  );
-  if (minRechargeMatch) {
-    accountData.minRecharge = minRechargeMatch[1].trim();
+  // Extract numeric values for min recharge and balance
+  const numericValues = cleanValues.filter(val => /^\d+\.?\d*$/.test(val)).map(val => parseFloat(val));
+
+  // Min recharge is typically a smaller value (under 1000)
+  const minRechargeCandidate = numericValues.find(val => val > 0 && val < 1000);
+  if (minRechargeCandidate) {
+    accountData.minRecharge = minRechargeCandidate.toString();
   }
 
-  const balanceMatch = html.match(
-    /<label[^>]*>Remaining Balance \(Tk\.\)[\s\S]*?<\/label>[\s\S]*?<input[^>]*value="([^"]*)"[^>]*>/i
-  );
-  if (balanceMatch) {
-    accountData.balanceRemaining = balanceMatch[1].trim();
+  // Balance is typically a larger decimal value
+  const balanceCandidate = numericValues.find(val => val > 0 && val.toString().includes('.'));
+  if (balanceCandidate) {
+    accountData.balanceRemaining = balanceCandidate.toString();
   }
 
-  const balanceTimeMatch = html.match(
-    /<label[^>]*>Remaining Balance[\s\S]*?<span>([\s\S]*?)<\/span>/i
-  );
+  // Extract balance timestamp
+  const balanceTimeMatch = html.match(/<span>\s*([\d\s\w:]+)\s*<\/span>\)/i);
   if (balanceTimeMatch) {
     const rawDate = balanceTimeMatch[1].trim();
     accountData.balanceLatestDate = formatDateToStandard(rawDate);
   }
 
-  const connectionStatusMatch = html.match(
-    /<label[^>]*>Connection Status<\/label>[\s\S]*?<input[^>]*value="([^"]*)"[^>]*>/i
-  );
-  if (connectionStatusMatch) {
-    accountData.connectionStatus = connectionStatusMatch[1].trim();
-  } else {
-    accountData.connectionStatus = accountData.balanceRemaining
+  // Fallback for connection status
+  if (!accountData.connectionStatus) {
+    accountData.connectionStatus = accountData.balanceRemaining && parseFloat(accountData.balanceRemaining) > 0
       ? "Active"
       : "Unknown";
   }
@@ -380,10 +400,7 @@ function analyzeHTML(html) {
     console.log(`Found ${formMatches.length} form(s) in HTML`);
   }
 
-  const csrfMatches = html.match(/name="_token"\s+value="([^"]+)"/);
-  if (csrfMatches) {
-    console.log(`✓ CSRF Token: ${csrfMatches[1]}`);
-  }
+
 
   const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
   if (titleMatch) {
