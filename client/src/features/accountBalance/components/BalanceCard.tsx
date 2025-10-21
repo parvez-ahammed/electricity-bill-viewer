@@ -22,7 +22,7 @@ export const BalanceCard = ({
     error,
 }: BalanceCardProps) => {
     return (
-        <Card className="border-none shadow-none sm:border sm:shadow-sm">
+        <Card className="border-none py-4 shadow-none sm:border sm:shadow-sm">
             <CardHeader className="hidden px-4 py-4 sm:block sm:px-6 sm:py-6">
                 <CardTitle className="text-lg sm:text-xl">
                     Account Balance Details
@@ -31,7 +31,7 @@ export const BalanceCard = ({
                     View your electricity account information and balance
                 </CardDescription>
             </CardHeader>
-            <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
+            <CardContent className="p-0">
                 {loading ? (
                     <div className="flex items-center justify-center py-8">
                         <div className="border-primary h-8 w-8 animate-spin rounded-full border-b-2"></div>

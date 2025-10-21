@@ -36,7 +36,7 @@ export const BalanceCardView = ({ account, index }: BalanceCardViewProps) => {
                 </div>
 
                 {/* Balance Section */}
-                <div className="bg-primary/5 mb-2 rounded-lg p-2.5">
+                <div className="bg-primary/5 rounded-lg p-2.5">
                     <div className="flex items-center justify-between">
                         <p className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
                             Current Balance
