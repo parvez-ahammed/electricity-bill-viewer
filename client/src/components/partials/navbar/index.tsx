@@ -28,6 +28,7 @@ export const Navbar = () => {
         setMobileSearchOpen(!mobileSearchOpen);
         if (mobileMenuOpen) setMobileMenuOpen(false);
     };
+    const showOthers = false;
 
     return (
         <header className="sticky top-0 z-20 border-y-1 border-black bg-white/80 px-2 backdrop-blur-md supports-[backdrop-filter]:bg-white/70">
@@ -36,12 +37,12 @@ export const Navbar = () => {
                     <div className="flex items-center">
                         <Link to="/" className="flex items-center">
                             <Text className="bg-black px-3 py-1 text-xl font-bold text-white">
-                                Frontend
+                                BillBarta
                             </Text>
                         </Link>
                     </div>
 
-                    {isBaseRoute && (
+                    {showOthers && isBaseRoute && (
                         <>
                             <SearchBar />
                             {!mobileSearchOpen && (
@@ -55,16 +56,17 @@ export const Navbar = () => {
                             )}
                         </>
                     )}
+                    {showOthers && (
+                        <div className="hidden items-center gap-4 md:flex">
+                            {isAuthenticated && isValidToken ? (
+                                <AuthorizedButtons />
+                            ) : (
+                                <UnauthorizedButtons />
+                            )}
+                        </div>
+                    )}
 
-                    <div className="hidden items-center gap-4 md:flex">
-                        {isAuthenticated && isValidToken ? (
-                            <AuthorizedButtons />
-                        ) : (
-                            <UnauthorizedButtons />
-                        )}
-                    </div>
-
-                    {!mobileSearchOpen && (
+                    {!mobileSearchOpen && showOthers && (
                         <Button
                             className="p-2 md:hidden"
                             onClick={toggleMobileMenu}
@@ -81,7 +83,7 @@ export const Navbar = () => {
                     )}
                 </div>
 
-                {isBaseRoute && mobileSearchOpen && (
+                {showOthers && isBaseRoute && mobileSearchOpen && (
                     <div className="bg-white/60 pb-4 backdrop-blur-md md:hidden">
                         <SearchBar
                             isMobile
@@ -91,7 +93,7 @@ export const Navbar = () => {
                     </div>
                 )}
 
-                {mobileMenuOpen && (
+                {showOthers && mobileMenuOpen && (
                     <div className="border-t border-gray-200 bg-white/90 py-4 backdrop-blur-sm md:hidden">
                         {isAuthenticated && isValidToken ? (
                             <AuthorizedButtons isMobile />

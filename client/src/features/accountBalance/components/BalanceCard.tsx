@@ -23,7 +23,7 @@ export const BalanceCard = ({
 }: BalanceCardProps) => {
     return (
         <Card className="border-none shadow-none sm:border sm:shadow-sm">
-            <CardHeader className="px-4 py-4 sm:px-6 sm:py-6">
+            <CardHeader className="hidden px-4 py-4 sm:block sm:px-6 sm:py-6">
                 <CardTitle className="text-lg sm:text-xl">
                     Account Balance Details
                 </CardTitle>
