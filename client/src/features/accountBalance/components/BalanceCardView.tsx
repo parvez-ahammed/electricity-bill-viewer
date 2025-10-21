@@ -26,7 +26,7 @@ export const BalanceCardView = ({ account, index }: BalanceCardViewProps) => {
         >
             <CardContent className="p-0">
                 {/* Header Section */}
-                <div className="mb-2 flex items-start justify-between gap-2">
+                <div className="mb-2 flex items-center justify-between gap-2">
                     <div className="min-w-0 flex-1">
                         <h4 className="truncate text-sm font-semibold">
                             {account.customerName}
