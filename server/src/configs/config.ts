@@ -4,6 +4,9 @@ import { z } from 'zod';
 
 const envSchema = z
     .object({
+        NODE_ENV: z
+            .enum(['development', 'production', 'test'])
+            .default('development'),
         PORT: z.coerce.number().default(3000),
         JWT_SECRET: z.string().min(1, 'JWT_SECRET is required'),
         JWT_EXPIRES_IN: z.any().refine((val) => ms(val), {
@@ -49,6 +52,7 @@ if (!parsedEnv.success) {
 }
 
 export const appConfig = {
+    nodeEnv: parsedEnv.data.NODE_ENV,
     port: parsedEnv.data.PORT,
     jwtSecret: parsedEnv.data.JWT_SECRET,
     jwtExpiresIn: parsedEnv.data.JWT_EXPIRES_IN,

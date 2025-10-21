@@ -26,6 +26,8 @@ export const applyGlobalMiddlewares = (
         appConfig.frontendUrl,
         'http://localhost:5173',
         'http://127.0.0.1:5173',
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
         // Add IP address patterns for local network
         /^http:\/\/192\.168\.\d{1,3}\.\d{1,3}:\d+$/,
         /^http:\/\/10\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+$/,
@@ -36,7 +38,10 @@ export const applyGlobalMiddlewares = (
         cors({
             origin: (origin, callback) => {
                 // Allow requests with no origin (like mobile apps or curl requests)
-                if (!origin) return callback(null, true);
+                if (!origin) {
+                    console.log('CORS: Request with no origin allowed');
+                    return callback(null, true);
+                }
 
                 // Check if origin is in allowed list or matches pattern
                 const isAllowed = allowedOrigins.some((allowedOrigin) => {
@@ -50,9 +55,20 @@ export const applyGlobalMiddlewares = (
                 });
 
                 if (isAllowed) {
+                    console.log(`CORS: Origin allowed - ${origin}`);
                     callback(null, true);
                 } else {
-                    callback(new Error('Not allowed by CORS'));
+                    console.error(`CORS: Origin blocked - ${origin}`);
+                    console.error('Allowed origins:', allowedOrigins);
+                    // Instead of throwing error, allow in development
+                    if (appConfig.nodeEnv === 'development') {
+                        console.warn(
+                            'CORS: Allowing origin in development mode'
+                        );
+                        callback(null, true);
+                    } else {
+                        callback(new Error('Not allowed by CORS'));
+                    }
                 }
             },
             credentials: true,
