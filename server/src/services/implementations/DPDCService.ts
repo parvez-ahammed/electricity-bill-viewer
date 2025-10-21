@@ -1,3 +1,5 @@
+import * as crypto from 'crypto';
+
 import { appConfig } from '@configs/config';
 import { DPDCAccountDetails, IDPDCService } from '../interfaces/IDPDCService';
 import {
@@ -13,13 +15,12 @@ export class DPDCService implements IDPDCService {
         BASE_URL: 'https://amiapp.dpdc.org.bd',
         BEARER_ENDPOINT: '/auth/login/generate-bearer',
         LOGIN_ENDPOINT: '/auth/login',
-        CLIENT_ID: appConfig.dpdc.clientId,
+        CLIENT_ID: 'auth-ui',
         CLIENT_SECRET: appConfig.dpdc.clientSecret,
-        TENANT_CODE: appConfig.dpdc.tenantCode,
+        TENANT_CODE: 'DPDC',
         MAX_RETRY_ATTEMPTS: 3,
         RETRY_DELAY_MS: 2000,
         ACCEPT_LANGUAGE: 'en-GB,en;q=0.9',
-        COOKIE: appConfig.dpdc.cookie,
     };
 
     getProviderName(): ElectricityProvider {
@@ -28,6 +29,22 @@ export class DPDCService implements IDPDCService {
 
     private sleep(ms: number): Promise<void> {
         return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    /**
+     * Generate a random Rzp cookie string of length 14 and format it
+     * @param length - Length of the random string
+     * @returns Random Rzp cookie string
+     */
+    private genRzpCookieString(length: number = 14): string {
+        const chars =
+            'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        const bytes = crypto.randomBytes(length);
+        let id = '';
+        for (let i = 0; i < length; i++) {
+            id += chars[bytes[i] % chars.length];
+        }
+        return `rzp_unified_session_id=${id}; i18next=en`;
     }
 
     private formatDateToStandard(dateString: string): string {
@@ -67,7 +84,7 @@ export class DPDCService implements IDPDCService {
                     'sec-fetch-mode': 'cors',
                     'sec-fetch-site': 'same-origin',
                     tenantcode: this.config.TENANT_CODE,
-                    cookie: this.config.COOKIE,
+                    cookie: this.genRzpCookieString(),
                     Referer: `${this.config.BASE_URL}/login/`,
                 },
                 body: '{}',
@@ -113,7 +130,7 @@ export class DPDCService implements IDPDCService {
                     'sec-fetch-mode': 'cors',
                     'sec-fetch-site': 'same-origin',
                     tenantcode: this.config.TENANT_CODE,
-                    cookie: this.config.COOKIE,
+                    cookie: this.genRzpCookieString(),
                     Referer: `${this.config.BASE_URL}/login/`,
                 },
                 body: JSON.stringify({

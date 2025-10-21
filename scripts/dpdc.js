@@ -12,9 +12,9 @@ const CONFIG = {
   LOGIN_ENDPOINT: "/auth/login",
 
   // Authentication - Load from environment variables
-  CLIENT_ID: process.env.DPDC_CLIENT_ID || "auth-ui",
+  CLIENT_ID: "auth-ui",
   CLIENT_SECRET: process.env.DPDC_CLIENT_SECRET || "",
-  TENANT_CODE: process.env.DPDC_TENANT_CODE || "DPDC",
+  TENANT_CODE: "DPDC",
 
   // Multiple credentials array - Load from environment or use empty array
   CREDENTIALS:
@@ -58,6 +58,21 @@ function sleep(ms) {
 }
 
 /**
+ * Generate a random Rzp cookie string of length 14 and format it
+ * @param {number} length - Length of the random string
+ * @returns {string} Random Rzp cookie string
+ */
+function genRzpCookieString(length = 14) {
+  const chars =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const bytes = new Uint8Array(length);
+  crypto.getRandomValues(bytes);
+  let id = "";
+  for (let i = 0; i < length; i++) id += chars[bytes[i] % chars.length];
+  return `rzp_unified_session_id=${id}; i18next=en`;
+}
+
+/**
  * Generate bearer token from the API
  * @returns {Promise<string>} Access token
  */
@@ -76,7 +91,7 @@ async function generateBearerToken() {
       "sec-fetch-mode": "cors",
       "sec-fetch-site": "same-origin",
       tenantcode: CONFIG.TENANT_CODE,
-      cookie: CONFIG.COOKIE,
+      cookie: genRzpCookieString(),
       Referer: `${CONFIG.BASE_URL}/login/`,
     },
     body: "{}",
