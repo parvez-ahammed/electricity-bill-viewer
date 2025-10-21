@@ -5,33 +5,166 @@ const CONFIG = {
   BASE_URL: "https://customer.nesco.gov.bd",
   LOGIN_ENDPOINT: "/login",
   PANEL_ENDPOINT: "/pre/panel",
-
   CUSTOMER_NUMBER: process.env.NESCO_CUSTOMER_NUMBER || "",
-  COOKIE: process.env.NESCO_COOKIE || "",
-  CSRF_TOKEN:
-    process.env.NESCO_CSRF_TOKEN || "Wp7NzYo20wDFBwgymW4RWkeSDjKbx525qScf1gnE",
 };
 
-async function fetchNESCOData(customerNumber, csrfToken) {
-  console.log("=== Fetching NESCO Data ===\n");
+/**
+ * Fetches cookies and CSRF token from NESCO by making a GET request to the panel endpoint
+ * @returns {Promise<{cookies: string, csrfToken: string}>}
+ */
+async function fetchNESCOSession() {
+  console.log("=== Fetching NESCO Session (Cookies & CSRF Token) ===\n");
+
+  const https = require("https");
+  const agent = new https.Agent({
+    rejectUnauthorized: false, // Disable SSL verification for testing
+  });
+
+  const url = `${CONFIG.BASE_URL}${CONFIG.PANEL_ENDPOINT}`;
+  console.log(`Fetching: ${url}`);
+
+  let response;
+  try {
+    response = await fetch(url, {
+      agent, // Use custom agent with SSL disabled
+      headers: {
+        accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        "accept-language": "en-GB,en;q=0.9",
+        "cache-control": "max-age=0",
+        "user-agent":
+          "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36",
+        "sec-ch-ua":
+          '"Google Chrome";v="141", "Not?A_Brand";v="8", "Chromium";v="141"',
+        "sec-ch-ua-mobile": "?1",
+        "sec-ch-ua-platform": '"Android"',
+        "sec-fetch-dest": "document",
+        "sec-fetch-mode": "navigate",
+        "sec-fetch-site": "none",
+        "sec-fetch-user": "?1",
+        "upgrade-insecure-requests": "1",
+      },
+      method: "GET",
+    });
+  } catch (fetchError) {
+    console.error("❌ Fetch failed:", fetchError.message);
+    if (fetchError.cause) {
+      console.error("Cause:", fetchError.cause);
+    }
+    throw fetchError;
+  }
+
+  console.log("Response Status:", response.status, response.statusText);
+
+  // Extract cookies from Set-Cookie headers
+  // Try getSetCookie() first (newer Fetch API), fallback to iterating headers
+  let setCookieHeaders = [];
+
+  if (typeof response.headers.getSetCookie === "function") {
+    setCookieHeaders = response.headers.getSetCookie();
+  } else {
+    // Fallback: collect all set-cookie headers manually
+    response.headers.forEach((value, key) => {
+      if (key.toLowerCase() === "set-cookie") {
+        setCookieHeaders.push(value);
+      }
+    });
+  }
+
+  console.log("\n📦 Set-Cookie Headers:");
+  setCookieHeaders.forEach((cookie, index) => {
+    console.log(`  [${index + 1}] ${cookie.substring(0, 100)}...`);
+  });
+
+  if (setCookieHeaders.length === 0) {
+    console.warn("⚠️  No Set-Cookie headers found in response!");
+  }
+
+  // Parse cookies
+  let xsrfToken = "";
+  let sessionCookie = "";
+
+  setCookieHeaders.forEach((cookie) => {
+    if (cookie.startsWith("XSRF-TOKEN=")) {
+      const match = cookie.match(/XSRF-TOKEN=([^;]+)/);
+      if (match) xsrfToken = match[1];
+    } else if (cookie.startsWith("customer_service_portal_session=")) {
+      const match = cookie.match(/customer_service_portal_session=([^;]+)/);
+      if (match) sessionCookie = match[1];
+    }
+  });
+
+  // Get HTML content to extract CSRF token from the form
+  const htmlContent = await response.text();
+
+  // Extract CSRF token from the HTML (look for _token input field or meta tag)
+  let csrfToken = "";
+
+  // Try method 1: Look for <input name="_token" value="...">
+  const tokenInputMatch = htmlContent.match(
+    /<input[^>]*name="_token"[^>]*value="([^"]+)"/i
+  );
+  if (tokenInputMatch) {
+    csrfToken = tokenInputMatch[1];
+    console.log("✅ CSRF token found in input field");
+  } else {
+    // Try method 2: Look for <meta name="csrf-token" content="...">
+    const tokenMetaMatch = htmlContent.match(
+      /<meta[^>]*name="csrf-token"[^>]*content="([^"]+)"/i
+    );
+    if (tokenMetaMatch) {
+      csrfToken = tokenMetaMatch[1];
+      console.log("✅ CSRF token found in meta tag");
+    } else {
+      console.error("❌ Could not find CSRF token in HTML");
+      // Save HTML for debugging
+      const fs = require("fs");
+      fs.writeFileSync("nesco_session.html", htmlContent, "utf-8");
+      console.log("💾 HTML saved to nesco_session.html for debugging");
+    }
+  }
+
+  // Build cookie string for subsequent requests
+  const cookies = `XSRF-TOKEN=${xsrfToken}; customer_service_portal_session=${sessionCookie}`;
+
+  console.log("\n✅ Session Data Extracted:");
+  console.log(`XSRF-TOKEN Cookie: ${xsrfToken.substring(0, 50)}...`);
+  console.log(`Session Cookie: ${sessionCookie.substring(0, 50)}...`);
+  console.log(`CSRF Token (from HTML): ${csrfToken}`);
+  console.log("━".repeat(80));
+
+  return { cookies, csrfToken };
+}
+
+async function fetchNESCOData(customerNumber, cookies, csrfToken) {
+  console.log("\n=== Fetching NESCO Data ===\n");
   console.log(`Customer Number: ${customerNumber}`);
-  console.log(`CSRF Token: ${csrfToken}\n`);
+  console.log(`CSRF Token: ${csrfToken}`);
+  console.log(`Cookies: ${cookies.substring(0, 80)}...\n`);
+
+  const https = require("https");
+  const agent = new https.Agent({
+    rejectUnauthorized: false, // Disable SSL verification for testing
+  });
 
   const response = await fetch(`${CONFIG.BASE_URL}${CONFIG.PANEL_ENDPOINT}`, {
+    agent, // Use custom agent with SSL disabled
     headers: {
       accept:
         "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
       "accept-language": "en-GB,en-US;q=0.9,en;q=0.8,bn;q=0.7",
       "cache-control": "max-age=0",
       "content-type": "application/x-www-form-urlencoded",
-      priority: "u=0, i",
+      "user-agent":
+        "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36",
       "sec-fetch-dest": "document",
       "sec-fetch-mode": "navigate",
       "sec-fetch-site": "same-origin",
       "sec-fetch-user": "?1",
       "upgrade-insecure-requests": "1",
-      cookie: CONFIG.COOKIE,
+      cookie: cookies,
       Referer: `${CONFIG.BASE_URL}${CONFIG.PANEL_ENDPOINT}`,
+      Origin: CONFIG.BASE_URL,
     },
     body: `_token=${csrfToken}&cust_no=${customerNumber}&submit=%E0%A6%B0%E0%A6%BF%E0%A6%9A%E0%A6%BE%E0%A6%B0%E0%A7%8D%E0%A6%9C+%E0%A6%B9%E0%A6%BF%E0%A6%B8%E0%A7%8D%E0%A6%9F%E0%A7%8D%E0%A6%B0%E0%A6%BF`,
     method: "POST",
@@ -181,10 +314,12 @@ function extractAccountData(html) {
   // This approach works regardless of language (English/Bangla)
 
   const allInputs = html.match(/<input[^>]*>/gi) || [];
-  const disabledInputs = allInputs.filter(input => input.includes('disabled'));
+  const disabledInputs = allInputs.filter((input) =>
+    input.includes("disabled")
+  );
 
   const extractedValues = [];
-  disabledInputs.forEach(input => {
+  disabledInputs.forEach((input) => {
     const valueMatch = input.match(/value="([^"]*)"/i);
     if (valueMatch && valueMatch[1].trim()) {
       extractedValues.push(valueMatch[1].trim());
@@ -192,36 +327,47 @@ function extractAccountData(html) {
   });
 
   // Filter out empty values and analyze patterns
-  const cleanValues = extractedValues.filter(val => val && val.length > 0);
+  const cleanValues = extractedValues.filter((val) => val && val.length > 0);
 
   // Extract customer name (typically the first text value that's not a number)
-  const nameCandidate = cleanValues.find(val =>
-    /^[A-Z\s]+$/.test(val) && val.length > 3 && !val.includes('PARA') && !val.includes('ROAD') && !val.includes('BAZAR')
+  const nameCandidate = cleanValues.find(
+    (val) =>
+      /^[A-Z\s]+$/.test(val) &&
+      val.length > 3 &&
+      !val.includes("PARA") &&
+      !val.includes("ROAD") &&
+      !val.includes("BAZAR")
   );
   if (nameCandidate) {
     accountData.customerName = nameCandidate;
   }
 
   // Extract address (look for location patterns)
-  const addressCandidate = cleanValues.find(val =>
-    /^[A-Z\s]+(PARA|ROAD|STREET|BAZAR|MARKET|WARD)/.test(val) ||
-    (val.includes('SARDAR') && val.includes('PARA'))
+  const addressCandidate = cleanValues.find(
+    (val) =>
+      /^[A-Z\s]+(PARA|ROAD|STREET|BAZAR|MARKET|WARD)/.test(val) ||
+      (val.includes("SARDAR") && val.includes("PARA"))
   );
   if (addressCandidate) {
     accountData.location = addressCandidate;
   }
 
   // Extract mobile number (look for phone patterns)
-  const mobileCandidate = cleanValues.find(val =>
-    /^\+880\s*\d+\*+\d+$/.test(val) || /^\d{11}$/.test(val) || /^\+\d+\s*\d+\*+\d+$/.test(val)
+  const mobileCandidate = cleanValues.find(
+    (val) =>
+      /^\+880\s*\d+\*+\d+$/.test(val) ||
+      /^\d{11}$/.test(val) ||
+      /^\+\d+\s*\d+\*+\d+$/.test(val)
   );
   if (mobileCandidate) {
     accountData.mobileNumber = mobileCandidate;
   }
 
   // Extract consumer number (should match the input customer number)
-  const consumerCandidate = cleanValues.find(val =>
-    val === CONFIG.CUSTOMER_NUMBER.trim() || val.replace(/\s/g, '') === CONFIG.CUSTOMER_NUMBER.replace(/\s/g, '')
+  const consumerCandidate = cleanValues.find(
+    (val) =>
+      val === CONFIG.CUSTOMER_NUMBER.trim() ||
+      val.replace(/\s/g, "") === CONFIG.CUSTOMER_NUMBER.replace(/\s/g, "")
   );
   if (consumerCandidate) {
     accountData.customerNumber = consumerCandidate;
@@ -229,8 +375,8 @@ function extractAccountData(html) {
   }
 
   // Extract meter number (long numeric string, different from consumer number)
-  const meterCandidate = cleanValues.find(val =>
-    /^\d{10,}$/.test(val) && val !== accountData.customerNumber
+  const meterCandidate = cleanValues.find(
+    (val) => /^\d{10,}$/.test(val) && val !== accountData.customerNumber
   );
   if (meterCandidate) {
     accountData.accountId = meterCandidate;
@@ -238,7 +384,7 @@ function extractAccountData(html) {
   }
 
   // Extract connection status
-  const statusCandidate = cleanValues.find(val =>
+  const statusCandidate = cleanValues.find((val) =>
     /^(Active|Inactive|Connected|Disconnected)$/i.test(val)
   );
   if (statusCandidate) {
@@ -246,16 +392,22 @@ function extractAccountData(html) {
   }
 
   // Extract numeric values for min recharge and balance
-  const numericValues = cleanValues.filter(val => /^\d+\.?\d*$/.test(val)).map(val => parseFloat(val));
+  const numericValues = cleanValues
+    .filter((val) => /^\d+\.?\d*$/.test(val))
+    .map((val) => parseFloat(val));
 
   // Min recharge is typically a smaller value (under 1000)
-  const minRechargeCandidate = numericValues.find(val => val > 0 && val < 1000);
+  const minRechargeCandidate = numericValues.find(
+    (val) => val > 0 && val < 1000
+  );
   if (minRechargeCandidate) {
     accountData.minRecharge = minRechargeCandidate.toString();
   }
 
   // Balance is typically a larger decimal value
-  const balanceCandidate = numericValues.find(val => val > 0 && val.toString().includes('.'));
+  const balanceCandidate = numericValues.find(
+    (val) => val > 0 && val.toString().includes(".")
+  );
   if (balanceCandidate) {
     accountData.balanceRemaining = balanceCandidate.toString();
   }
@@ -269,9 +421,11 @@ function extractAccountData(html) {
 
   // Fallback for connection status
   if (!accountData.connectionStatus) {
-    accountData.connectionStatus = accountData.balanceRemaining && parseFloat(accountData.balanceRemaining) > 0
-      ? "Active"
-      : "Unknown";
+    accountData.connectionStatus =
+      accountData.balanceRemaining &&
+      parseFloat(accountData.balanceRemaining) > 0
+        ? "Active"
+        : "Unknown";
   }
 
   const tableMatch = html.match(
@@ -400,8 +554,6 @@ function analyzeHTML(html) {
     console.log(`Found ${formMatches.length} form(s) in HTML`);
   }
 
-
-
   const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
   if (titleMatch) {
     console.log(`Page Title: ${titleMatch[1].trim()}`);
@@ -418,9 +570,14 @@ async function main() {
     console.log("NESCO DATA FETCHER & ANALYZER");
     console.log("=".repeat(100) + "\n");
 
+    // Step 1: Fetch session cookies and CSRF token
+    const { cookies, csrfToken } = await fetchNESCOSession();
+
+    // Step 2: Fetch NESCO data using the session
     const result = await fetchNESCOData(
       CONFIG.CUSTOMER_NUMBER,
-      CONFIG.CSRF_TOKEN
+      cookies,
+      csrfToken
     );
 
     console.log("\n" + "=".repeat(100));
