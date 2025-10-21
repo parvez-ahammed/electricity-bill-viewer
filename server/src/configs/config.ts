@@ -28,10 +28,6 @@ const envSchema = z
         DPDC_TENANT_CODE: z.string().optional().default('DPDC'),
         DPDC_COOKIE: z.string().optional(),
 
-        // NESCO Service Configuration
-        NESCO_COOKIE: z.string().optional(),
-        NESCO_CSRF_TOKEN: z.string().optional(),
-
         // Telegram Bot Configuration
         TELEGRAM_BOT_TOKEN: z.string().optional(),
         TELEGRAM_CHAT_ID: z.string().optional(),
@@ -71,10 +67,8 @@ export const appConfig = {
     },
 
     // NESCO Configuration
-    nesco: {
-        cookie: parsedEnv.data.NESCO_COOKIE,
-        csrfToken: parsedEnv.data.NESCO_CSRF_TOKEN,
-    },
+    // Note: Cookies and CSRF tokens are fetched dynamically by NESCOService
+    nesco: {},
 
     // Telegram Configuration
     telegram: {
