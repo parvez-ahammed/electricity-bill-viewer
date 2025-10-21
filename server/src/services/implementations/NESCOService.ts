@@ -27,6 +27,47 @@ export class NESCOService implements INESCOService {
         return new Promise((resolve) => setTimeout(resolve, ms));
     }
 
+    private saveDebugHTML(html: string, customerNumber: string): void {
+        try {
+            const fs = require('fs');
+            const path = require('path');
+            const filename = `nesco_response_${customerNumber}_${Date.now()}.html`;
+            const filepath = path.join(process.cwd(), 'debug', filename);
+
+            // Ensure debug directory exists
+            const debugDir = path.dirname(filepath);
+            if (!fs.existsSync(debugDir)) {
+                fs.mkdirSync(debugDir, { recursive: true });
+            }
+
+            fs.writeFileSync(filepath, html, 'utf-8');
+            console.log(`Debug HTML saved to: ${filepath}`);
+        } catch (error) {
+            console.warn('Failed to save debug HTML:', error);
+        }
+    }
+
+    private logAccountData(accountData: ProviderAccountDetails): void {
+        if (process.env.NODE_ENV === 'development' || process.env.DEBUG_NESCO === 'true') {
+            console.log('\n📊 EXTRACTED ACCOUNT DATA (ProviderAccountDetails Format):');
+            console.log('━'.repeat(80));
+            console.log(`Account ID           : ${accountData.accountId || 'N/A'}`);
+            console.log(`Customer Number      : ${accountData.customerNumber || 'N/A'}`);
+            console.log(`Customer Name        : ${accountData.customerName || 'N/A'}`);
+            console.log(`Provider             : ${accountData.provider}`);
+            console.log(`Account Type         : ${accountData.accountType}`);
+            console.log(`💰 Balance Remaining : ${accountData.balanceRemaining || 'N/A'} Tk`);
+            console.log(`Connection Status    : ${accountData.connectionStatus || 'N/A'}`);
+            console.log(`Last Payment Amount  : ${accountData.lastPaymentAmount || 'N/A'} Tk`);
+            console.log(`Last Payment Date    : ${accountData.lastPaymentDate || 'N/A'}`);
+            console.log(`⏰ Balance Latest Date: ${accountData.balanceLatestDate || 'N/A'}`);
+            console.log(`Location             : ${accountData.location || 'N/A'}`);
+            console.log(`Mobile Number        : ${accountData.mobileNumber || 'N/A'}`);
+            console.log(`💵 Min Recharge      : ${accountData.minRecharge || 'N/A'} Tk`);
+            console.log('━'.repeat(80));
+        }
+    }
+
     private formatDateToStandard(dateString: string): string {
         try {
             const cleanDate = dateString.trim();
@@ -146,10 +187,17 @@ export class NESCOService implements INESCOService {
             );
         }
 
-        return await response.text();
+        const htmlData = await response.text();
+
+        // Save debug HTML if in development mode
+        if (process.env.NODE_ENV === 'development' || process.env.DEBUG_NESCO === 'true') {
+            this.saveDebugHTML(htmlData, customerNumber);
+        }
+
+        return htmlData;
     }
 
-    private extractAccountData(html: string): ProviderAccountDetails {
+    private extractAccountData(html: string, username?: string): ProviderAccountDetails {
         const accountData: ProviderAccountDetails = {
             accountId: '',
             customerNumber: '',
@@ -166,98 +214,137 @@ export class NESCOService implements INESCOService {
             minRecharge: null,
         };
 
-        const consumerNameMatch = html.match(
-            /<label[^>]*>Consumer Name<\/label>[\s\S]*?<input[^>]*value="([^"]*)"[^>]*>/i
+        // Extract data by finding all disabled input fields and analyzing their values
+        // This approach works regardless of language (English/Bangla)
+        const allInputs = html.match(/<input[^>]*>/gi) || [];
+        const disabledInputs = allInputs.filter(input => input.includes('disabled'));
+
+        const extractedValues: string[] = [];
+        disabledInputs.forEach(input => {
+            const valueMatch = input.match(/value="([^"]*)"/i);
+            if (valueMatch && valueMatch[1].trim()) {
+                extractedValues.push(valueMatch[1].trim());
+            }
+        });
+
+        // Filter out empty values and analyze patterns
+        const cleanValues = extractedValues.filter(val => val && val.length > 0);
+
+        // Extract customer name (typically the first text value that's not a number)
+        const nameCandidate = cleanValues.find(val =>
+            /^[A-Z\s]+$/.test(val) && val.length > 3 && !val.includes('PARA') && !val.includes('ROAD') && !val.includes('BAZAR')
         );
-        if (consumerNameMatch) {
-            accountData.customerName = consumerNameMatch[1].trim();
+        if (nameCandidate) {
+            accountData.customerName = nameCandidate;
         }
 
-        const consumerNumberMatch = html.match(
-            /<label[^>]*>Consumer No\.<\/label>[\s\S]*?<input[^>]*value="([^"]*)"[^>]*>/i
+        // Extract address (look for location patterns)
+        const addressCandidate = cleanValues.find(val =>
+            /^[A-Z\s]+(PARA|ROAD|STREET|BAZAR|MARKET|WARD)/.test(val) ||
+            (val.includes('SARDAR') && val.includes('PARA'))
         );
-        if (consumerNumberMatch) {
-            accountData.customerNumber = consumerNumberMatch[1].trim();
+        if (addressCandidate) {
+            accountData.location = addressCandidate;
         }
 
-        const meterNumberMatch = html.match(
-            /<label[^>]*>Meter No\.<\/label>[\s\S]*?<input[^>]*value="([^"]*)"[^>]*>/i
+        // Extract mobile number (look for phone patterns)
+        const mobileCandidate = cleanValues.find(val =>
+            /^\+880\s*\d+\*+\d+$/.test(val) || /^\d{11}$/.test(val) || /^\+\d+\s*\d+\*+\d+$/.test(val)
         );
-        if (meterNumberMatch) {
-            accountData.accountId = meterNumberMatch[1].trim();
+        if (mobileCandidate) {
+            accountData.mobileNumber = mobileCandidate;
         }
 
-        const addressMatch = html.match(
-            /<label[^>]*>Address<\/label>[\s\S]*?<input[^>]*value="([^"]*)"[^>]*>/i
+        // Extract consumer number (should match any reasonable customer number pattern)
+        // First try to find exact match with input, then fallback to pattern matching
+        let consumerCandidate = cleanValues.find(val =>
+            val === username?.trim() || val.replace(/\s/g, '') === username?.replace(/\s/g, '')
         );
-        if (addressMatch) {
-            accountData.location = addressMatch[1].trim();
+
+        if (!consumerCandidate) {
+            consumerCandidate = cleanValues.find(val =>
+                /^\d{8,15}$/.test(val) // Look for numeric strings between 8-15 digits
+            );
         }
 
-        const mobileMatch = html.match(
-            /<label[^>]*>Mobile<\/label>[\s\S]*?<input[^>]*value="([^"]*)"[^>]*>/i
-        );
-        if (mobileMatch) {
-            accountData.mobileNumber = mobileMatch[1].trim();
+        if (consumerCandidate) {
+            accountData.customerNumber = consumerCandidate;
         }
 
-        const minRechargeMatch = html.match(
-            /<label[^>]*>Minimum Recharge Amount[\s\S]*?<\/label>[\s\S]*?<input[^>]*value="([^"]*)"[^>]*>/i
+        // Extract meter number (long numeric string, different from consumer number)
+        const meterCandidate = cleanValues.find(val =>
+            /^\d{10,}$/.test(val) && val !== accountData.customerNumber
         );
-        if (minRechargeMatch) {
-            accountData.minRecharge = minRechargeMatch[1].trim();
+        if (meterCandidate) {
+            accountData.accountId = meterCandidate;
         }
 
-        const balanceMatch = html.match(
-            /<label[^>]*>Remaining Balance \(Tk\.\)[\s\S]*?<\/label>[\s\S]*?<input[^>]*value="([^"]*)"[^>]*>/i
+        // Extract connection status
+        const statusCandidate = cleanValues.find(val =>
+            /^(Active|Inactive|Connected|Disconnected)$/i.test(val)
         );
-        if (balanceMatch) {
-            accountData.balanceRemaining = balanceMatch[1].trim();
+        if (statusCandidate) {
+            accountData.connectionStatus = statusCandidate;
         }
 
-        const balanceTimeMatch = html.match(
-            /<label[^>]*>Remaining Balance[\s\S]*?<span>([\s\S]*?)<\/span>/i
-        );
+        // Extract numeric values for min recharge and balance
+        const numericValues = cleanValues.filter(val => /^\d+\.?\d*$/.test(val)).map(val => parseFloat(val));
+
+        // Min recharge is typically a smaller value (under 1000)
+        const minRechargeCandidate = numericValues.find(val => val > 0 && val < 1000);
+        if (minRechargeCandidate) {
+            accountData.minRecharge = minRechargeCandidate.toString();
+        }
+
+        // Balance is typically a larger decimal value
+        const balanceCandidate = numericValues.find(val => val > 0 && val.toString().includes('.'));
+        if (balanceCandidate) {
+            accountData.balanceRemaining = balanceCandidate.toString();
+        }
+
+        // Extract balance timestamp
+        const balanceTimeMatch = html.match(/<span>\s*([\d\s\w:]+)\s*<\/span>\)/i);
         if (balanceTimeMatch) {
             const rawDate = balanceTimeMatch[1].trim();
             accountData.balanceLatestDate = this.formatDateToStandard(rawDate);
         }
 
-        const connectionStatusMatch = html.match(
-            /<label[^>]*>Connection Status<\/label>[\s\S]*?<input[^>]*value="([^"]*)"[^>]*>/i
-        );
-        if (connectionStatusMatch) {
-            accountData.connectionStatus = connectionStatusMatch[1].trim();
-        } else {
-            accountData.connectionStatus = accountData.balanceRemaining
+        // Fallback for connection status
+        if (!accountData.connectionStatus) {
+            accountData.connectionStatus = accountData.balanceRemaining && parseFloat(accountData.balanceRemaining) > 0
                 ? 'Active'
                 : 'Unknown';
         }
 
+        // Extract recharge history from table
         const tableMatch = html.match(
             /<tbody[^>]*class="[^"]*text-center[^"]*"[^>]*>([\s\S]*?)<\/tbody>/i
         );
         if (tableMatch) {
-            const rowMatches = tableMatch[1].match(
-                /<tr[^>]*>([\s\S]*?)<\/tr>/gi
-            );
+            const rowMatches = tableMatch[1].match(/<tr[^>]*>([\s\S]*?)<\/tr>/gi);
             if (rowMatches && rowMatches.length > 0) {
-                const firstRow = rowMatches[0];
-                const cellMatches = firstRow.match(
-                    /<td[^>]*>([\s\S]*?)<\/td>/gi
-                );
+                for (let i = 0; i < rowMatches.length; i++) {
+                    const cellMatches = rowMatches[i].match(/<td[^>]*>([\s\S]*?)<\/td>/gi);
+                    if (cellMatches && cellMatches.length >= 14) {
+                        const cleanCell = (cell: string) => cell.replace(/<[^>]*>/g, '').trim();
 
-                if (cellMatches && cellMatches.length >= 14) {
-                    const cleanCell = (cell: string) =>
-                        cell.replace(/<[^>]*>/g, '').trim();
+                        const rechargeAmount = cleanCell(cellMatches[10]);
+                        const rechargeDate = cleanCell(cellMatches[13]);
 
-                    accountData.lastPaymentAmount = cleanCell(cellMatches[10]);
-                    const rawPaymentDate = cleanCell(cellMatches[13]);
-                    accountData.lastPaymentDate =
-                        this.formatPaymentDateToStandard(rawPaymentDate);
+                        if (rechargeDate && rechargeAmount) {
+                            // Use the first (most recent) record for last payment info
+                            if (i === 0) {
+                                accountData.lastPaymentDate = this.formatPaymentDateToStandard(rechargeDate);
+                                accountData.lastPaymentAmount = rechargeAmount;
+                            }
+                        }
+                    }
                 }
             }
         }
+
+        // Log extracted data in development mode
+        this.logAccountData(accountData);
 
         return accountData;
     }
@@ -271,12 +358,18 @@ export class NESCOService implements INESCOService {
         const maxAttempts = this.config.MAX_RETRY_ATTEMPTS;
 
         try {
+            // Use username as customer number (following the pattern from nesco.js)
             const htmlResponse = await this.fetchNESCOData(
                 username,
                 this.config.DEFAULT_CSRF_TOKEN
             );
 
-            const accountData = this.extractAccountData(htmlResponse);
+            const accountData = this.extractAccountData(htmlResponse, username);
+
+            // Set the customer number from the input if not extracted
+            if (!accountData.customerNumber) {
+                accountData.customerNumber = username;
+            }
 
             if (!accountData.customerNumber || !accountData.accountId) {
                 throw new Error(
