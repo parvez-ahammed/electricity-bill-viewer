@@ -1,592 +1,273 @@
 // Load environment variables
 require("dotenv").config();
+const cheerio = require("cheerio");
 
 const CONFIG = {
   BASE_URL: "https://customer.nesco.gov.bd",
-  LOGIN_ENDPOINT: "/login",
   PANEL_ENDPOINT: "/pre/panel",
   CUSTOMER_NUMBER: process.env.NESCO_CUSTOMER_NUMBER || "",
 };
 
 /**
- * Fetches cookies and CSRF token from NESCO by making a GET request to the panel endpoint
- * @returns {Promise<{cookies: string, csrfToken: string}>}
+ * Ultra-simple NESCO data extractor
  */
-async function fetchNESCOSession() {
-  console.log("=== Fetching NESCO Session (Cookies & CSRF Token) ===\n");
-
-  const https = require("https");
-  const agent = new https.Agent({
-    rejectUnauthorized: false, // Disable SSL verification for testing
-  });
-
-  const url = `${CONFIG.BASE_URL}${CONFIG.PANEL_ENDPOINT}`;
-  console.log(`Fetching: ${url}`);
-
-  let response;
-  try {
-    response = await fetch(url, {
-      agent, // Use custom agent with SSL disabled
-      headers: {
-        accept:
-          "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-        "accept-language": "en-GB,en;q=0.9",
-        "cache-control": "max-age=0",
-        "user-agent":
-          "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36",
-        "sec-ch-ua":
-          '"Google Chrome";v="141", "Not?A_Brand";v="8", "Chromium";v="141"',
-        "sec-ch-ua-mobile": "?1",
-        "sec-ch-ua-platform": '"Android"',
-        "sec-fetch-dest": "document",
-        "sec-fetch-mode": "navigate",
-        "sec-fetch-site": "none",
-        "sec-fetch-user": "?1",
-        "upgrade-insecure-requests": "1",
-      },
-      method: "GET",
-    });
-  } catch (fetchError) {
-    console.error("❌ Fetch failed:", fetchError.message);
-    if (fetchError.cause) {
-      console.error("Cause:", fetchError.cause);
-    }
-    throw fetchError;
+class SimpleNESCOExtractor {
+  constructor() {
+    this.agent = null;
   }
 
-  console.log("Response Status:", response.status, response.statusText);
+  async fetchData() {
+    // Setup HTTPS agent
+    const https = require("https");
+    this.agent = new https.Agent({ rejectUnauthorized: false });
 
-  // Extract cookies from Set-Cookie headers
-  // Try getSetCookie() first (newer Fetch API), fallback to iterating headers
-  let setCookieHeaders = [];
+    // Get initial page for CSRF token
+    const initResponse = await fetch(`${CONFIG.BASE_URL}${CONFIG.PANEL_ENDPOINT}`, {
+      agent: this.agent,
+      headers: this.getHeaders(),
+    });
 
-  if (typeof response.headers.getSetCookie === "function") {
-    setCookieHeaders = response.headers.getSetCookie();
-  } else {
-    // Fallback: collect all set-cookie headers manually
-    response.headers.forEach((value, key) => {
-      if (key.toLowerCase() === "set-cookie") {
-        setCookieHeaders.push(value);
+    // Extract cookies and CSRF token
+    const cookies = this.extractCookies(initResponse);
+    const csrfToken = this.extractCSRFToken(await initResponse.text());
+
+    // Fetch account data
+    const dataResponse = await fetch(`${CONFIG.BASE_URL}${CONFIG.PANEL_ENDPOINT}`, {
+      agent: this.agent,
+      method: "POST",
+      headers: {
+        ...this.getHeaders(),
+        "content-type": "application/x-www-form-urlencoded",
+        cookie: cookies,
+        Referer: `${CONFIG.BASE_URL}${CONFIG.PANEL_ENDPOINT}`,
+        Origin: CONFIG.BASE_URL,
+      },
+      body: `_token=${csrfToken}&cust_no=${CONFIG.CUSTOMER_NUMBER}&submit=রিচার্জ+হিস্ট্রি`,
+    });
+
+    return dataResponse.text();
+  }
+
+  extractCookies(response) {
+    const setCookieHeaders = response.headers.getSetCookie?.() || [];
+    const cookiePairs = [];
+
+    setCookieHeaders.forEach(cookie => {
+      if (cookie.startsWith("XSRF-TOKEN=")) {
+        const token = cookie.match(/XSRF-TOKEN=([^;]+)/)?.[1];
+        if (token) cookiePairs.push(`XSRF-TOKEN=${token}`);
+      } else if (cookie.startsWith("customer_service_portal_session=")) {
+        const session = cookie.match(/customer_service_portal_session=([^;]+)/)?.[1];
+        if (session) cookiePairs.push(`customer_service_portal_session=${session}`);
       }
     });
+
+    return cookiePairs.join("; ");
   }
 
-  console.log("\n📦 Set-Cookie Headers:");
-  setCookieHeaders.forEach((cookie, index) => {
-    console.log(`  [${index + 1}] ${cookie.substring(0, 100)}...`);
-  });
-
-  if (setCookieHeaders.length === 0) {
-    console.warn("⚠️  No Set-Cookie headers found in response!");
+  extractCSRFToken(html) {
+    const $ = cheerio.load(html);
+    return $('input[name="_token"]').attr('value') ||
+      $('meta[name="csrf-token"]').attr('content') || "";
   }
 
-  // Parse cookies
-  let xsrfToken = "";
-  let sessionCookie = "";
+  parseAccountData(html) {
+    const $ = cheerio.load(html);
+    const data = {
+      provider: "NESCO",
+      accountType: "Prepaid",
+      rawData: { inputValues: [], rechargeHistory: [] }
+    };
 
-  setCookieHeaders.forEach((cookie) => {
-    if (cookie.startsWith("XSRF-TOKEN=")) {
-      const match = cookie.match(/XSRF-TOKEN=([^;]+)/);
-      if (match) xsrfToken = match[1];
-    } else if (cookie.startsWith("customer_service_portal_session=")) {
-      const match = cookie.match(/customer_service_portal_session=([^;]+)/);
-      if (match) sessionCookie = match[1];
+    // Extract all disabled input values in order
+    const inputValues = [];
+    $('input[disabled]').each((_, el) => {
+      const value = $(el).attr('value')?.trim();
+      if (value) {
+        inputValues.push(value);
+      }
+    });
+
+    // Based on the HTML structure, map values by position
+    // Position 0: Customer Name (IRIN PARVIN)
+    // Position 1: Father/Husband Name (empty)
+    // Position 2: Address (SARDAR PARA) 
+    // Position 3: Mobile (+880 173*****35)
+    // Position 4: Office (Rangpur S&D-4)
+    // Position 5: Feeder (Co Bazar Feeder)
+    // Position 6: Consumer Number (19900128)
+    // Position 7: Meter Number (31041055913)
+    // Position 8: Authorized Load (3)
+    // Position 9: Tariff (LT-A)
+    // Position 10: Meter Type (Single-Phase Meter)
+    // Position 11: Meter Status (Active)
+    // Position 12: Installation Date (20-Jan-2025 5:05 PM)
+    // Position 13: Min Recharge (53.00)
+    // Position 14: Balance (94.790)
+
+    if (inputValues.length >= 14) {
+      data.customerName = inputValues[0];
+      data.location = inputValues[1];
+      data.mobileNumber = inputValues[2];
+      data.customerNumber = inputValues[5];
+      data.accountId = inputValues[6];
+      data.connectionStatus = inputValues[10];
+      data.minRecharge = inputValues[12];
+      data.balanceRemaining = inputValues[13];
     }
-  });
 
-  // Get HTML content to extract CSRF token from the form
-  const htmlContent = await response.text();
-
-  // Extract CSRF token from the HTML (look for _token input field or meta tag)
-  let csrfToken = "";
-
-  // Try method 1: Look for <input name="_token" value="...">
-  const tokenInputMatch = htmlContent.match(
-    /<input[^>]*name="_token"[^>]*value="([^"]+)"/i
-  );
-  if (tokenInputMatch) {
-    csrfToken = tokenInputMatch[1];
-    console.log("✅ CSRF token found in input field");
-  } else {
-    // Try method 2: Look for <meta name="csrf-token" content="...">
-    const tokenMetaMatch = htmlContent.match(
-      /<meta[^>]*name="csrf-token"[^>]*content="([^"]+)"/i
-    );
-    if (tokenMetaMatch) {
-      csrfToken = tokenMetaMatch[1];
-      console.log("✅ CSRF token found in meta tag");
-    } else {
-      console.error("❌ Could not find CSRF token in HTML");
-      // Save HTML for debugging
-      const fs = require("fs");
-      fs.writeFileSync("nesco_session.html", htmlContent, "utf-8");
-      console.log("💾 HTML saved to nesco_session.html for debugging");
+    // Extract balance date from the label text
+    const balanceLabel = $('label:contains("অবশিষ্ট ব্যালেন্স")').text();
+    const timeMatch = balanceLabel.match(/(\d{1,2}\s+\w+\s+\d{4}\s+\d{1,2}:\d{2}:\d{2}\s+(?:AM|PM))/i);
+    if (timeMatch) {
+      data.balanceLatestDate = this.formatDate(timeMatch[1]);
     }
+
+    // Extract recharge history
+    $('tbody.text-center tr').each((_, row) => {
+      const $row = $(row);
+      const cells = $row.find('td');
+
+      if (cells.length >= 14) {
+        const recharge = {
+          serial: $(cells[0]).text().trim(),
+          tokenNumber: $(cells[2]).text().trim(),
+          amount: $(cells[10]).text().trim(),
+          media: $(cells[12]).text().trim(),
+          date: $(cells[13]).text().trim(),
+          status: cells[14] ? $(cells[14]).text().trim() : "",
+        };
+
+        if (recharge.date && recharge.amount) {
+          data.rawData.rechargeHistory.push(recharge);
+        }
+      }
+    });
+
+    // Set last payment info from first recharge record
+    if (data.rawData.rechargeHistory.length > 0) {
+      const firstRecharge = data.rawData.rechargeHistory[0];
+      data.lastPaymentAmount = firstRecharge.amount;
+      data.lastPaymentDate = this.formatPaymentDate(firstRecharge.date);
+    }
+
+    data.rawData.inputValues = inputValues;
+    return data;
   }
 
-  // Build cookie string for subsequent requests
-  const cookies = `XSRF-TOKEN=${xsrfToken}; customer_service_portal_session=${sessionCookie}`;
+  formatDate(dateString) {
+    try {
+      const match = dateString.match(/(\d{1,2})\s+(\w+)\s+(\d{4})/);
+      if (match) {
+        const [, day, month, year] = match;
+        const monthMap = {
+          'January': '01', 'February': '02', 'March': '03', 'April': '04',
+          'May': '05', 'June': '06', 'July': '07', 'August': '08',
+          'September': '09', 'October': '10', 'November': '11', 'December': '12'
+        };
+        const monthNum = monthMap[month] || '01';
+        return `${year}-${monthNum}-${day.padStart(2, '0')}`;
+      }
+    } catch (e) {
+      console.warn('Date formatting failed:', e.message);
+    }
+    return dateString;
+  }
 
-  console.log("\n✅ Session Data Extracted:");
-  console.log(`XSRF-TOKEN Cookie: ${xsrfToken.substring(0, 50)}...`);
-  console.log(`Session Cookie: ${sessionCookie.substring(0, 50)}...`);
-  console.log(`CSRF Token (from HTML): ${csrfToken}`);
-  console.log("━".repeat(80));
+  formatPaymentDate(dateString) {
+    try {
+      const match = dateString.match(/(\d{1,2})-([A-Z]{3})-(\d{4})/);
+      if (match) {
+        const [, day, month, year] = match;
+        const monthMap = {
+          'JAN': '01', 'FEB': '02', 'MAR': '03', 'APR': '04',
+          'MAY': '05', 'JUN': '06', 'JUL': '07', 'AUG': '08',
+          'SEP': '09', 'OCT': '10', 'NOV': '11', 'DEC': '12'
+        };
+        const monthNum = monthMap[month] || '01';
+        return `${year}-${monthNum}-${day.padStart(2, '0')}`;
+      }
+    } catch (e) {
+      console.warn('Payment date formatting failed:', e.message);
+    }
+    return dateString;
+  }
 
-  return { cookies, csrfToken };
-}
-
-async function fetchNESCOData(customerNumber, cookies, csrfToken) {
-  console.log("\n=== Fetching NESCO Data ===\n");
-  console.log(`Customer Number: ${customerNumber}`);
-  console.log(`CSRF Token: ${csrfToken}`);
-  console.log(`Cookies: ${cookies.substring(0, 80)}...\n`);
-
-  const https = require("https");
-  const agent = new https.Agent({
-    rejectUnauthorized: false, // Disable SSL verification for testing
-  });
-
-  const response = await fetch(`${CONFIG.BASE_URL}${CONFIG.PANEL_ENDPOINT}`, {
-    agent, // Use custom agent with SSL disabled
-    headers: {
-      accept:
-        "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-      "accept-language": "en-GB,en-US;q=0.9,en;q=0.8,bn;q=0.7",
-      "cache-control": "max-age=0",
-      "content-type": "application/x-www-form-urlencoded",
-      "user-agent":
-        "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36",
+  getHeaders() {
+    return {
+      accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "accept-language": "en-GB,en;q=0.9",
+      "user-agent": "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36",
       "sec-fetch-dest": "document",
       "sec-fetch-mode": "navigate",
       "sec-fetch-site": "same-origin",
-      "sec-fetch-user": "?1",
-      "upgrade-insecure-requests": "1",
-      cookie: cookies,
-      Referer: `${CONFIG.BASE_URL}${CONFIG.PANEL_ENDPOINT}`,
-      Origin: CONFIG.BASE_URL,
-    },
-    body: `_token=${csrfToken}&cust_no=${customerNumber}&submit=%E0%A6%B0%E0%A6%BF%E0%A6%9A%E0%A6%BE%E0%A6%B0%E0%A7%8D%E0%A6%9C+%E0%A6%B9%E0%A6%BF%E0%A6%B8%E0%A7%8D%E0%A6%9F%E0%A7%8D%E0%A6%B0%E0%A6%BF`,
-    method: "POST",
-  });
-
-  console.log("Response Status:", response.status, response.statusText);
-  console.log("Response Headers:");
-  for (const [key, value] of response.headers.entries()) {
-    console.log(`  ${key}: ${value}`);
+    };
   }
-  console.log("\n");
-
-  const contentType = response.headers.get("content-type");
-
-  if (contentType?.includes("application/json")) {
-    const jsonData = await response.json();
-    console.log("=== JSON Response ===");
-    console.log(JSON.stringify(jsonData, null, 2));
-    return jsonData;
-  } else if (contentType?.includes("text/html")) {
-    const htmlData = await response.text();
-    console.log("=== HTML Response (First 2000 chars) ===");
-    console.log(htmlData.substring(0, 2000));
-    console.log("\n=== HTML Response Length ===");
-    console.log(`Total Length: ${htmlData.length} characters`);
-
-    const fs = require("fs");
-    fs.writeFileSync("nesco_response.html", htmlData, "utf-8");
-    console.log("\n✓ Full HTML saved to: nesco_response.html");
-
-    analyzeHTML(htmlData);
-    return htmlData;
-  } else {
-    const textData = await response.text();
-    console.log("=== Text Response ===");
-    console.log(textData);
-    return textData;
-  }
-}
-
-function extractAccountData(html) {
-  const accountData = {
-    accountId: "",
-    customerNumber: "",
-    customerName: "",
-    provider: "NESCO",
-    accountType: "Prepaid",
-    balanceRemaining: "",
-    connectionStatus: "",
-    lastPaymentAmount: "",
-    lastPaymentDate: "",
-    balanceLatestDate: "",
-    location: "",
-    mobileNumber: "",
-    minRecharge: null,
-    rawData: {
-      consumerNumber: "",
-      meterNumber: "",
-      email: "",
-      rechargeHistory: [],
-    },
-  };
-
-  // Helper function to format date from "20 October 2025 12:00:00 AM" to "2025-10-20"
-  const formatDateToStandard = (dateString) => {
-    try {
-      const cleanDate = dateString.trim();
-      const datePattern =
-        /(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})\s+(AM|PM)/i;
-      const match = cleanDate.match(datePattern);
-
-      if (match) {
-        const [, day, month, year] = match;
-
-        const monthMap = {
-          january: "01",
-          february: "02",
-          march: "03",
-          april: "04",
-          may: "05",
-          june: "06",
-          july: "07",
-          august: "08",
-          september: "09",
-          october: "10",
-          november: "11",
-          december: "12",
-        };
-
-        const monthNum =
-          monthMap[month.toLowerCase()] ||
-          new Date(`${month} 1, 2000`).getMonth() + 1;
-        const paddedMonth =
-          typeof monthNum === "string"
-            ? monthNum
-            : monthNum.toString().padStart(2, "0");
-        const paddedDay = day.padStart(2, "0");
-
-        return `${year}-${paddedMonth}-${paddedDay}`;
-      }
-
-      return cleanDate;
-    } catch {
-      return dateString;
-    }
-  };
-
-  // Helper function to format payment date from "01-OCT-2025 2:01 PM" to "2025-10-01"
-  const formatPaymentDateToStandard = (dateString) => {
-    try {
-      const cleanDate = dateString.trim();
-      const datePattern =
-        /(\d{1,2})-([A-Z]{3})-(\d{4})\s+(\d{1,2}):(\d{2})\s+(AM|PM)/i;
-      const match = cleanDate.match(datePattern);
-
-      if (match) {
-        const [, day, month, year] = match;
-
-        const monthMap = {
-          jan: "01",
-          feb: "02",
-          mar: "03",
-          apr: "04",
-          may: "05",
-          jun: "06",
-          jul: "07",
-          aug: "08",
-          sep: "09",
-          oct: "10",
-          nov: "11",
-          dec: "12",
-        };
-
-        const monthNum = monthMap[month.toLowerCase()] || "01";
-        const paddedDay = day.padStart(2, "0");
-
-        return `${year}-${monthNum}-${paddedDay}`;
-      }
-
-      return cleanDate;
-    } catch {
-      return dateString;
-    }
-  };
-
-  // Extract data by finding all disabled input fields and analyzing their values
-  // This approach works regardless of language (English/Bangla)
-
-  const allInputs = html.match(/<input[^>]*>/gi) || [];
-  const disabledInputs = allInputs.filter((input) =>
-    input.includes("disabled")
-  );
-
-  const extractedValues = [];
-  disabledInputs.forEach((input) => {
-    const valueMatch = input.match(/value="([^"]*)"/i);
-    if (valueMatch && valueMatch[1].trim()) {
-      extractedValues.push(valueMatch[1].trim());
-    }
-  });
-
-  // Filter out empty values and analyze patterns
-  const cleanValues = extractedValues.filter((val) => val && val.length > 0);
-
-  // Extract customer name (typically the first text value that's not a number)
-  const nameCandidate = cleanValues.find(
-    (val) =>
-      /^[A-Z\s]+$/.test(val) &&
-      val.length > 3 &&
-      !val.includes("PARA") &&
-      !val.includes("ROAD") &&
-      !val.includes("BAZAR")
-  );
-  if (nameCandidate) {
-    accountData.customerName = nameCandidate;
-  }
-
-  // Extract address (look for location patterns)
-  const addressCandidate = cleanValues.find(
-    (val) =>
-      /^[A-Z\s]+(PARA|ROAD|STREET|BAZAR|MARKET|WARD)/.test(val) ||
-      (val.includes("SARDAR") && val.includes("PARA"))
-  );
-  if (addressCandidate) {
-    accountData.location = addressCandidate;
-  }
-
-  // Extract mobile number (look for phone patterns)
-  const mobileCandidate = cleanValues.find(
-    (val) =>
-      /^\+880\s*\d+\*+\d+$/.test(val) ||
-      /^\d{11}$/.test(val) ||
-      /^\+\d+\s*\d+\*+\d+$/.test(val)
-  );
-  if (mobileCandidate) {
-    accountData.mobileNumber = mobileCandidate;
-  }
-
-  // Extract consumer number (should match the input customer number)
-  const consumerCandidate = cleanValues.find(
-    (val) =>
-      val === CONFIG.CUSTOMER_NUMBER.trim() ||
-      val.replace(/\s/g, "") === CONFIG.CUSTOMER_NUMBER.replace(/\s/g, "")
-  );
-  if (consumerCandidate) {
-    accountData.customerNumber = consumerCandidate;
-    accountData.rawData.consumerNumber = consumerCandidate;
-  }
-
-  // Extract meter number (long numeric string, different from consumer number)
-  const meterCandidate = cleanValues.find(
-    (val) => /^\d{10,}$/.test(val) && val !== accountData.customerNumber
-  );
-  if (meterCandidate) {
-    accountData.accountId = meterCandidate;
-    accountData.rawData.meterNumber = meterCandidate;
-  }
-
-  // Extract connection status
-  const statusCandidate = cleanValues.find((val) =>
-    /^(Active|Inactive|Connected|Disconnected)$/i.test(val)
-  );
-  if (statusCandidate) {
-    accountData.connectionStatus = statusCandidate;
-  }
-
-  // Extract numeric values for min recharge and balance
-  const numericValues = cleanValues
-    .filter((val) => /^\d+\.?\d*$/.test(val))
-    .map((val) => parseFloat(val));
-
-  // Min recharge is typically a smaller value (under 1000)
-  const minRechargeCandidate = numericValues.find(
-    (val) => val > 0 && val < 1000
-  );
-  if (minRechargeCandidate) {
-    accountData.minRecharge = minRechargeCandidate.toString();
-  }
-
-  // Balance is typically a larger decimal value
-  const balanceCandidate = numericValues.find(
-    (val) => val > 0 && val.toString().includes(".")
-  );
-  if (balanceCandidate) {
-    accountData.balanceRemaining = balanceCandidate.toString();
-  }
-
-  // Extract balance timestamp
-  const balanceTimeMatch = html.match(/<span>\s*([\d\s\w:]+)\s*<\/span>\)/i);
-  if (balanceTimeMatch) {
-    const rawDate = balanceTimeMatch[1].trim();
-    accountData.balanceLatestDate = formatDateToStandard(rawDate);
-  }
-
-  // Fallback for connection status
-  if (!accountData.connectionStatus) {
-    accountData.connectionStatus =
-      accountData.balanceRemaining &&
-      parseFloat(accountData.balanceRemaining) > 0
-        ? "Active"
-        : "Unknown";
-  }
-
-  const tableMatch = html.match(
-    /<tbody[^>]*class="[^"]*text-center[^"]*"[^>]*>([\s\S]*?)<\/tbody>/i
-  );
-  if (tableMatch) {
-    const rowMatches = tableMatch[1].match(/<tr[^>]*>([\s\S]*?)<\/tr>/gi);
-    if (rowMatches && rowMatches.length > 0) {
-      for (let i = 0; i < rowMatches.length; i++) {
-        const cellMatches = rowMatches[i].match(/<td[^>]*>([\s\S]*?)<\/td>/gi);
-        if (cellMatches && cellMatches.length >= 14) {
-          const cleanCell = (cell) => cell.replace(/<[^>]*>/g, "").trim();
-
-          const recharge = {
-            serial: cleanCell(cellMatches[0]),
-            seqNo: cleanCell(cellMatches[1]),
-            tokenNumber: cleanCell(cellMatches[2]),
-            meterRent: cleanCell(cellMatches[3]),
-            demandCharge: cleanCell(cellMatches[4]),
-            pfcCharge: cleanCell(cellMatches[5]),
-            vat: cleanCell(cellMatches[6]),
-            paidDebt: cleanCell(cellMatches[7]),
-            rebate: cleanCell(cellMatches[8]),
-            energyAmount: cleanCell(cellMatches[9]),
-            rechargeAmount: cleanCell(cellMatches[10]),
-            estimatedUnit: cleanCell(cellMatches[11]),
-            rechargeMedia: cleanCell(cellMatches[12]),
-            rechargeDate: cleanCell(cellMatches[13]),
-            status: cellMatches[14] ? cleanCell(cellMatches[14]) : "",
-          };
-
-          if (recharge.rechargeDate && recharge.rechargeAmount) {
-            accountData.rawData.rechargeHistory.push(recharge);
-            if (i === 0) {
-              accountData.lastPaymentDate = formatPaymentDateToStandard(
-                recharge.rechargeDate
-              );
-              accountData.lastPaymentAmount = recharge.rechargeAmount;
-            }
-          }
-        }
-      }
-    }
-  }
-
-  return accountData;
-}
-
-function analyzeHTML(html) {
-  console.log("\n=== HTML Analysis ===");
-
-  const accountData = extractAccountData(html);
-
-  console.log("\n📊 EXTRACTED ACCOUNT DATA (ProviderAccountDetails Format):");
-  console.log("━".repeat(80));
-  console.log(`Account ID           : ${accountData.accountId || "N/A"}`);
-  console.log(`Customer Number      : ${accountData.customerNumber || "N/A"}`);
-  console.log(`Customer Name        : ${accountData.customerName || "N/A"}`);
-  console.log(`Provider             : ${accountData.provider}`);
-  console.log(`Account Type         : ${accountData.accountType}`);
-  console.log(
-    `💰 Balance Remaining : ${accountData.balanceRemaining || "N/A"} Tk`
-  );
-  console.log(
-    `Connection Status    : ${accountData.connectionStatus || "N/A"}`
-  );
-  console.log(
-    `Last Payment Amount  : ${accountData.lastPaymentAmount || "N/A"} Tk`
-  );
-  console.log(`Last Payment Date    : ${accountData.lastPaymentDate || "N/A"}`);
-  console.log(
-    `⏰ Balance Latest Date: ${accountData.balanceLatestDate || "N/A"}`
-  );
-  console.log(`Location             : ${accountData.location || "N/A"}`);
-  console.log(`Mobile Number        : ${accountData.mobileNumber || "N/A"}`);
-  console.log(`💵 Min Recharge      : ${accountData.minRecharge || "N/A"} Tk`);
-  console.log("━".repeat(80));
-
-  console.log("\n📋 Additional Info:");
-  console.log(
-    `Consumer Number (Raw): ${accountData.rawData.consumerNumber || "N/A"}`
-  );
-  console.log(
-    `Meter Number (Raw)   : ${accountData.rawData.meterNumber || "N/A"}`
-  );
-  console.log(`Email                : ${accountData.rawData.email || "N/A"}`);
-  console.log("━".repeat(80));
-
-  if (accountData.rawData.rechargeHistory.length > 0) {
-    console.log(
-      `\n💳 RECHARGE HISTORY (${accountData.rawData.rechargeHistory.length} records):`
-    );
-    console.log("━".repeat(80));
-    console.table(accountData.rawData.rechargeHistory);
-  } else {
-    console.log("\n⚠️  No recharge history found");
-  }
-
-  console.log("\n🔍 JSON Format (ProviderAccountDetails):");
-  console.log("━".repeat(80));
-  const providerAccountDetails = {
-    accountId: accountData.accountId,
-    customerNumber: accountData.customerNumber,
-    customerName: accountData.customerName,
-    provider: accountData.provider,
-    accountType: accountData.accountType,
-    balanceRemaining: accountData.balanceRemaining,
-    connectionStatus: accountData.connectionStatus,
-    lastPaymentAmount: accountData.lastPaymentAmount,
-    lastPaymentDate: accountData.lastPaymentDate,
-    balanceLatestDate: accountData.balanceLatestDate,
-    location: accountData.location,
-    mobileNumber: accountData.mobileNumber,
-    minRecharge: accountData.minRecharge,
-  };
-  console.log(JSON.stringify(providerAccountDetails, null, 2));
-  console.log("━".repeat(80));
-
-  const tableMatches = html.match(/<table[^>]*>([\s\S]*?)<\/table>/gi);
-  if (tableMatches) {
-    console.log(`\n\nFound ${tableMatches.length} table(s) in HTML`);
-  }
-
-  const formMatches = html.match(/<form[^>]*>([\s\S]*?)<\/form>/gi);
-  if (formMatches) {
-    console.log(`Found ${formMatches.length} form(s) in HTML`);
-  }
-
-  const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
-  if (titleMatch) {
-    console.log(`Page Title: ${titleMatch[1].trim()}`);
-  }
-
-  console.log("\n=== End of HTML Analysis ===\n");
-
-  return accountData;
 }
 
 async function main() {
   try {
-    console.log("\n" + "=".repeat(100));
-    console.log("NESCO DATA FETCHER & ANALYZER");
-    console.log("=".repeat(100) + "\n");
+    console.log("⚡ NESCO Ultra-Simple Extractor\n");
 
-    // Step 1: Fetch session cookies and CSRF token
-    const { cookies, csrfToken } = await fetchNESCOSession();
+    const extractor = new SimpleNESCOExtractor();
 
-    // Step 2: Fetch NESCO data using the session
-    const result = await fetchNESCOData(
-      CONFIG.CUSTOMER_NUMBER,
-      cookies,
-      csrfToken
-    );
+    console.log("📡 Fetching data...");
+    const html = await extractor.fetchData();
+    console.log("✅ Data fetched\n");
 
-    console.log("\n" + "=".repeat(100));
-    console.log("FETCH COMPLETE");
-    console.log("=".repeat(100) + "\n");
+    console.log("🔍 Parsing data...");
+    const accountData = extractor.parseAccountData(html);
+    console.log("✅ Data parsed\n");
+
+    // Display results
+    console.log("📋 ACCOUNT INFORMATION:");
+    console.log("━".repeat(60));
+    console.log(`Customer Name    : ${accountData.customerName || 'N/A'}`);
+    console.log(`Account ID       : ${accountData.accountId || 'N/A'}`);
+    console.log(`Customer Number  : ${accountData.customerNumber || 'N/A'}`);
+    console.log(`Balance          : ${accountData.balanceRemaining || 'N/A'} Tk`);
+    console.log(`Balance Date     : ${accountData.balanceLatestDate || 'N/A'}`);
+    console.log(`Status           : ${accountData.connectionStatus || 'N/A'}`);
+    console.log(`Location         : ${accountData.location || 'N/A'}`);
+    console.log(`Mobile           : ${accountData.mobileNumber || 'N/A'}`);
+    console.log(`Min Recharge     : ${accountData.minRecharge || 'N/A'} Tk`);
+    console.log(`Last Payment     : ${accountData.lastPaymentAmount || 'N/A'} Tk`);
+    console.log(`Last Payment Date: ${accountData.lastPaymentDate || 'N/A'}`);
+    console.log(`Recharge Records : ${accountData.rawData.rechargeHistory.length}`);
+    console.log("━".repeat(60));
+
+    console.log("\n📄 CLEAN JSON:");
+    const cleanOutput = {
+      provider: accountData.provider,
+      accountType: accountData.accountType,
+      customerName: accountData.customerName,
+      customerNumber: accountData.customerNumber,
+      accountId: accountData.accountId,
+      location: accountData.location,
+      mobileNumber: accountData.mobileNumber,
+      connectionStatus: accountData.connectionStatus,
+      balanceRemaining: accountData.balanceRemaining,
+      balanceLatestDate: accountData.balanceLatestDate,
+      minRecharge: accountData.minRecharge,
+      lastPaymentAmount: accountData.lastPaymentAmount,
+      lastPaymentDate: accountData.lastPaymentDate,
+      rechargeHistoryCount: accountData.rawData.rechargeHistory.length
+    };
+    console.log(JSON.stringify(cleanOutput, null, 2));
+
+    console.log("\n🔍 DEBUG - All Input Values:");
+    accountData.rawData.inputValues.forEach((value, index) => {
+      console.log(`[${index}]: ${value}`);
+    });
+
   } catch (error) {
-    console.error("\n❌ Error:", error.message);
-    console.error("Stack:", error.stack);
+    console.error("❌ Error:", error.message);
+    console.error(error.stack);
   }
 }
 
-main();
+if (require.main === module) {
+  main();
+}
+
+module.exports = { SimpleNESCOExtractor };
