@@ -25,17 +25,11 @@ services:
     ports:
       - "${PORT:-3000}:3000"
       - "9091:9091"
+    env_file:
+      - .env
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - NODE_ENV=${NODE_ENV}
-      - JWT_SECRET=${JWT_SECRET}
-      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
-      - FRONTEND_URL=${FRONTEND_URL}
-      - DPDC_CLIENT_SECRET=${DPDC_CLIENT_SECRET}
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
-      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
-      - ELECTRICITY_CREDENTIALS=${ELECTRICITY_CREDENTIALS}
     volumes:
       - ../server:/app
       - /app/node_modules
@@ -52,8 +46,8 @@ services:
       - bill-barta-net
     ports:
       - "${CLIENT_PORT:-5173}:5173"
-    environment:
-      - VITE_BACKEND_API_PATH=${VITE_BACKEND_API_PATH:-http://localhost:3000/api/v1}
+    env_file:
+      - .env
     volumes:
       - ../client:/app
       - /app/node_modules
