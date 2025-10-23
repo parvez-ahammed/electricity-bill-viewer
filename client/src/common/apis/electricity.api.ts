@@ -40,20 +40,28 @@ export interface ElectricityUsageResponse {
 }
 
 export const electricityApi = {
-    getUsageData: async (credentials: ElectricityCredential[]) => {
+    getUsageData: async (
+        credentials: ElectricityCredential[],
+        skipCache = false
+    ) => {
         const data = await apiRequest<ElectricityUsageResponse>(
             HTTP_METHOD.POST,
             API_ENDPOINTS.ELECTRICITY.USAGE,
-            { credentials }
+            { credentials },
+            skipCache
         );
         return data;
     },
 
-    getSingleUsageData: async (credential: ElectricityCredential) => {
+    getSingleUsageData: async (
+        credential: ElectricityCredential,
+        skipCache = false
+    ) => {
         const data = await apiRequest<ElectricityUsageResponse>(
             HTTP_METHOD.POST,
             API_ENDPOINTS.ELECTRICITY.SINGLE,
-            credential
+            credential,
+            skipCache
         );
         return data;
     },

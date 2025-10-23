@@ -3,7 +3,8 @@ import {
     ElectricityCredential,
     electricityApi,
 } from "@/common/apis/electricity.api";
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { PostBalanceDetails } from "../constants/balance.constant";
@@ -63,54 +64,72 @@ const getCredentialsFromEnv = (): ElectricityCredential[] => {
 const CREDENTIALS: ElectricityCredential[] = getCredentialsFromEnv();
 
 export const useBalanceData = () => {
-    const [accountsData, setAccountsData] = useState<PostBalanceDetails[]>([]);
-    const [loading, setLoading] = useState<boolean>(true);
-    const [error, setError] = useState<string | null>(null);
+    const [skipCache, setSkipCache] = useState(false);
+    const hasShownToast = useRef(false);
 
+    const { data, isLoading, error, refetch, isFetching } = useQuery({
+        queryKey: ["electricityBalance", skipCache],
+        queryFn: async () => {
+            hasShownToast.current = false;
+            const response = await electricityApi.getUsageData(
+                CREDENTIALS,
+                skipCache
+            );
+            return response;
+        },
+        staleTime: skipCache ? 0 : 5 * 60 * 1000, // 5 minutes if cached, 0 if skip cache
+        gcTime: 10 * 60 * 1000, // 10 minutes
+        refetchOnWindowFocus: false,
+    });
+
+    // Show toasts based on data
     useEffect(() => {
-        const fetchBalanceData = async () => {
-            try {
-                setLoading(true);
-                setError(null);
+        if (data && !hasShownToast.current) {
+            hasShownToast.current = true;
 
-                const response = await electricityApi.getUsageData(CREDENTIALS);
+            if (data.success && data.accounts.length > 0) {
+                toast.success(
+                    `${skipCache ? "Refreshed" : "Loaded"} ${data.totalAccounts} account(s) successfully`
+                );
 
-                if (response.success && response.accounts.length > 0) {
-                    const transformedData =
-                        response.accounts.map(transformAccountData);
-                    setAccountsData(transformedData);
-
-                    toast.success(
-                        `Loaded ${response.totalAccounts} account(s) successfully`
+                if (data.errors && data.errors.length > 0) {
+                    toast.warning(
+                        `${data.failedLogins} account(s) failed to load`
                     );
-
-                    if (response.errors && response.errors.length > 0) {
-                        toast.warning(
-                            `${response.failedLogins} account(s) failed to load`
-                        );
-                    }
-                } else {
-                    setError("No accounts found");
-                    toast.error("No electricity accounts found");
                 }
-            } catch (err) {
-                const errorMessage =
-                    err instanceof Error
-                        ? err.message
-                        : "Failed to fetch balance data";
-                setError(errorMessage);
-                toast.error(errorMessage);
-            } finally {
-                setLoading(false);
+            } else {
+                toast.error("No electricity accounts found");
             }
-        };
+        }
+    }, [data, skipCache]);
 
-        fetchBalanceData();
-    }, []);
+    // Show error toast
+    useEffect(() => {
+        if (error) {
+            const errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : "Failed to fetch balance data";
+            toast.error(errorMessage);
+        }
+    }, [error]);
+
+    const accountsData =
+        data?.accounts.map(transformAccountData) ??
+        ([] as PostBalanceDetails[]);
+
+    const refreshWithSkipCache = async () => {
+        setSkipCache(true);
+        await refetch();
+        // Reset skip cache after fetch
+        setTimeout(() => setSkipCache(false), 100);
+    };
 
     return {
         accountsData,
-        loading,
-        error,
+        loading: isLoading || isFetching,
+        error: error ? String(error) : null,
+        refresh: refetch,
+        refreshWithSkipCache,
     };
 };

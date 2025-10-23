@@ -18,12 +18,14 @@ axiosInstance.interceptors.request.use((config) => {
 export const apiRequest = async <T, TRequest = unknown>(
     method: keyof typeof HTTP_METHOD,
     url: string,
-    data?: TRequest
+    data?: TRequest,
+    skipCache?: boolean
 ): Promise<T> => {
     const response = await axiosInstance({
         method,
         url,
         data,
+        headers: skipCache ? { "x-skip-cache": "true" } : {},
     });
 
     return response.data;

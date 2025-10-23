@@ -6,6 +6,7 @@
     "description": "A modern React boilerplate with authentication, user management, and profile functionality",
     "scripts": {
         "dev": "vite",
+        "start:dev": "vite --host 0.0.0.0",
         "build": "tsc -b && vite build",
         "lint": "eslint .",
         "preview": "vite preview",

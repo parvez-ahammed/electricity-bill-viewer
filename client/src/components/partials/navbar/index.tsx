@@ -1,6 +1,6 @@
 import { useValidToken } from "@/common/hooks/useGetUserInfo";
 import { useAuthContext } from "@/context/AuthContext";
-import { Menu, Search, X } from "lucide-react";
+import { Menu, RefreshCw, Search, X } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 
@@ -16,8 +16,27 @@ export const Navbar = () => {
     const location = useLocation();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
     const isBaseRoute = location.pathname === "/";
+
+    const handleRefresh = async () => {
+        setIsRefreshing(true);
+        try {
+            // Call the global refresh function exposed by AccountBalance
+            const refreshFn = (
+                window as Window & {
+                    refreshElectricityData?: () => Promise<void>;
+                }
+            ).refreshElectricityData;
+            if (refreshFn) {
+                await refreshFn();
+            }
+        } finally {
+            // Keep spinning for a bit to show feedback
+            setTimeout(() => setIsRefreshing(false), 1000);
+        }
+    };
 
     const toggleMobileMenu = () => {
         setMobileMenuOpen(!mobileMenuOpen);
@@ -40,6 +59,23 @@ export const Navbar = () => {
                                 BillBarta
                             </Text>
                         </Link>
+                    </div>
+
+                    {/* Cache Refresh Button */}
+                    <div className="flex items-center gap-2">
+                        <Button
+                            onClick={handleRefresh}
+                            variant="outline"
+                            size="sm"
+                            className="flex items-center gap-2"
+                            title="Refresh data from server (bypass cache)"
+                            disabled={isRefreshing}
+                        >
+                            <RefreshCw
+                                className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+                            />
+                            <span className="hidden sm:inline">Refresh</span>
+                        </Button>
                     </div>
 
                     {showOthers && isBaseRoute && (
