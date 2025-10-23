@@ -34,7 +34,11 @@ export class TelegramController {
                 return;
             }
 
-            const result = await this.telegramService.sendAccountBalances();
+            // Check for x-skip-cache header
+            const skipCache = req.headers['x-skip-cache'] === 'true';
+
+            const result =
+                await this.telegramService.sendAccountBalances(skipCache);
 
             if (result.success) {
                 new ResponseBuilder(res)

@@ -10,9 +10,11 @@ import {
 } from '../interfaces/IProviderService';
 import { DPDCService } from './DPDCService';
 import { NESCOService } from './NESCOService';
+import { cacheService } from './RedisCacheService';
 
 export class ElectricityService implements IElectricityService {
     private providers: Map<ElectricityProvider, IElectricityProvider>;
+    private readonly CACHE_PREFIX = 'electricity:usage';
 
     constructor() {
         this.providers = new Map();
@@ -66,6 +68,36 @@ export class ElectricityService implements IElectricityService {
     }
 
     async getUsageData(
+        credentials: ElectricityCredential[],
+        skipCache = false
+    ): Promise<ElectricityUsageResponse> {
+        // Generate cache key based on credentials
+        const cacheKey = cacheService.generateCacheKey(
+            this.CACHE_PREFIX,
+            credentials.reduce(
+                (acc, cred, index) => {
+                    acc[`cred_${index}`] = {
+                        username: cred.username,
+                        password: cred.password,
+                        provider: cred.provider,
+                    };
+                    return acc;
+                },
+                {} as Record<string, unknown>
+            )
+        );
+
+        // Use cache service to get or set data
+        return cacheService.getOrSet<ElectricityUsageResponse>(
+            cacheKey,
+            async () => {
+                return this.fetchUsageData(credentials);
+            },
+            { skipCache }
+        );
+    }
+
+    private async fetchUsageData(
         credentials: ElectricityCredential[]
     ): Promise<ElectricityUsageResponse> {
         try {
@@ -158,6 +190,33 @@ export class ElectricityService implements IElectricityService {
     }
 
     async getSingleAccountUsage(
+        username: string,
+        password: string,
+        provider: ElectricityProvider,
+        skipCache = false
+    ): Promise<ElectricityUsageResponse> {
+        // Generate cache key based on single account credentials
+        const cacheKey = cacheService.generateCacheKey(this.CACHE_PREFIX, {
+            username,
+            password,
+            provider,
+        });
+
+        // Use cache service to get or set data
+        return cacheService.getOrSet<ElectricityUsageResponse>(
+            cacheKey,
+            async () => {
+                return this.fetchSingleAccountUsage(
+                    username,
+                    password,
+                    provider
+                );
+            },
+            { skipCache }
+        );
+    }
+
+    private async fetchSingleAccountUsage(
         username: string,
         password: string,
         provider: ElectricityProvider

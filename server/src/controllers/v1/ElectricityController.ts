@@ -13,6 +13,9 @@ export class ElectricityController {
         try {
             const { credentials } = req.body;
 
+            // Check for x-skip-cache header
+            const skipCache = req.headers['x-skip-cache'] === 'true';
+
             if (!credentials || !Array.isArray(credentials)) {
                 res.status(400).json({
                     success: false,
@@ -44,8 +47,10 @@ export class ElectricityController {
                 }
             }
 
-            const result =
-                await this.electricityService.getUsageData(credentials);
+            const result = await this.electricityService.getUsageData(
+                credentials,
+                skipCache
+            );
 
             res.status(200).json(result);
         } catch (error: unknown) {
@@ -63,6 +68,9 @@ export class ElectricityController {
     getSingleUsageData = async (req: Request, res: Response): Promise<void> => {
         try {
             const { username, password, provider } = req.body;
+
+            // Check for x-skip-cache header
+            const skipCache = req.headers['x-skip-cache'] === 'true';
 
             if (!username || !password || !provider) {
                 res.status(400).json({
@@ -85,7 +93,8 @@ export class ElectricityController {
             const result = await this.electricityService.getSingleAccountUsage(
                 username,
                 password,
-                provider as ElectricityProvider
+                provider as ElectricityProvider,
+                skipCache
             );
 
             res.status(200).json(result);

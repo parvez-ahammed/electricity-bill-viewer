@@ -39,12 +39,14 @@ export interface ElectricityUsageResponse {
 
 export interface IElectricityService {
     getUsageData(
-        credentials: ElectricityCredential[]
+        credentials: ElectricityCredential[],
+        skipCache?: boolean
     ): Promise<ElectricityUsageResponse>;
 
     getSingleAccountUsage(
         username: string,
         password: string,
-        provider: ElectricityProvider
+        provider: ElectricityProvider,
+        skipCache?: boolean
     ): Promise<ElectricityUsageResponse>;
 }

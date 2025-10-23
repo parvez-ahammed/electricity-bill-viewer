@@ -1,0 +1,69 @@
+services:
+  redis:
+    image: redis:7.4-alpine
+    container_name: bill-barta-redis
+    networks:
+      - bill-barta-net
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --appendonly yes
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build:
+      context: ../server
+      dockerfile: ../docker/Dockerfile.server
+    container_name: bill-barta-server
+    networks:
+      - bill-barta-net
+    ports:
+      - "${PORT:-3000}:3000"
+      - "9091:9091"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - NODE_ENV=${NODE_ENV}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
+      - FRONTEND_URL=${FRONTEND_URL}
+      - DPDC_CLIENT_SECRET=${DPDC_CLIENT_SECRET}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      - ELECTRICITY_CREDENTIALS=${ELECTRICITY_CREDENTIALS}
+    volumes:
+      - ../server:/app
+      - /app/node_modules
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  client:
+    build:
+      context: ../client
+      dockerfile: ../docker/Dockerfile.client
+    container_name: bill-barta-client
+    networks:
+      - bill-barta-net
+    ports:
+      - "${CLIENT_PORT:-5173}:5173"
+    environment:
+      - VITE_BACKEND_API_PATH=${VITE_BACKEND_API_PATH:-http://localhost:3000/api/v1}
+    volumes:
+      - ../client:/app
+      - /app/node_modules
+    depends_on:
+      - server
+
+networks:
+  bill-barta-net:
+    driver: bridge
+
+volumes:
+  redis-data:
+    driver: local

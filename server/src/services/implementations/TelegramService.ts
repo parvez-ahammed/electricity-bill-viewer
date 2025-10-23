@@ -149,7 +149,7 @@ export class TelegramService implements ITelegramService {
         return message;
     }
 
-    async sendAccountBalances(): Promise<{
+    async sendAccountBalances(skipCache = false): Promise<{
         success: boolean;
         message: string;
         sentAccounts?: number;
@@ -167,9 +167,11 @@ export class TelegramService implements ITelegramService {
                 };
             }
 
-            // Fetch account data
-            const result =
-                await this.electricityService.getUsageData(credentials);
+            // Fetch account data with skipCache parameter
+            const result = await this.electricityService.getUsageData(
+                credentials,
+                skipCache
+            );
 
             if (result.accounts.length === 0) {
                 return {

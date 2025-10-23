@@ -1,7 +1,7 @@
 import { ProviderAccountDetails } from './IProviderService';
 
 export interface ITelegramService {
-    sendAccountBalances(): Promise<{
+    sendAccountBalances(skipCache?: boolean): Promise<{
         success: boolean;
         message: string;
         sentAccounts?: number;

@@ -89,6 +89,7 @@ export const applyGlobalMiddlewares = (
                 'x-client-key',
                 'x-client-token',
                 'x-client-secret',
+                'x-skip-cache',
                 'Authorization',
             ],
         })
