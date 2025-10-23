@@ -1,4 +1,3 @@
-import { AuthContextProvider } from "@/context/AuthContext";
 import { PreferencesProvider } from "@/context/PreferenceContext";
 import { Suspense } from "react";
 import { Toaster } from "react-hot-toast";
@@ -27,15 +26,11 @@ export const AppProvider = (props: AppProviderProps) => {
                 <QueryProvider>
                     <PreferencesProvider>
                         <TooltipProvider>
-                            <AuthContextProvider>
-                                <Toaster position="top-right" />
-                                <LoadingProvider>
-                                    <BrowserRouter>
-                                        {props.children}
-                                    </BrowserRouter>
-                                    <LoadingSpinner />
-                                </LoadingProvider>
-                            </AuthContextProvider>
+                            <Toaster position="top-right" />
+                            <LoadingProvider>
+                                <BrowserRouter>{props.children}</BrowserRouter>
+                                <LoadingSpinner />
+                            </LoadingProvider>
                         </TooltipProvider>
                     </PreferencesProvider>
                 </QueryProvider>
