@@ -1,5 +1,3 @@
-import authRouter from '@routes/v1/AuthRoute';
-import userRouter from '@routes/v1/UserRoute';
 import Router from 'express';
 import httpStatus from 'http-status';
 
@@ -7,20 +5,11 @@ const v1Router = Router();
 
 v1Router.get('/', async (req, res) => {
     res.status(httpStatus.OK).send(
-        'Version 1 of the Neatify API is up and running!'
+        'Version 1 of the Bill Barta API is up and running!'
     );
 });
 
-const defaultRoutes = [
-    {
-        prefix: '/users',
-        router: userRouter,
-    },
-    {
-        prefix: '/auth',
-        router: authRouter,
-    },
-];
+const defaultRoutes = [];
 
 defaultRoutes.forEach((route) => {
     v1Router.use(route.prefix, route.router);
