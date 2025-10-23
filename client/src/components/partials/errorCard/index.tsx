@@ -1,5 +1,4 @@
 import { UserNotFound } from "@/assets/images";
-import { useLocales } from "@/config/i18n";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { ArrowLeft, Home } from "lucide-react";
@@ -27,7 +26,6 @@ export const ErrorCard = ({
     showButtons = true,
     className,
 }: ErrorCardProps) => {
-    const { locale } = useLocales();
     return (
         <div
             className={cn(
@@ -64,13 +62,13 @@ export const ErrorCard = ({
                         >
                             <Link to="/">
                                 <ArrowLeft className="h-4 w-4" />
-                                <span>{locale.common.cta.goBack}</span>
+                                <span>Go Back</span>
                             </Link>
                         </Button>
                         <Button asChild className="bg-black hover:bg-black/80">
                             <Link to="/" className="text-white">
                                 <Home className="h-4 w-4" />
-                                <span>{locale.common.cta.goBack}</span>
+                                <span>Go Home</span>
                             </Link>
                         </Button>
                     </CardFooter>

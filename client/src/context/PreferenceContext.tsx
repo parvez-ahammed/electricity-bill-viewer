@@ -1,15 +1,13 @@
-import { useLocales } from "@/config/i18n";
 import { CacheService, CacheServiceFactory } from "@/lib/cache";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 export interface IPreferences {
-    language: string;
+    theme: string;
 }
 
 interface PreferencesContextType {
     preferences: IPreferences;
     setPreferences: (preferences: IPreferences) => void;
-    handleLanguageChange: () => void;
 }
 
 interface PreferencesProviderProps {
@@ -21,7 +19,7 @@ const PreferencesContext = createContext<PreferencesContextType | undefined>(
 );
 
 const defaultPreferences: IPreferences = {
-    language: "en",
+    theme: "system",
 };
 
 export const PreferencesProvider: React.FC<PreferencesProviderProps> = ({
@@ -30,7 +28,6 @@ export const PreferencesProvider: React.FC<PreferencesProviderProps> = ({
     const cacheService: CacheService = CacheServiceFactory.getCacheService();
     const [preferences, setPreferences] = useState<IPreferences | null>(null);
     const [loading, setLoading] = useState(true);
-    const { changeLanguage, currentLanguage } = useLocales();
 
     useEffect(() => {
         const loadPreferences = async () => {
@@ -39,14 +36,12 @@ export const PreferencesProvider: React.FC<PreferencesProviderProps> = ({
             if (savedPreferences) {
                 const parsedPref = JSON.parse(savedPreferences);
                 setPreferences(parsedPref);
-                changeLanguage(parsedPref.language);
             } else {
                 setPreferences(defaultPreferences);
                 cacheService.save(
                     "preferences",
                     JSON.stringify(defaultPreferences)
                 );
-                changeLanguage(defaultPreferences.language);
             }
 
             setLoading(false);
@@ -65,16 +60,8 @@ export const PreferencesProvider: React.FC<PreferencesProviderProps> = ({
         return <></>;
     }
 
-    const handleLanguageChange = () => {
-        const newLanguage = currentLanguage === "en" ? "no" : "en";
-        changeLanguage(newLanguage);
-        setPreferences({ ...preferences, language: newLanguage });
-    };
-
     return (
-        <PreferencesContext.Provider
-            value={{ preferences, setPreferences, handleLanguageChange }}
-        >
+        <PreferencesContext.Provider value={{ preferences, setPreferences }}>
             {children}
         </PreferencesContext.Provider>
     );

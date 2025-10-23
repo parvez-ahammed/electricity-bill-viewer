@@ -1,1 +1,2 @@
-export * from "./auth.path";
+// Path exports (currently none)
+export {};

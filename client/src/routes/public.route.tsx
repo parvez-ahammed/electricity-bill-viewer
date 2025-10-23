@@ -1,16 +1,15 @@
 import { RouteObject } from "react-router-dom";
 
 import { ErrorPage } from "@/pages/error.page";
+import { HomePage } from "@/pages/home.page";
 
 import { MainLayout } from "@/components/layout/mainLayout";
 
-import { PublicProfilePage } from "@/features/user/profile";
-
 export const publicRoutes: RouteObject[] = [
     {
-        path: "/user",
+        path: "/",
         element: <MainLayout />,
-        children: [{ path: ":username", element: <PublicProfilePage /> }],
+        children: [{ path: "", element: <HomePage /> }],
     },
     {
         path: "/unauthorized",

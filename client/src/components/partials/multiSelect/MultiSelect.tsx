@@ -1,5 +1,4 @@
 import { EMPTY_STRING } from "@/common/constants/app.constant";
-import { useLocales } from "@/config/i18n";
 import { cn } from "@/lib/utils";
 import { type VariantProps, cva } from "class-variance-authority";
 import { CheckIcon, ChevronDown, XCircle, XIcon } from "lucide-react";
@@ -136,8 +135,6 @@ export const MultiSelect = React.forwardRef<
             React.useState<string[]>(defaultValue);
         const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
         const [isAnimating] = React.useState(false);
-
-        const { locale } = useLocales();
 
         const handleInputKeyDown = (
             event: React.KeyboardEvent<HTMLInputElement>
@@ -299,13 +296,11 @@ export const MultiSelect = React.forwardRef<
                 >
                     <Command>
                         <CommandInput
-                            placeholder={locale.common.info.search}
+                            placeholder="Search..."
                             onKeyDown={handleInputKeyDown}
                         />
                         <CommandList>
-                            <CommandEmpty>
-                                {locale.common.info.noResultFound}
-                            </CommandEmpty>
+                            <CommandEmpty>No results found</CommandEmpty>
                             <CommandGroup>
                                 <CommandItem
                                     key="all"
@@ -364,7 +359,7 @@ export const MultiSelect = React.forwardRef<
                                                 onSelect={handleClear}
                                                 className="flex-1 cursor-pointer justify-center"
                                             >
-                                                {locale.common.cta.clear}
+                                                Clear
                                             </CommandItem>
                                             <Separator
                                                 orientation="vertical"
@@ -376,7 +371,7 @@ export const MultiSelect = React.forwardRef<
                                         onSelect={() => setIsPopoverOpen(false)}
                                         className="max-w-full flex-1 cursor-pointer justify-center"
                                     >
-                                        {locale.common.cta.close}
+                                        Close
                                     </CommandItem>
                                 </div>
                             </CommandGroup>
