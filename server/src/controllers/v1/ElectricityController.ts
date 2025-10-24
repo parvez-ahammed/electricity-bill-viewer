@@ -1,6 +1,13 @@
+import { appConfig } from '@configs/config';
 import { Request, Response } from 'express';
 import { ElectricityService } from '../../services/implementations/ElectricityService';
 import { ElectricityProvider } from '../../services/interfaces/IProviderService';
+
+interface ElectricityCredential {
+    username: string;
+    password: string;
+    provider: ElectricityProvider;
+}
 
 export class ElectricityController {
     private electricityService: ElectricityService;
@@ -9,91 +16,30 @@ export class ElectricityController {
         this.electricityService = new ElectricityService();
     }
 
+    /**
+     * GET /api/v1/electricity/usage
+     * Fetches electricity usage data using credentials from server .env
+     */
     getUsageData = async (req: Request, res: Response): Promise<void> => {
         try {
-            const { credentials } = req.body;
-
             // Check for x-skip-cache header
             const skipCache = req.headers['x-skip-cache'] === 'true';
 
-            if (!credentials || !Array.isArray(credentials)) {
-                res.status(400).json({
+            // Get credentials from environment variable
+            const credentials = this.getCredentialsFromEnv();
+
+            if (credentials.length === 0) {
+                res.status(500).json({
                     success: false,
-                    message: 'Invalid request. Expected array of credentials.',
-                    error: 'credentials must be an array of {username, password, provider} objects',
+                    message: 'No credentials configured on server',
+                    error: 'ELECTRICITY_CREDENTIALS environment variable is not set or empty',
+                    timestamp: new Date().toISOString(),
                 });
                 return;
-            }
-
-            for (const cred of credentials) {
-                if (!cred.username || !cred.password || !cred.provider) {
-                    res.status(400).json({
-                        success: false,
-                        message: 'Invalid credentials format',
-                        error: 'Each credential must have username, password, and provider',
-                    });
-                    return;
-                }
-
-                if (
-                    !Object.values(ElectricityProvider).includes(cred.provider)
-                ) {
-                    res.status(400).json({
-                        success: false,
-                        message: 'Invalid provider',
-                        error: `Provider must be one of: ${Object.values(ElectricityProvider).join(', ')}`,
-                    });
-                    return;
-                }
             }
 
             const result = await this.electricityService.getUsageData(
                 credentials,
-                skipCache
-            );
-
-            res.status(200).json(result);
-        } catch (error: unknown) {
-            const errorMessage =
-                error instanceof Error ? error.message : 'Unknown error';
-            res.status(500).json({
-                success: false,
-                message: 'Internal server error',
-                error: errorMessage,
-                timestamp: new Date().toISOString(),
-            });
-        }
-    };
-
-    getSingleUsageData = async (req: Request, res: Response): Promise<void> => {
-        try {
-            const { username, password, provider } = req.body;
-
-            // Check for x-skip-cache header
-            const skipCache = req.headers['x-skip-cache'] === 'true';
-
-            if (!username || !password || !provider) {
-                res.status(400).json({
-                    success: false,
-                    message: 'Invalid request',
-                    error: 'username, password, and provider are required',
-                });
-                return;
-            }
-
-            if (!Object.values(ElectricityProvider).includes(provider)) {
-                res.status(400).json({
-                    success: false,
-                    message: 'Invalid provider',
-                    error: `Provider must be one of: ${Object.values(ElectricityProvider).join(', ')}`,
-                });
-                return;
-            }
-
-            const result = await this.electricityService.getSingleAccountUsage(
-                username,
-                password,
-                provider as ElectricityProvider,
                 skipCache
             );
 
@@ -119,4 +65,54 @@ export class ElectricityController {
             timestamp: new Date().toISOString(),
         });
     };
+
+    /**
+     * Helper method to parse credentials from environment variable
+     */
+    private getCredentialsFromEnv(): ElectricityCredential[] {
+        try {
+            const credentialsJson = appConfig.electricityCredentials;
+
+            if (!credentialsJson) {
+                return [];
+            }
+
+            const credentials = JSON.parse(credentialsJson);
+
+            if (!Array.isArray(credentials)) {
+                console.error('ELECTRICITY_CREDENTIALS must be a JSON array');
+                return [];
+            }
+
+            // Validate and filter credentials
+            return credentials
+                .filter((cred: ElectricityCredential) => {
+                    if (!cred.username || !cred.password || !cred.provider) {
+                        console.warn('Skipping invalid credential:', cred);
+                        return false;
+                    }
+
+                    if (
+                        !Object.values(ElectricityProvider).includes(
+                            cred.provider
+                        )
+                    ) {
+                        console.warn(
+                            `Skipping credential with invalid provider: ${cred.provider}`
+                        );
+                        return false;
+                    }
+
+                    return true;
+                })
+                .map((cred: ElectricityCredential) => ({
+                    username: cred.username,
+                    password: cred.password,
+                    provider: cred.provider as ElectricityProvider,
+                }));
+        } catch (error) {
+            console.error('Failed to parse ELECTRICITY_CREDENTIALS:', error);
+            return [];
+        }
+    }
 }

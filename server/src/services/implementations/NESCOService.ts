@@ -1,4 +1,4 @@
-import cheerio from 'cheerio';
+import * as cheerio from 'cheerio';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -181,8 +181,11 @@ export class NESCOService implements IProviderService {
      * Simplified session management - extract cookies and CSRF token
      */
     private extractCookies(response: Response): string {
-        const setCookieHeaders =
-            (response.headers as any).getSetCookie?.() || [];
+        // Type assertion for getSetCookie method (available in Node.js 19+)
+        const headers = response.headers as Headers & {
+            getSetCookie?: () => string[];
+        };
+        const setCookieHeaders = headers.getSetCookie?.() || [];
         const cookiePairs: string[] = [];
 
         setCookieHeaders.forEach((cookie: string) => {
@@ -313,7 +316,7 @@ export class NESCOService implements IProviderService {
         html: string,
         username?: string
     ): ProviderAccountDetails {
-        let $: any;
+        let $: cheerio.Root;
         let useCheerio = true;
 
         try {

@@ -1,5 +1,5 @@
 import electricityRouter from '@routes/v1/electricity.routes';
-import telegramRouter from '@routes/v1/TelegramRoute';
+import telegramRouter from '@routes/v1/telegram.routes';
 import Router from 'express';
 import httpStatus from 'http-status';
 

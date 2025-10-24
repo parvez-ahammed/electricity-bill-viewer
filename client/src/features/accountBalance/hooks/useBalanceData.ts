@@ -1,6 +1,5 @@
 import {
     ElectricityAccount,
-    ElectricityCredential,
     electricityApi,
 } from "@/common/apis/electricity.api";
 import { useQuery } from "@tanstack/react-query";
@@ -35,36 +34,6 @@ const transformAccountData = (
     };
 };
 
-// Read credentials from environment variable
-const getCredentialsFromEnv = (): ElectricityCredential[] => {
-    try {
-        const credentialsEnv = import.meta.env.VITE_ELECTRICITY_CREDENTIALS;
-
-        if (!credentialsEnv) {
-            return [];
-        }
-
-        const credentials = JSON.parse(
-            credentialsEnv
-        ) as ElectricityCredential[];
-
-        // Validate the structure
-        if (!Array.isArray(credentials)) {
-            return [];
-        }
-
-        return credentials.filter(
-            (cred) => cred.provider && cred.username && cred.password
-        );
-    } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        toast.error(`Failed to parse VITE_ELECTRICITY_CREDENTIALS: ${errorMessage}`);
-        return [];
-    }
-};
-
-const CREDENTIALS: ElectricityCredential[] = getCredentialsFromEnv();
-
 export const useBalanceData = () => {
     const [skipCache, setSkipCache] = useState(false);
     const hasShownToast = useRef(false);
@@ -73,10 +42,7 @@ export const useBalanceData = () => {
         queryKey: ["electricityBalance", skipCache],
         queryFn: async () => {
             hasShownToast.current = false;
-            const response = await electricityApi.getUsageData(
-                CREDENTIALS,
-                skipCache
-            );
+            const response = await electricityApi.getUsageData(skipCache);
             return response;
         },
         staleTime: skipCache ? 0 : 5 * 60 * 1000, // 5 minutes if cached, 0 if skip cache

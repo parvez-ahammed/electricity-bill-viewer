@@ -1,5 +1,5 @@
 import { HTTP_METHOD } from "@/common/constants/http.constant";
-import axios from "axios";
+import axios, { AxiosRequestConfig } from "axios";
 
 const axiosInstance = axios.create({
     headers: {
@@ -13,12 +13,18 @@ export const apiRequest = async <T, TRequest = unknown>(
     data?: TRequest,
     skipCache?: boolean
 ): Promise<T> => {
-    const response = await axiosInstance({
+    const config: AxiosRequestConfig = {
         method,
         url,
-        data,
         headers: skipCache ? { "x-skip-cache": "true" } : {},
-    });
+    };
+
+    // Only add data for non-GET requests
+    if (method !== "GET" && data !== undefined) {
+        config.data = data;
+    }
+
+    const response = await axiosInstance(config);
 
     return response.data;
 };
