@@ -71,122 +71,47 @@ export class ElectricityService implements IElectricityService {
         credentials: ElectricityCredential[],
         skipCache = false
     ): Promise<ElectricityUsageResponse> {
-        // Generate cache key based on credentials
-        const cacheKey = cacheService.generateCacheKey(
-            this.CACHE_PREFIX,
-            credentials.reduce(
-                (acc, cred, index) => {
-                    acc[`cred_${index}`] = {
-                        username: cred.username,
-                        password: cred.password,
-                        provider: cred.provider,
-                    };
-                    return acc;
-                },
-                {} as Record<string, unknown>
+        // Fetch each credential individually (with its own cache)
+        const individualResults = await Promise.all(
+            credentials.map((cred) =>
+                this.getSingleAccountUsage(
+                    cred.username,
+                    cred.password,
+                    cred.provider,
+                    skipCache
+                )
             )
         );
 
-        // Use cache service to get or set data
-        return cacheService.getOrSet<ElectricityUsageResponse>(
-            cacheKey,
-            async () => {
-                return this.fetchUsageData(credentials);
-            },
-            { skipCache }
-        );
-    }
+        // Aggregate all individual results
+        const allAccounts: ElectricityUsageData[] = [];
+        const allErrors: Array<{
+            username: string;
+            provider: string;
+            error: string;
+            attempts: number;
+        }> = [];
+        let successfulLogins = 0;
+        let failedLogins = 0;
 
-    private async fetchUsageData(
-        credentials: ElectricityCredential[]
-    ): Promise<ElectricityUsageResponse> {
-        try {
-            const credentialsByProvider = new Map<
-                ElectricityProvider,
-                ElectricityCredential[]
-            >();
-
-            credentials.forEach((cred) => {
-                if (!credentialsByProvider.has(cred.provider)) {
-                    credentialsByProvider.set(cred.provider, []);
-                }
-                credentialsByProvider.get(cred.provider)!.push(cred);
-            });
-
-            const allAccounts: ElectricityUsageData[] = [];
-            const allErrors: Array<{
-                username: string;
-                provider: string;
-                error: string;
-                attempts: number;
-            }> = [];
-            let successfulLogins = 0;
-            let failedLogins = 0;
-
-            for (const [provider, providerCreds] of credentialsByProvider) {
-                try {
-                    const service = this.getProviderService(provider);
-                    const result =
-                        await service.getMultipleAccountsInfo(providerCreds);
-
-                    const usageData = this.transformToUsageData(
-                        result.accounts
-                    );
-
-                    allAccounts.push(...usageData);
-                    successfulLogins += result.successfulLogins;
-                    failedLogins += result.failedLogins.length;
-
-                    result.failedLogins.forEach((error) => {
-                        allErrors.push({
-                            ...error,
-                            provider: provider,
-                        });
-                    });
-                } catch (error: unknown) {
-                    const errorMessage =
-                        error instanceof Error
-                            ? error.message
-                            : 'Unknown error';
-                    providerCreds.forEach((cred) => {
-                        allErrors.push({
-                            username: cred.username,
-                            provider: provider,
-                            error: errorMessage,
-                            attempts: 0,
-                        });
-                    });
-                    failedLogins += providerCreds.length;
-                }
+        individualResults.forEach((result) => {
+            allAccounts.push(...result.accounts);
+            successfulLogins += result.successfulLogins;
+            failedLogins += result.failedLogins;
+            if (result.errors) {
+                allErrors.push(...result.errors);
             }
+        });
 
-            return {
-                success: allAccounts.length > 0,
-                totalAccounts: allAccounts.length,
-                successfulLogins,
-                failedLogins,
-                accounts: allAccounts,
-                errors: allErrors.length > 0 ? allErrors : undefined,
-                timestamp: new Date().toISOString(),
-            };
-        } catch (error: unknown) {
-            const errorMessage =
-                error instanceof Error ? error.message : 'Unknown error';
-            return {
-                success: false,
-                totalAccounts: 0,
-                successfulLogins: 0,
-                failedLogins: credentials.length,
-                accounts: [],
-                errors: credentials.map((cred) => ({
-                    username: cred.username,
-                    provider: cred.provider,
-                    error: errorMessage,
-                    attempts: 0,
-                })),
-                timestamp: new Date().toISOString(),
-            };
-        }
+        return {
+            success: allAccounts.length > 0,
+            totalAccounts: allAccounts.length,
+            successfulLogins,
+            failedLogins,
+            accounts: allAccounts,
+            errors: allErrors.length > 0 ? allErrors : undefined,
+            timestamp: new Date().toISOString(),
+        };
     }
 
     async getSingleAccountUsage(
