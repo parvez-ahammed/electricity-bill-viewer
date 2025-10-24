@@ -108,21 +108,13 @@ export class TelegramService implements ITelegramService {
             const emoji =
                 provider === 'DPDC' ? '🔵' : provider === 'NESCO' ? '🟢' : '🟣';
 
-            message += `${emoji} <b>${provider}</b> (${providerAccounts.length} account${providerAccounts.length > 1 ? 's' : ''})\n`;
+            message += `${emoji} <b>${provider}</b>\n`;
             message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
 
             providerAccounts.forEach((account, index) => {
-                message += `\n<b>${index + 1}. ${account.customerName || 'N/A'}</b>\n`;
-                message += `📍 Location: ${account.location || 'N/A'}\n`;
-                message += `🆔 Account: ${account.accountId || 'N/A'}\n`;
-                message += `💰 <b>Balance: ৳${account.balanceRemaining || '0'}</b>\n`;
-                message += `📊 Type: ${account.accountType || 'N/A'}\n`;
-                message += `🔌 Status: ${account.connectionStatus || 'N/A'}\n`;
+                message += `\n<b>${account.customerName || 'N/A'}</b>\n`;
+                message += `💰 Balance: <b>৳${account.balanceRemaining || '0'}</b>\n`;
                 message += `📅 Updated: ${account.balanceLatestDate || 'N/A'}\n`;
-
-                if (account.lastPaymentAmount && account.lastPaymentDate) {
-                    message += `💳 Last Payment: ৳${account.lastPaymentAmount} on ${account.lastPaymentDate}\n`;
-                }
 
                 if (index < providerAccounts.length - 1) {
                     message += `\n`;
@@ -131,20 +123,6 @@ export class TelegramService implements ITelegramService {
 
             message += `\n`;
         }
-
-        // Summary
-        const totalBalance = accounts.reduce((sum, account) => {
-            const balance = parseFloat(
-                account.balanceRemaining.replace(/[^0-9.-]/g, '')
-            );
-            return sum + (isNaN(balance) ? 0 : balance);
-        }, 0);
-
-        message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-        message += `📊 <b>Summary</b>\n`;
-        message += `Total Accounts: ${accounts.length}\n`;
-        message += `💵 Total Balance: <b>৳${totalBalance.toFixed(2)}</b>\n`;
-        message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
 
         return message;
     }
