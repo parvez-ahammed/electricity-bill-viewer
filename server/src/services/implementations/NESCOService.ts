@@ -1,17 +1,17 @@
-const cheerio = require('cheerio');
+import cheerio from 'cheerio';
 import * as fs from 'fs';
 import * as path from 'path';
 
-import { INESCOService } from '../interfaces/INESCOService';
 import {
     ElectricityProvider,
+    IProviderService,
     ProviderAccountDetails,
     ProviderAccountResult,
     ProviderBatchResult,
     ProviderCredential,
 } from '../interfaces/IProviderService';
 
-export class NESCOService implements INESCOService {
+export class NESCOService implements IProviderService {
     private readonly config = {
         BASE_URL: 'https://customer.nesco.gov.bd',
         PANEL_ENDPOINT: '/pre/panel',
@@ -177,7 +177,8 @@ export class NESCOService implements INESCOService {
      * Simplified session management - extract cookies and CSRF token
      */
     private extractCookies(response: Response): string {
-        const setCookieHeaders = (response.headers as any).getSetCookie?.() || [];
+        const setCookieHeaders =
+            (response.headers as any).getSetCookie?.() || [];
         const cookiePairs: string[] = [];
 
         setCookieHeaders.forEach((cookie: string) => {
@@ -185,8 +186,13 @@ export class NESCOService implements INESCOService {
                 const token = cookie.match(/XSRF-TOKEN=([^;]+)/)?.[1];
                 if (token) cookiePairs.push(`XSRF-TOKEN=${token}`);
             } else if (cookie.startsWith('customer_service_portal_session=')) {
-                const session = cookie.match(/customer_service_portal_session=([^;]+)/)?.[1];
-                if (session) cookiePairs.push(`customer_service_portal_session=${session}`);
+                const session = cookie.match(
+                    /customer_service_portal_session=([^;]+)/
+                )?.[1];
+                if (session)
+                    cookiePairs.push(
+                        `customer_service_portal_session=${session}`
+                    );
             }
         });
 
@@ -196,16 +202,26 @@ export class NESCOService implements INESCOService {
     private extractCSRFToken(html: string): string {
         try {
             const $ = cheerio.load(html);
-            return $('input[name="_token"]').attr('value') ||
-                $('meta[name="csrf-token"]').attr('content') || '';
+            return (
+                $('input[name="_token"]').attr('value') ||
+                $('meta[name="csrf-token"]').attr('content') ||
+                ''
+            );
         } catch (error) {
-            console.error('Error parsing HTML for CSRF token with cheerio, falling back to regex:', error);
+            console.error(
+                'Error parsing HTML for CSRF token with cheerio, falling back to regex:',
+                error
+            );
             // Fallback to regex approach
-            const tokenInputMatch = html.match(/<input[^>]*name="_token"[^>]*value="([^"]+)"/i);
+            const tokenInputMatch = html.match(
+                /<input[^>]*name="_token"[^>]*value="([^"]+)"/i
+            );
             if (tokenInputMatch) {
                 return tokenInputMatch[1];
             }
-            const tokenMetaMatch = html.match(/<meta[^>]*name="csrf-token"[^>]*content="([^"]+)"/i);
+            const tokenMetaMatch = html.match(
+                /<meta[^>]*name="csrf-token"[^>]*content="([^"]+)"/i
+            );
             if (tokenMetaMatch) {
                 return tokenMetaMatch[1];
             }
@@ -217,7 +233,8 @@ export class NESCOService implements INESCOService {
         return {
             accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
             'accept-language': 'en-GB,en;q=0.9',
-            'user-agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36',
+            'user-agent':
+                'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36',
             'sec-fetch-dest': 'document',
             'sec-fetch-mode': 'navigate',
             'sec-fetch-site': 'same-origin',
@@ -229,12 +246,17 @@ export class NESCOService implements INESCOService {
      */
     private async fetchAccountData(customerNumber: string): Promise<string> {
         // Get initial page for CSRF token
-        const initResponse = await fetch(`${this.config.BASE_URL}${this.config.PANEL_ENDPOINT}`, {
-            headers: this.getHeaders(),
-        });
+        const initResponse = await fetch(
+            `${this.config.BASE_URL}${this.config.PANEL_ENDPOINT}`,
+            {
+                headers: this.getHeaders(),
+            }
+        );
 
         if (!initResponse.ok) {
-            throw new Error(`NESCO session fetch failed: ${initResponse.status} ${initResponse.statusText}`);
+            throw new Error(
+                `NESCO session fetch failed: ${initResponse.status} ${initResponse.statusText}`
+            );
         }
 
         // Extract cookies and CSRF token
@@ -246,26 +268,34 @@ export class NESCOService implements INESCOService {
         }
 
         // Fetch account data
-        const dataResponse = await fetch(`${this.config.BASE_URL}${this.config.PANEL_ENDPOINT}`, {
-            method: 'POST',
-            headers: {
-                ...this.getHeaders(),
-                'content-type': 'application/x-www-form-urlencoded',
-                cookie: cookies,
-                Referer: `${this.config.BASE_URL}${this.config.PANEL_ENDPOINT}`,
-                Origin: this.config.BASE_URL,
-            },
-            body: `_token=${csrfToken}&cust_no=${customerNumber}&submit=রিচার্জ+হিস্ট্রি`,
-        });
+        const dataResponse = await fetch(
+            `${this.config.BASE_URL}${this.config.PANEL_ENDPOINT}`,
+            {
+                method: 'POST',
+                headers: {
+                    ...this.getHeaders(),
+                    'content-type': 'application/x-www-form-urlencoded',
+                    cookie: cookies,
+                    Referer: `${this.config.BASE_URL}${this.config.PANEL_ENDPOINT}`,
+                    Origin: this.config.BASE_URL,
+                },
+                body: `_token=${csrfToken}&cust_no=${customerNumber}&submit=রিচার্জ+হিস্ট্রি`,
+            }
+        );
 
         if (!dataResponse.ok) {
-            throw new Error(`NESCO API request failed: ${dataResponse.status} ${dataResponse.statusText}`);
+            throw new Error(
+                `NESCO API request failed: ${dataResponse.status} ${dataResponse.statusText}`
+            );
         }
 
         const htmlData = await dataResponse.text();
 
         // Save debug HTML if in development mode
-        if (process.env.NODE_ENV === 'development' || process.env.DEBUG_NESCO === 'true') {
+        if (
+            process.env.NODE_ENV === 'development' ||
+            process.env.DEBUG_NESCO === 'true'
+        ) {
             this.saveDebugHTML(htmlData, customerNumber);
         }
 
@@ -275,14 +305,20 @@ export class NESCOService implements INESCOService {
     /**
      * Simplified data extraction using positional mapping like the script
      */
-    private parseAccountData(html: string, username?: string): ProviderAccountDetails {
+    private parseAccountData(
+        html: string,
+        username?: string
+    ): ProviderAccountDetails {
         let $: any;
         let useCheerio = true;
 
         try {
             $ = cheerio.load(html);
         } catch (error) {
-            console.error('Error parsing HTML with cheerio, falling back to regex:', error);
+            console.error(
+                'Error parsing HTML with cheerio, falling back to regex:',
+                error
+            );
             useCheerio = false;
         }
         const data: ProviderAccountDetails = {
@@ -314,7 +350,9 @@ export class NESCOService implements INESCOService {
         } else {
             // Fallback to regex approach
             const allInputs = html.match(/<input[^>]*>/gi) || [];
-            const disabledInputs = allInputs.filter((input) => input.includes('disabled'));
+            const disabledInputs = allInputs.filter((input) =>
+                input.includes('disabled')
+            );
 
             disabledInputs.forEach((input) => {
                 const valueMatch = input.match(/value="([^"]*)"/i);
@@ -326,19 +364,21 @@ export class NESCOService implements INESCOService {
 
         // Map values by position based on HTML structure analysis
         if (inputValues.length >= 14) {
-            data.customerName = inputValues[0];        // Position 0: Customer Name
-            data.location = inputValues[1];            // Position 1: Address
-            data.mobileNumber = inputValues[2];        // Position 2: Mobile
-            data.customerNumber = inputValues[5];      // Position 5: Consumer Number
-            data.accountId = inputValues[6];           // Position 6: Meter Number
-            data.connectionStatus = inputValues[10];   // Position 10: Meter Status
-            data.minRecharge = inputValues[12];        // Position 12: Min Recharge
-            data.balanceRemaining = inputValues[13];   // Position 13: Balance
+            data.customerName = inputValues[0]; // Position 0: Customer Name
+            data.location = inputValues[1]; // Position 1: Address
+            data.mobileNumber = inputValues[2]; // Position 2: Mobile
+            data.customerNumber = inputValues[5]; // Position 5: Consumer Number
+            data.accountId = inputValues[6]; // Position 6: Meter Number
+            data.connectionStatus = inputValues[10]; // Position 10: Meter Status
+            data.minRecharge = inputValues[12]; // Position 12: Min Recharge
+            data.balanceRemaining = inputValues[13]; // Position 13: Balance
         }
 
         // Extract balance date from the label text
         const balanceLabel = $('label:contains("অবশিষ্ট ব্যালেন্স")').text();
-        const timeMatch = balanceLabel.match(/(\d{1,2}\s+\w+\s+\d{4}\s+\d{1,2}:\d{2}:\d{2}\s+(?:AM|PM))/i);
+        const timeMatch = balanceLabel.match(
+            /(\d{1,2}\s+\w+\s+\d{4}\s+\d{1,2}:\d{2}:\d{2}\s+(?:AM|PM))/i
+        );
         if (timeMatch) {
             data.balanceLatestDate = this.formatDateToStandard(timeMatch[1]);
         }
@@ -355,7 +395,8 @@ export class NESCOService implements INESCOService {
                 if (rechargeDate && rechargeAmount && i === 0) {
                     // Use first (most recent) record for last payment info
                     data.lastPaymentAmount = rechargeAmount;
-                    data.lastPaymentDate = this.formatPaymentDateToStandard(rechargeDate);
+                    data.lastPaymentDate =
+                        this.formatPaymentDateToStandard(rechargeDate);
                 }
             }
         });
@@ -386,7 +427,9 @@ export class NESCOService implements INESCOService {
 
             // Validate that we got essential data
             if (!accountData.customerNumber || !accountData.accountId) {
-                throw new Error('No account information found in NESCO response');
+                throw new Error(
+                    'No account information found in NESCO response'
+                );
             }
 
             return {
@@ -402,7 +445,8 @@ export class NESCOService implements INESCOService {
 
                 return this.getAccountInfo(username, password, retryCount + 1);
             } else {
-                const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+                const errorMsg =
+                    error instanceof Error ? error.message : 'Unknown error';
                 return {
                     success: false,
                     error: errorMsg,

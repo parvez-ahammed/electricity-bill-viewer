@@ -46,14 +46,32 @@ export interface ProviderBatchResult {
     }>;
 }
 
-export interface IElectricityProvider {
+/**
+ * Common interface for all electricity provider services
+ * Implemented by DPDC, NESCO, DESCO, etc.
+ */
+export interface IProviderService {
+    /**
+     * Get the provider name (DPDC, NESCO, DESCO, etc.)
+     */
     getProviderName(): ElectricityProvider;
 
+    /**
+     * Get account information for a single user
+     * @param username - User's account number
+     * @param password - User's password
+     * @param retryCount - Current retry attempt (internal use)
+     */
     getAccountInfo(
         username: string,
-        password: string
+        password: string,
+        retryCount?: number
     ): Promise<ProviderAccountResult>;
 
+    /**
+     * Get account information for multiple users
+     * @param credentials - Array of user credentials
+     */
     getMultipleAccountsInfo(
         credentials: ProviderCredential[]
     ): Promise<ProviderBatchResult>;

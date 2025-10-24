@@ -6,14 +6,14 @@ import {
 } from '../interfaces/IElectricityService';
 import {
     ElectricityProvider,
-    IElectricityProvider,
+    IProviderService,
 } from '../interfaces/IProviderService';
 import { DPDCService } from './DPDCService';
 import { NESCOService } from './NESCOService';
 import { cacheService } from './RedisCacheService';
 
 export class ElectricityService implements IElectricityService {
-    private providers: Map<ElectricityProvider, IElectricityProvider>;
+    private providers: Map<ElectricityProvider, IProviderService>;
     private readonly CACHE_PREFIX = 'electricity:usage';
 
     constructor() {
@@ -25,7 +25,7 @@ export class ElectricityService implements IElectricityService {
 
     private getProviderService(
         provider: ElectricityProvider
-    ): IElectricityProvider {
+    ): IProviderService {
         const service = this.providers.get(provider);
         if (!service) {
             throw new Error(`Provider service not found for: ${provider}`);

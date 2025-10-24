@@ -1,16 +1,38 @@
 import * as crypto from 'crypto';
 
 import { appConfig } from '@configs/config';
-import { DPDCAccountDetails, IDPDCService } from '../interfaces/IDPDCService';
 import {
     ElectricityProvider,
+    IProviderService,
     ProviderAccountDetails,
     ProviderAccountResult,
     ProviderBatchResult,
     ProviderCredential,
 } from '../interfaces/IProviderService';
 
-export class DPDCService implements IDPDCService {
+/**
+ * DPDC-specific account details (internal use)
+ */
+interface DPDCAccountDetails {
+    accountId: string;
+    customerNumber: string;
+    customerName: string;
+    customerClass: string;
+    mobileNumber: string;
+    emailId: string;
+    accountType: string;
+    balanceRemaining: string;
+    connectionStatus: string;
+    customerType: string | null;
+    minRecharge: string | null;
+    balanceLatestDate: string;
+    lastPayAmtOnSa: string;
+    lastPayDateOnSa: string;
+    flatNameOrLocation?: string;
+    provider?: string;
+}
+
+export class DPDCService implements IProviderService {
     private readonly config = {
         BASE_URL: 'https://amiapp.dpdc.org.bd',
         BEARER_ENDPOINT: '/auth/login/generate-bearer',
