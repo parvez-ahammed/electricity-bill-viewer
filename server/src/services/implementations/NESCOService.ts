@@ -1,6 +1,4 @@
 import * as cheerio from 'cheerio';
-import * as fs from 'fs';
-import * as path from 'path';
 
 import {
     ElectricityProvider,
@@ -25,72 +23,6 @@ export class NESCOService implements IProviderService {
 
     private sleep(ms: number): Promise<void> {
         return new Promise((resolve) => setTimeout(resolve, ms));
-    }
-
-    private saveDebugHTML(html: string, customerNumber: string): void {
-        try {
-            const filename = `nesco_response_${customerNumber}_${Date.now()}.html`;
-            const filepath = path.join(process.cwd(), 'debug', filename);
-
-            // Ensure debug directory exists
-            const debugDir = path.dirname(filepath);
-            if (!fs.existsSync(debugDir)) {
-                fs.mkdirSync(debugDir, { recursive: true });
-            }
-
-            fs.writeFileSync(filepath, html, 'utf-8');
-            console.log(`Debug HTML saved to: ${filepath}`);
-        } catch (error) {
-            console.warn('Failed to save debug HTML:', error);
-        }
-    }
-
-    private logAccountData(accountData: ProviderAccountDetails): void {
-        if (
-            process.env.NODE_ENV === 'development' ||
-            process.env.DEBUG_NESCO === 'true'
-        ) {
-            console.log(
-                '\n📊 EXTRACTED ACCOUNT DATA (ProviderAccountDetails Format):'
-            );
-            console.log('━'.repeat(80));
-            console.log(
-                `Account ID           : ${accountData.accountId || 'N/A'}`
-            );
-            console.log(
-                `Customer Number      : ${accountData.customerNumber || 'N/A'}`
-            );
-            console.log(
-                `Customer Name        : ${accountData.customerName || 'N/A'}`
-            );
-            console.log(`Provider             : ${accountData.provider}`);
-            console.log(`Account Type         : ${accountData.accountType}`);
-            console.log(
-                `💰 Balance Remaining : ${accountData.balanceRemaining || 'N/A'} Tk`
-            );
-            console.log(
-                `Connection Status    : ${accountData.connectionStatus || 'N/A'}`
-            );
-            console.log(
-                `Last Payment Amount  : ${accountData.lastPaymentAmount || 'N/A'} Tk`
-            );
-            console.log(
-                `Last Payment Date    : ${accountData.lastPaymentDate || 'N/A'}`
-            );
-            console.log(
-                `⏰ Balance Latest Date: ${accountData.balanceLatestDate || 'N/A'}`
-            );
-            console.log(
-                `Location             : ${accountData.location || 'N/A'}`
-            );
-            console.log(
-                `Mobile Number        : ${accountData.mobileNumber || 'N/A'}`
-            );
-            console.log(
-                `💵 Min Recharge      : ${accountData.minRecharge || 'N/A'} Tk`
-            );
-            console.log('━'.repeat(80));
-        }
     }
 
     private formatDateToStandard(dateString: string): string {
@@ -207,33 +139,12 @@ export class NESCOService implements IProviderService {
     }
 
     private extractCSRFToken(html: string): string {
-        try {
-            const $ = cheerio.load(html);
-            return (
-                $('input[name="_token"]').attr('value') ||
-                $('meta[name="csrf-token"]').attr('content') ||
-                ''
-            );
-        } catch (error) {
-            console.error(
-                'Error parsing HTML for CSRF token with cheerio, falling back to regex:',
-                error
-            );
-            // Fallback to regex approach
-            const tokenInputMatch = html.match(
-                /<input[^>]*name="_token"[^>]*value="([^"]+)"/i
-            );
-            if (tokenInputMatch) {
-                return tokenInputMatch[1];
-            }
-            const tokenMetaMatch = html.match(
-                /<meta[^>]*name="csrf-token"[^>]*content="([^"]+)"/i
-            );
-            if (tokenMetaMatch) {
-                return tokenMetaMatch[1];
-            }
-            return '';
-        }
+        const $ = cheerio.load(html);
+        return (
+            $('input[name="_token"]').attr('value') ||
+            $('meta[name="csrf-token"]').attr('content') ||
+            ''
+        );
     }
 
     private getHeaders(): Record<string, string> {
@@ -298,14 +209,6 @@ export class NESCOService implements IProviderService {
 
         const htmlData = await dataResponse.text();
 
-        // Save debug HTML if in development mode
-        if (
-            process.env.NODE_ENV === 'development' ||
-            process.env.DEBUG_NESCO === 'true'
-        ) {
-            this.saveDebugHTML(htmlData, customerNumber);
-        }
-
         return htmlData;
     }
 
@@ -316,18 +219,8 @@ export class NESCOService implements IProviderService {
         html: string,
         username?: string
     ): ProviderAccountDetails {
-        let $: cheerio.Root;
-        let useCheerio = true;
+        const $ = cheerio.load(html);
 
-        try {
-            $ = cheerio.load(html);
-        } catch (error) {
-            console.error(
-                'Error parsing HTML with cheerio, falling back to regex:',
-                error
-            );
-            useCheerio = false;
-        }
         const data: ProviderAccountDetails = {
             accountId: '',
             customerNumber: '',
@@ -344,30 +237,15 @@ export class NESCOService implements IProviderService {
             minRecharge: null,
         };
 
-        // Extract all disabled input values in order (same as script)
+        // Extract all disabled input values in order
         const inputValues: string[] = [];
 
-        if (useCheerio) {
-            $('input[disabled]').each((_, el) => {
-                const value = $(el).attr('value')?.trim();
-                if (value) {
-                    inputValues.push(value);
-                }
-            });
-        } else {
-            // Fallback to regex approach
-            const allInputs = html.match(/<input[^>]*>/gi) || [];
-            const disabledInputs = allInputs.filter((input) =>
-                input.includes('disabled')
-            );
-
-            disabledInputs.forEach((input) => {
-                const valueMatch = input.match(/value="([^"]*)"/i);
-                if (valueMatch && valueMatch[1].trim()) {
-                    inputValues.push(valueMatch[1].trim());
-                }
-            });
-        }
+        $('input[disabled]').each((_, el) => {
+            const value = $(el).attr('value')?.trim();
+            if (value) {
+                inputValues.push(value);
+            }
+        });
 
         // Map values by position based on HTML structure analysis
         if (inputValues.length >= 14) {
@@ -412,9 +290,6 @@ export class NESCOService implements IProviderService {
         if (!data.customerNumber && username) {
             data.customerNumber = username;
         }
-
-        // Log extracted data in development mode
-        this.logAccountData(data);
 
         return data;
     }
