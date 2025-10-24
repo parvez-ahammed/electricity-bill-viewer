@@ -6,6 +6,7 @@
     "description": "A simple electricity bill viewer for DESCO and NESCO accounts",
     "scripts": {
         "dev": "vite",
+        "start:dev": "vite --host 0.0.0.0",
         "build": "tsc -b && vite build",
         "lint": "eslint .",
         "preview": "vite preview",

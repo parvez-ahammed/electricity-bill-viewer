@@ -1,3 +1,5 @@
+import electricityRouter from '@routes/v1/electricity.routes';
+import telegramRouter from '@routes/v1/TelegramRoute';
 import Router from 'express';
 import httpStatus from 'http-status';
 
@@ -9,7 +11,16 @@ v1Router.get('/', async (req, res) => {
     );
 });
 
-const defaultRoutes = [];
+const defaultRoutes = [
+    {
+        prefix: '/electricity',
+        router: electricityRouter,
+    },
+    {
+        prefix: '/telegram',
+        router: telegramRouter,
+    },
+];
 
 defaultRoutes.forEach((route) => {
     v1Router.use(route.prefix, route.router);

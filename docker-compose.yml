@@ -1,0 +1,64 @@
+services:
+  redis:
+    image: redis:7.4-alpine
+    container_name: ${PROJECT_NAME}-redis
+    networks:
+      - bill-barta-net
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --appendonly yes
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: ${PROJECT_NAME}-server
+    networks:
+      - bill-barta-net
+    ports:
+      - "3000:3000"
+      - "9091:9091"
+    env_file:
+      - ./server/.env
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: ${PROJECT_NAME}-client
+    networks:
+      - bill-barta-net
+    ports:
+      - "5173:5173"
+    env_file:
+      - ./client/.env
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    depends_on:
+      - server
+
+networks:
+  bill-barta-net:
+    name: ${PROJECT_NAME}-net
+    driver: bridge
+
+volumes:
+  redis-data:
+    driver: local

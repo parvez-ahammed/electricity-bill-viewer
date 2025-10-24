@@ -1,5 +1,5 @@
 {
-    "name": "neatify-backend",
+    "name": "bill-barta-backend",
     "version": "1.0.0",
     "description": "A blog webapp that allows users to write down their thoughts quickly and interact with others through a simple web application.",
     "main": "index.js",
@@ -37,6 +37,7 @@
         "typescript-eslint": "^8.23.0"
     },
     "dependencies": {
+        "@types/redis": "^4.0.10",
         "axios": "^1.8.2",
         "cheerio": "^1.1.2",
         "compression": "^1.8.0",

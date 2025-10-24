@@ -25,6 +25,7 @@ export const Navbar = () => {
             setTimeout(() => setIsRefreshing(false), 1000);
         }
     };
+    const showOthers = false;
 
     return (
         <header className="sticky top-0 z-20 border-y-1 border-black bg-white/80 px-2 backdrop-blur-md supports-[backdrop-filter]:bg-white/70">
@@ -33,7 +34,7 @@ export const Navbar = () => {
                     <div className="flex items-center">
                         <Link to="/" className="flex items-center">
                             <Text className="bg-black px-3 py-1 text-xl font-bold text-white">
-                                Frontend
+                                BillBarta
                             </Text>
                         </Link>
                     </div>
