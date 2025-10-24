@@ -1,7 +1,5 @@
-import authRouter from '@routes/v1/AuthRoute';
 import electricityRouter from '@routes/v1/electricity.routes';
 import telegramRouter from '@routes/v1/TelegramRoute';
-import userRouter from '@routes/v1/UserRoute';
 import Router from 'express';
 import httpStatus from 'http-status';
 
@@ -14,14 +12,6 @@ v1Router.get('/', async (req, res) => {
 });
 
 const defaultRoutes = [
-    {
-        prefix: '/users',
-        router: userRouter,
-    },
-    {
-        prefix: '/auth',
-        router: authRouter,
-    },
     {
         prefix: '/electricity',
         router: electricityRouter,

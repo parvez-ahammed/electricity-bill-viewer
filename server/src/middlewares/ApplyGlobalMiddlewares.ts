@@ -1,14 +1,12 @@
 import { appConfig } from '@configs/config';
-import { jwtStrategy } from '@configs/passport';
 import { rateLimitterConfig } from '@configs/rateLimitter';
 import compression from 'compression';
 import cors from 'cors';
 import express from 'express';
 import { rateLimit } from 'express-rate-limit';
 import helmet from 'helmet';
-import passport from 'passport';
-import { contentNegotiation } from './ContentNegotiation';
 import { latencyLogger } from './LatencyLoggerMiddleware';
+
 export const applyGlobalMiddlewares = (
     app: express.Application
 ): express.Application => {
@@ -99,9 +97,6 @@ export const applyGlobalMiddlewares = (
 
     app.use(rateLimit(rateLimitterConfig));
     app.use(express.json());
-    app.use(contentNegotiation);
-    passport.use('jwt', jwtStrategy);
-    app.use(passport.initialize());
 
     return app;
 };

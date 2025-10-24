@@ -1,9 +1,9 @@
 {
-    "name": "react-auth-boilerplate",
+    "name": "bill-barta-client",
     "private": true,
     "version": "1.0.0",
     "type": "module",
-    "description": "A modern React boilerplate with authentication, user management, and profile functionality",
+    "description": "A simple electricity bill viewer for DESCO and NESCO accounts",
     "scripts": {
         "dev": "vite",
         "start:dev": "vite --host 0.0.0.0",
@@ -51,8 +51,6 @@
         "clsx": "^2.1.1",
         "cmdk": "^1.1.1",
         "framer-motion": "^12.4.10",
-        "i18next": "^24.2.3",
-        "jwt-decode": "^4.0.0",
         "lowlight": "^3.3.0",
         "lucide-react": "^0.477.0",
         "next-themes": "^0.4.5",
@@ -61,7 +59,6 @@
         "react-dom": "^19.0.0",
         "react-hook-form": "^7.54.2",
         "react-hot-toast": "^2.5.2",
-        "react-i18next": "^15.4.1",
         "react-markdown": "^10.1.0",
         "react-medium-image-zoom": "^5.2.14",
         "react-router-dom": "^7.2.0",
