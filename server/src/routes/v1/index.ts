@@ -9,7 +9,7 @@ const v1Router = Router();
 
 v1Router.get('/', async (req, res) => {
     res.status(httpStatus.OK).send(
-        'Version 1 of the Neatify API is up and running!'
+        'Version 1 of the Bill Barta API is up and running!'
     );
 });
 

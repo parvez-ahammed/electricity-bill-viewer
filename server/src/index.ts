@@ -3,7 +3,7 @@ import logger from '@helpers/Logger';
 import http from 'http';
 import 'reflect-metadata';
 import { app } from './app';
-logger.info('Hello from Neatify API!');
+logger.info('Hello from Bill Barta API!');
 
 const server: http.Server = http.createServer(app);
 

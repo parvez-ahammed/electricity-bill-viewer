@@ -1,5 +1,5 @@
 {
-    "name": "neatify-backend",
+    "name": "bill-barta-backend",
     "version": "1.0.0",
     "description": "A blog webapp that allows users to write down their thoughts quickly and interact with others through a simple web application.",
     "main": "index.js",

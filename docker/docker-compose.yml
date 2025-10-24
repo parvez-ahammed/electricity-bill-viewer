@@ -1,7 +1,7 @@
 services:
   redis:
     image: redis:7.4-alpine
-    container_name: bill-barta-redis
+    container_name: ${PROJECT_NAME}-redis
     networks:
       - bill-barta-net
     ports:
@@ -19,7 +19,7 @@ services:
     build:
       context: ../server
       dockerfile: ../docker/Dockerfile.server
-    container_name: bill-barta-server
+    container_name: ${PROJECT_NAME}-server
     networks:
       - bill-barta-net
     ports:
@@ -41,7 +41,7 @@ services:
     build:
       context: ../client
       dockerfile: ../docker/Dockerfile.client
-    container_name: bill-barta-client
+    container_name: ${PROJECT_NAME}-client
     networks:
       - bill-barta-net
     ports:
@@ -56,6 +56,7 @@ services:
 
 networks:
   bill-barta-net:
+    name: ${PROJECT_NAME}-net
     driver: bridge
 
 volumes:
