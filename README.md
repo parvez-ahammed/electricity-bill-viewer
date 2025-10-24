@@ -18,28 +18,63 @@ A simple web application to view electricity bill balances for DPDC, NESCO, and 
 1. **Setup environment variables**:
 
    ```bash
-   # Copy root environment file
+   # Root .env (Redis and Docker Compose)
    cp .env.example .env
-   # Edit .env with Redis and project configuration
 
-   # Copy server environment file
+   # Server .env
    cp server/.env.example server/.env
-   # Edit server/.env with your server credentials
 
-   # Copy client environment file
+   # Client .env
    cp client/.env.example client/.env
-   # Edit client/.env with your client credentials
    ```
 
-2. **Start the application**:
+2. **Edit the .env files** with your actual credentials
+
+3. **Start all services**:
 
    ```bash
    docker compose up -d --build
    ```
 
-3. **Access the application**:
-   - Client: http://localhost:5173
-   - Server API: http://localhost:3000/api/v1
+4. **Access the application**:
+
+   - Client: <http://localhost:5173>
+   - Server API: <http://localhost:3000/api/v1>
+   - Redis: Port 6379
+
+5. **View logs**:
+
+   ```bash
+   docker compose logs -f
+   ```
+
+6. **Stop all services**:
+
+   ```bash
+   docker compose down
+   ```
+
+#### Docker Services
+
+- **Redis**: Port 6379
+- **Server**: Port 3000 (API), Port 9091 (Debug)
+- **Client**: Port 5173 (Dev Server)
+
+#### Useful Docker Commands
+
+```bash
+# Rebuild a specific service
+docker compose up -d --build server
+
+# View logs for a specific service
+docker compose logs -f server
+
+# Execute commands in a container
+docker compose exec server sh
+
+# Stop and remove all containers, networks, and volumes
+docker compose down -v
+```
 
 ### Local Development
 
