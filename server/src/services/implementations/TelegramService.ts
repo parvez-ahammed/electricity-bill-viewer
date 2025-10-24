@@ -1,9 +1,6 @@
 import { appConfig } from '@configs/config';
-import {
-    ElectricityProvider,
-    ProviderAccountDetails,
-    ProviderCredential,
-} from '../interfaces/IProviderService';
+import { getCredentialsFromEnv } from '../../utility/credentialParser';
+import { ProviderAccountDetails } from '../interfaces/IProviderService';
 import { ITelegramService } from '../interfaces/ITelegramService';
 import { ElectricityService } from './ElectricityService';
 
@@ -23,32 +20,6 @@ export class TelegramService implements ITelegramService {
         this.botToken = appConfig.telegram.botToken;
         this.chatId = appConfig.telegram.chatId;
         this.electricityService = new ElectricityService();
-    }
-
-    private getCredentials(): ProviderCredential[] {
-        try {
-            const credentialsJson = appConfig.electricityCredentials;
-
-            if (!credentialsJson) {
-                throw new Error('ELECTRICITY_CREDENTIALS not set');
-            }
-
-            const credentials = JSON.parse(credentialsJson);
-
-            if (!Array.isArray(credentials)) {
-                throw new Error('ELECTRICITY_CREDENTIALS must be a JSON array');
-            }
-
-            return credentials.map((cred) => ({
-                username: cred.username,
-                password: cred.password,
-                provider: cred.provider as ElectricityProvider,
-            }));
-        } catch (error) {
-            throw new Error(
-                `Failed to parse ELECTRICITY_CREDENTIALS: ${error instanceof Error ? error.message : 'Unknown error'}`
-            );
-        }
     }
 
     async sendMessage(message: string): Promise<boolean> {
@@ -135,7 +106,7 @@ export class TelegramService implements ITelegramService {
     }> {
         try {
             // Get credentials
-            const credentials = this.getCredentials();
+            const credentials = getCredentialsFromEnv();
 
             if (credentials.length === 0) {
                 return {
