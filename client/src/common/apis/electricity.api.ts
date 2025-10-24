@@ -2,12 +2,6 @@ import { API_ENDPOINTS } from "@/common/constants/api-endpoints.constant";
 import { HTTP_METHOD } from "@/common/constants/http.constant";
 import { apiRequest } from "@/lib/axios";
 
-export interface ElectricityCredential {
-    provider: "DPDC" | "NESCO" | "DESCO";
-    username: string;
-    password: string;
-}
-
 export interface ElectricityAccount {
     accountId: string;
     customerNumber: string;
@@ -40,27 +34,11 @@ export interface ElectricityUsageResponse {
 }
 
 export const electricityApi = {
-    getUsageData: async (
-        credentials: ElectricityCredential[],
-        skipCache = false
-    ) => {
+    getUsageData: async (skipCache = false) => {
         const data = await apiRequest<ElectricityUsageResponse>(
-            HTTP_METHOD.POST,
+            HTTP_METHOD.GET,
             API_ENDPOINTS.ELECTRICITY.USAGE,
-            { credentials },
-            skipCache
-        );
-        return data;
-    },
-
-    getSingleUsageData: async (
-        credential: ElectricityCredential,
-        skipCache = false
-    ) => {
-        const data = await apiRequest<ElectricityUsageResponse>(
-            HTTP_METHOD.POST,
-            API_ENDPOINTS.ELECTRICITY.SINGLE,
-            credential,
+            undefined,
             skipCache
         );
         return data;

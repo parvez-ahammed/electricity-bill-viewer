@@ -4,8 +4,7 @@ import { ElectricityController } from '../../controllers/v1/ElectricityControlle
 const router = Router();
 const electricityController = new ElectricityController();
 
-router.post('/usage', electricityController.getUsageData);
-router.post('/usage/single', electricityController.getSingleUsageData);
+router.get('/usage', electricityController.getUsageData);
 router.get('/health', electricityController.healthCheck);
 
 export default router;

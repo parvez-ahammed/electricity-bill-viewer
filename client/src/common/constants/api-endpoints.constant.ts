@@ -18,6 +18,5 @@ export const API_ENDPOINTS = {
     },
     ELECTRICITY: {
         USAGE: `${API_PATH}/electricity/usage`,
-        SINGLE: `${API_PATH}/electricity/single`,
     },
 };
