@@ -149,16 +149,11 @@ export class RedisCacheService {
     ): Promise<T> {
         // If skipCache is true, always fetch fresh data
         if (options?.skipCache) {
-            console.log(`Cache: Skipping cache for key: ${key}`);
             const freshData = await factory();
 
             // Only cache if the data is successful
             if (this.shouldCacheData(freshData)) {
                 await this.set(key, freshData, options);
-            } else {
-                console.log(
-                    `Cache: Not caching unsuccessful response for key: ${key}`
-                );
             }
 
             return freshData;
@@ -168,21 +163,15 @@ export class RedisCacheService {
         const cachedData = await this.get<T>(key);
 
         if (cachedData !== null) {
-            console.log(`Cache: Hit for key: ${key}`);
             return cachedData;
         }
 
         // Cache miss, fetch fresh data
-        console.log(`Cache: Miss for key: ${key}`);
         const freshData = await factory();
 
         // Store in cache only if data is successful
         if (this.shouldCacheData(freshData)) {
             await this.set(key, freshData, options);
-        } else {
-            console.log(
-                `Cache: Not caching unsuccessful response for key: ${key}`
-            );
         }
 
         return freshData;
@@ -209,7 +198,6 @@ export class RedisCacheService {
         try {
             const client = await redisClient.getClient();
             await client.flushDb();
-            console.log('Redis: All cache cleared');
             return true;
         } catch (error) {
             console.error('Redis Cache Clear All Error:', error);

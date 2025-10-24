@@ -1,13 +1,7 @@
-import { appConfig } from '@configs/config';
 import { Request, Response } from 'express';
 import { ElectricityService } from '../../services/implementations/ElectricityService';
 import { ElectricityProvider } from '../../services/interfaces/IProviderService';
-
-interface ElectricityCredential {
-    username: string;
-    password: string;
-    provider: ElectricityProvider;
-}
+import { getCredentialsFromEnv } from '../../utility/credentialParser';
 
 export class ElectricityController {
     private electricityService: ElectricityService;
@@ -26,7 +20,7 @@ export class ElectricityController {
             const skipCache = req.headers['x-skip-cache'] === 'true';
 
             // Get credentials from environment variable
-            const credentials = this.getCredentialsFromEnv();
+            const credentials = getCredentialsFromEnv();
 
             if (credentials.length === 0) {
                 res.status(500).json({
@@ -65,54 +59,4 @@ export class ElectricityController {
             timestamp: new Date().toISOString(),
         });
     };
-
-    /**
-     * Helper method to parse credentials from environment variable
-     */
-    private getCredentialsFromEnv(): ElectricityCredential[] {
-        try {
-            const credentialsJson = appConfig.electricityCredentials;
-
-            if (!credentialsJson) {
-                return [];
-            }
-
-            const credentials = JSON.parse(credentialsJson);
-
-            if (!Array.isArray(credentials)) {
-                console.error('ELECTRICITY_CREDENTIALS must be a JSON array');
-                return [];
-            }
-
-            // Validate and filter credentials
-            return credentials
-                .filter((cred: ElectricityCredential) => {
-                    if (!cred.username || !cred.password || !cred.provider) {
-                        console.warn('Skipping invalid credential:', cred);
-                        return false;
-                    }
-
-                    if (
-                        !Object.values(ElectricityProvider).includes(
-                            cred.provider
-                        )
-                    ) {
-                        console.warn(
-                            `Skipping credential with invalid provider: ${cred.provider}`
-                        );
-                        return false;
-                    }
-
-                    return true;
-                })
-                .map((cred: ElectricityCredential) => ({
-                    username: cred.username,
-                    password: cred.password,
-                    provider: cred.provider as ElectricityProvider,
-                }));
-        } catch (error) {
-            console.error('Failed to parse ELECTRICITY_CREDENTIALS:', error);
-            return [];
-        }
-    }
 }
