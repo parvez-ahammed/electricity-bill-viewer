@@ -78,7 +78,9 @@ export class DPDCService implements IProviderService {
             const match = dateString.match(datePattern);
 
             if (match) {
-                const [, year, month, day] = match;
+                const year = match[1];
+                const month = match[2];
+                const day = match[3];
                 return `${year}-${month}-${day}`;
             }
 

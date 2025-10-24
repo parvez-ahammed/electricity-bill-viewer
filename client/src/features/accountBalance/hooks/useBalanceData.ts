@@ -56,7 +56,9 @@ const getCredentialsFromEnv = (): ElectricityCredential[] => {
         return credentials.filter(
             (cred) => cred.provider && cred.username && cred.password
         );
-    } catch {
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        toast.error(`Failed to parse VITE_ELECTRICITY_CREDENTIALS: ${errorMessage}`);
         return [];
     }
 };

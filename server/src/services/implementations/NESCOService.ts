@@ -101,7 +101,9 @@ export class NESCOService implements IProviderService {
             const match = cleanDate.match(datePattern);
 
             if (match) {
-                const [, day, month, year] = match;
+                const day = match[1];
+                const month = match[2];
+                const year = match[3];
 
                 const monthMap: Record<string, string> = {
                     january: '01',
@@ -144,7 +146,9 @@ export class NESCOService implements IProviderService {
             const match = cleanDate.match(datePattern);
 
             if (match) {
-                const [, day, month, year] = match;
+                const day = match[1];
+                const month = match[2];
+                const year = match[3];
 
                 const monthMap: Record<string, string> = {
                     jan: '01',
