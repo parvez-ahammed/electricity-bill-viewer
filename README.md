@@ -18,15 +18,23 @@ A simple web application to view electricity bill balances for DPDC, NESCO, and 
 1. **Setup environment variables**:
 
    ```bash
-   cd docker
+   # Copy root environment file
    cp .env.example .env
-   # Edit .env with your credentials
+   # Edit .env with Redis and project configuration
+
+   # Copy server environment file
+   cp server/.env.example server/.env
+   # Edit server/.env with your server credentials
+
+   # Copy client environment file
+   cp client/.env.example client/.env
+   # Edit client/.env with your client credentials
    ```
 
 2. **Start the application**:
 
    ```bash
-   docker-compose up -d
+   docker compose up -d --build
    ```
 
 3. **Access the application**:
@@ -35,25 +43,20 @@ A simple web application to view electricity bill balances for DPDC, NESCO, and 
 
 ### Local Development
 
-1. **Setup centralized environment**:
+1. **Setup environment files**:
 
    ```bash
-   cd docker
+   # Copy environment files for each service
    cp .env.example .env
-   # Edit .env with your credentials
+   cp server/.env.example server/.env
+   cp client/.env.example client/.env
+   # Edit each .env file with your credentials
    ```
 
 2. **Server**:
 
    ```bash
    cd server
-
-   # Create symlink to centralized .env
-   # Windows (PowerShell as Admin):
-   New-Item -ItemType SymbolicLink -Path ".env" -Target "..\docker\.env"
-   # Linux/Mac:
-   ln -s ../docker/.env .env
-
    npm install
    npm run start:dev
    ```
@@ -62,42 +65,42 @@ A simple web application to view electricity bill balances for DPDC, NESCO, and 
 
    ```bash
    cd client
-
-   # Create symlink to centralized .env
-   # Windows (PowerShell as Admin):
-   New-Item -ItemType SymbolicLink -Path ".env" -Target "..\docker\.env"
-   # Linux/Mac:
-   ln -s ../docker/.env .env
-
    npm install
    npm run dev
    ```
 
 ## Configuration
 
-All environment variables are centralized in `docker/.env`. Key configurations:
+Environment variables are organized by service:
 
-### Required
+### Root `.env` (Docker Compose & Redis)
+
+- `PROJECT_NAME` - Project name for Docker containers
+- `REDIS_HOST`, `REDIS_PORT` - Redis configuration
+
+### Server `.env`
 
 - `DPDC_CLIENT_SECRET` - Your DPDC client secret
-- `VITE_ELECTRICITY_CREDENTIALS` - JSON array of account credentials
-
-### Optional
-
 - `TELEGRAM_BOT_TOKEN` - Telegram bot token for notifications
 - `TELEGRAM_CHAT_ID` - Telegram chat ID for notifications
 - `ELECTRICITY_CREDENTIALS` - Server-side credentials for Telegram reports
 - `ENABLE_LATENCY_LOGGER` - Enable request latency logging
 
-See `docker/.env.example` for all available options.
+### Client `.env`
+
+- `VITE_BACKEND_API_PATH` - Backend API URL
+- `VITE_ELECTRICITY_CREDENTIALS` - JSON array of account credentials
+
+See `.env.example` files in root, server, and client directories for all available options.
 
 ## Architecture
 
 ```
 ├── client/          # React + TypeScript frontend (Vite)
 ├── server/          # Node.js + Express backend (TypeScript)
-├── docker/          # Docker configuration & centralized .env
-└── scripts/         # Utility scripts
+├── scripts/         # Utility scripts
+├── docker-compose.yml  # Docker Compose configuration
+└── .env             # Root environment variables
 ```
 
 ### Tech Stack

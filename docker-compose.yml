@@ -17,21 +17,21 @@ services:
 
   server:
     build:
-      context: ../server
-      dockerfile: ../docker/Dockerfile.server
+      context: ./server
+      dockerfile: Dockerfile
     container_name: ${PROJECT_NAME}-server
     networks:
       - bill-barta-net
     ports:
-      - "${PORT:-3000}:3000"
+      - "3000:3000"
       - "9091:9091"
     env_file:
-      - .env
+      - ./server/.env
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     volumes:
-      - ../server:/app
+      - ./server:/app
       - /app/node_modules
     depends_on:
       redis:
@@ -39,17 +39,17 @@ services:
 
   client:
     build:
-      context: ../client
-      dockerfile: ../docker/Dockerfile.client
+      context: ./client
+      dockerfile: Dockerfile
     container_name: ${PROJECT_NAME}-client
     networks:
       - bill-barta-net
     ports:
-      - "${CLIENT_PORT:-5173}:5173"
+      - "5173:5173"
     env_file:
-      - .env
+      - ./client/.env
     volumes:
-      - ../client:/app
+      - ./client:/app
       - /app/node_modules
     depends_on:
       - server
