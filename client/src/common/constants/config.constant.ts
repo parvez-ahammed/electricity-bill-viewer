@@ -4,12 +4,13 @@ const envSchema = z.object({
     VITE_BACKEND_API_PATH: z
         .string()
         .min(1, "VITE_BACKEND_API_PATH must be at least 1 character long")
-        .default("http://localhost:3000/api/v1"),
+        .default("/api/v1"), // Use relative path for production (nginx will proxy)
 });
 
 function validateEnv() {
     const env = {
-        VITE_BACKEND_API_PATH: import.meta.env.VITE_BACKEND_API_PATH,
+        VITE_BACKEND_API_PATH:
+            import.meta.env.VITE_BACKEND_API_PATH || "/api/v1",
     };
 
     try {
