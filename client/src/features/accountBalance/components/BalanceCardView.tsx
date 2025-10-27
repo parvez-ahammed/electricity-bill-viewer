@@ -26,7 +26,7 @@ export const BalanceCardView = ({ account, index }: BalanceCardViewProps) => {
     return (
         <Card
             key={`${account.accountId}-${index}`}
-            className="overflow-hidden transition-all hover:shadow-md"
+            className="overflow-hidden py-0 transition-all hover:shadow-md"
         >
             <CardContent className="p-3">
                 {/* Header Section */}
@@ -39,30 +39,29 @@ export const BalanceCardView = ({ account, index }: BalanceCardViewProps) => {
                     <ProviderChip provider={account.provider || "-"} />
                 </div>
 
-                {/* Balance Section */}
-                <div className="bg-primary/5 rounded-lg p-2.5">
-                    <div className="flex items-center justify-between">
-                        <p className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
-                            Current Balance
-                        </p>
-                        <p className="text-lg font-bold">
-                            ৳ {account.balanceRemaining}
-                        </p>
-                    </div>
-                    <div className="mt-1">
-                        <p className="text-muted-foreground text-xs">
-                            As of {formatDate(account.balanceLatestDate)}
-                        </p>
-                    </div>
-                </div>
-
-                {/* Details Accordion */}
-                <Accordion type="single" collapsible className="mt-2">
+                {/* Balance Section with Accordion */}
+                <Accordion type="single" collapsible>
                     <AccordionItem value="details" className="border-none">
-                        <AccordionTrigger className="text-muted-foreground hover:text-foreground py-2 text-xs font-medium hover:no-underline">
-                            View Details
-                        </AccordionTrigger>
-                        <AccordionContent className="space-y-2.5 pt-1">
+                        <div className="bg-primary/5 rounded-lg p-2.5">
+                            <div className="flex items-center justify-between">
+                                <p className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
+                                    Current Balance
+                                </p>
+                                <p className="text-lg font-bold">
+                                    ৳ {account.balanceRemaining}
+                                </p>
+                            </div>
+                            <div className="mt-1 flex items-center justify-between">
+                                <p className="text-muted-foreground text-xs">
+                                    As of{" "}
+                                    {formatDate(account.balanceLatestDate)}
+                                </p>
+                                <AccordionTrigger className="text-muted-foreground hover:text-foreground py-0 text-xs font-medium hover:no-underline">
+                                    Details
+                                </AccordionTrigger>
+                            </div>
+                        </div>
+                        <AccordionContent className="space-y-2.5 pt-2">
                             {/* Location */}
                             <div>
                                 <p className="text-muted-foreground text-xs font-medium">
