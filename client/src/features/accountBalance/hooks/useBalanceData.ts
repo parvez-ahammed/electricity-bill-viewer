@@ -8,7 +8,12 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { PostBalanceDetails } from "../constants/balance.constant";
+import {
+    CACHE_EXPIRY_DURATION,
+    CACHE_GC_TIME,
+    CACHE_STALE_TIME,
+    PostBalanceDetails,
+} from "../constants/balance.constant";
 
 const transformAccountData = (
     account: ElectricityAccount
@@ -48,7 +53,7 @@ export const useBalanceData = () => {
         "electricity_balance_data",
         null,
         {
-            expiryDuration: 24 * 60 * 60 * 1000, // 24 hours
+            expiryDuration: CACHE_EXPIRY_DURATION,
             showErrorToast: false,
         }
     );
@@ -73,8 +78,8 @@ export const useBalanceData = () => {
 
             return response;
         },
-        staleTime: skipCache ? 0 : 5 * 60 * 1000, // 5 minutes if cached, 0 if skip cache
-        gcTime: 10 * 60 * 1000, // 10 minutes
+        staleTime: skipCache ? 0 : CACHE_STALE_TIME,
+        gcTime: CACHE_GC_TIME,
         refetchOnWindowFocus: false,
     });
 

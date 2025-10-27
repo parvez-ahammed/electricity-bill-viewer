@@ -30,3 +30,8 @@ export const TABLE_HEADERS = [
     "Balance Latest Date",
     "Last Payment Date",
 ] as const;
+
+// Cache configuration
+export const CACHE_EXPIRY_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+export const CACHE_STALE_TIME = 5 * 60 * 1000; // 5 minutes
+export const CACHE_GC_TIME = 10 * 60 * 1000; // 10 minutes

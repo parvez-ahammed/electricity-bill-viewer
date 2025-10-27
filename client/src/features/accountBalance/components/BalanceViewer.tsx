@@ -10,7 +10,7 @@ interface BalanceTableProps {
     accountsData: PostBalanceDetails[];
 }
 
-export const BalanceTable = ({ accountsData }: BalanceTableProps) => {
+export const BalanceViewer = ({ accountsData }: BalanceTableProps) => {
     if (accountsData.length === 0) {
         return (
             <div className="flex items-center justify-center py-8">
@@ -37,8 +37,8 @@ export const BalanceTable = ({ accountsData }: BalanceTableProps) => {
             {/* Desktop Table View */}
             <div className="hidden w-full md:block">
                 <div className="border-border bg-card overflow-hidden rounded-xl border shadow-sm">
-                    <div className="overflow-x-auto">
-                        <Table className="table-fixed">
+                    <div className="table-scroll overflow-x-auto">
+                        <Table className="w-full min-w-max">
                             <BalanceTableHeader />
                             <TableBody>
                                 {accountsData.map((account, index) => (
