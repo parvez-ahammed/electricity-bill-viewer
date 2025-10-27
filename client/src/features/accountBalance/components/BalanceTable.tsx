@@ -35,19 +35,23 @@ export const BalanceTable = ({ accountsData }: BalanceTableProps) => {
             </div>
 
             {/* Desktop Table View */}
-            <div className="hidden w-full overflow-x-auto md:block">
-                <Table className="table-fixed">
-                    <BalanceTableHeader />
-                    <TableBody>
-                        {accountsData.map((account, index) => (
-                            <BalanceTableRow
-                                key={`${account.accountId}-${index}`}
-                                account={account}
-                                index={index}
-                            />
-                        ))}
-                    </TableBody>
-                </Table>
+            <div className="hidden w-full md:block">
+                <div className="border-border bg-card overflow-hidden rounded-xl border shadow-sm">
+                    <div className="overflow-x-auto">
+                        <Table className="table-fixed">
+                            <BalanceTableHeader />
+                            <TableBody>
+                                {accountsData.map((account, index) => (
+                                    <BalanceTableRow
+                                        key={`${account.accountId}-${index}`}
+                                        account={account}
+                                        index={index}
+                                    />
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </div>
             </div>
         </>
     );

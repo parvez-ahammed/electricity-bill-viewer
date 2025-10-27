@@ -15,12 +15,12 @@ const COLUMN_WIDTHS: Record<string, string> = {
 
 export const BalanceTableHeader = () => {
     return (
-        <TableHeader>
-            <TableRow>
+        <TableHeader className="bg-muted/50">
+            <TableRow className="hover:bg-muted/50">
                 {TABLE_HEADERS.map((header) => (
                     <TableHead
                         key={header}
-                        className={COLUMN_WIDTHS[header] || ""}
+                        className={`text-foreground font-semibold ${COLUMN_WIDTHS[header] || ""}`}
                     >
                         {header}
                     </TableHead>

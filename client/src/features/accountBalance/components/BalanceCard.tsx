@@ -22,8 +22,8 @@ export const BalanceCard = ({
     error,
 }: BalanceCardProps) => {
     return (
-        <Card className="border-none py-4 shadow-none sm:border sm:shadow-sm">
-            <CardHeader className="hidden px-4 py-4 sm:block sm:px-6 sm:py-6">
+        <Card className="border-none pt-4 pb-0 shadow-none sm:border sm:shadow-none">
+            <CardHeader className="hidden px-0 py-4 sm:block sm:px-0 sm:py-6">
                 <CardTitle className="text-lg sm:text-xl">
                     Account Balance Details
                 </CardTitle>

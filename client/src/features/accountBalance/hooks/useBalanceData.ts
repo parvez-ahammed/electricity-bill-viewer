@@ -1,7 +1,9 @@
 import {
     ElectricityAccount,
+    ElectricityUsageResponse,
     electricityApi,
 } from "@/common/apis/electricity.api";
+import { useLocalStorage } from "@/common/hooks/useLocalStorage";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -37,12 +39,38 @@ const transformAccountData = (
 export const useBalanceData = () => {
     const [skipCache, setSkipCache] = useState(false);
     const hasShownToast = useRef(false);
+    const {
+        value: cachedData,
+        setValue: setCachedData,
+        clearValue: clearCache,
+        hasValidData,
+    } = useLocalStorage<ElectricityUsageResponse | null>(
+        "electricity_balance_data",
+        null,
+        {
+            expiryDuration: 24 * 60 * 60 * 1000, // 24 hours
+            showErrorToast: false,
+        }
+    );
 
     const { data, isLoading, error, refetch, isFetching } = useQuery({
         queryKey: ["electricityBalance", skipCache],
         queryFn: async () => {
             hasShownToast.current = false;
+
+            // Check localStorage first if not skipping cache
+            if (!skipCache && hasValidData() && cachedData) {
+                return cachedData;
+            }
+
+            // Fetch from API
             const response = await electricityApi.getUsageData(skipCache);
+
+            // Save to localStorage on successful fetch
+            if (response.success) {
+                setCachedData(response);
+            }
+
             return response;
         },
         staleTime: skipCache ? 0 : 5 * 60 * 1000, // 5 minutes if cached, 0 if skip cache
@@ -87,6 +115,8 @@ export const useBalanceData = () => {
         ([] as PostBalanceDetails[]);
 
     const refreshWithSkipCache = async () => {
+        // Clear localStorage before fetching fresh data
+        clearCache();
         setSkipCache(true);
         await refetch();
         // Reset skip cache after fetch
