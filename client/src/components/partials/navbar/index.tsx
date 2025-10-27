@@ -27,7 +27,7 @@ export const Navbar = () => {
     };
 
     return (
-        <header className="sticky top-0 z-20 border-y-1 border-black bg-white/80 px-2 backdrop-blur-md supports-[backdrop-filter]:bg-white/70">
+        <header className="sticky top-0 z-20 border-y border-black bg-white/80 px-2 backdrop-blur-md supports-backdrop-filter:bg-white/70">
             <div className="container mx-auto max-w-7xl">
                 <div className="flex h-16 items-center justify-between">
                     <div className="flex items-center">

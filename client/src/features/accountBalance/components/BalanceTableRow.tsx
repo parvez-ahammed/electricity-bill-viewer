@@ -47,17 +47,17 @@ export const BalanceTableRow = ({ account, index }: BalanceTableRowProps) => {
             <TableCell className="w-[140px] min-w-[140px] px-4 py-4">
                 <div className="truncate text-sm">{account.accountType}</div>
             </TableCell>
-            <TableCell className="w-[160px] min-w-[160px] px-4 py-4">
+            <TableCell className="w-40 min-w-40 px-4 py-4">
                 <div className="text-primary truncate text-sm font-semibold">
                     ৳ {account.balanceRemaining}
                 </div>
             </TableCell>
-            <TableCell className="w-[160px] min-w-[160px] px-4 py-4">
+            <TableCell className="w-40 min-w-40 px-4 py-4">
                 <div className="text-muted-foreground truncate text-sm">
                     {formatDate(account.balanceLatestDate)}
                 </div>
             </TableCell>
-            <TableCell className="w-[160px] min-w-[160px] px-4 py-4">
+            <TableCell className="w-40 min-w-40 px-4 py-4">
                 <div className="text-muted-foreground truncate text-sm">
                     {formattedLastPaymentDate}
                 </div>
