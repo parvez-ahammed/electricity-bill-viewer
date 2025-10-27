@@ -7,6 +7,7 @@ The Telegram bot integration allows you to receive electricity account balance r
 ## Features
 
 - ⚡ **Automated Balance Reports**: Get electricity account balances sent to Telegram
+- ⏰ **Daily Scheduled Reports**: Automatically sends balance at 12:00 PM BST every day
 - 📊 **Formatted Messages**: Beautiful HTML-formatted messages with emojis
 - 🔵🟢 **Multi-Provider Support**: DPDC and NESCO accounts in one report
 - 💰 **Balance Summary**: Total balance across all accounts
@@ -159,7 +160,42 @@ Total Accounts: 3
 
 ## Automation
 
-### Using Cron Jobs (Linux/Mac)
+### Built-in Scheduler (Recommended)
+
+The server automatically sends balance reports **every day at 12:00 PM BST (Bangladesh Standard Time)**.
+
+**How it works:**
+
+- Scheduler starts automatically when the server starts
+- Runs at 12:00 PM Asia/Dhaka timezone
+- Fetches fresh data (bypasses cache)
+- Sends formatted message to your Telegram chat
+- Logs success/failure in server logs
+
+**No configuration needed!** Just ensure your `.env` has:
+
+- `TELEGRAM_BOT_TOKEN`
+- `TELEGRAM_CHAT_ID`
+- `ELECTRICITY_CREDENTIALS`
+
+**Check logs:**
+
+```bash
+# You'll see messages like:
+⏰ Scheduled daily balance notifications at 12:00 PM BST (Asia/Dhaka timezone)
+⏰ Running scheduled balance notification at 12:00 PM BST...
+✅ Scheduled balance notification sent successfully. Accounts: 3
+```
+
+### Manual Trigger (Optional)
+
+You can also manually trigger a balance report anytime:
+
+```bash
+curl http://localhost:3000/api/v1/telegram/send-balances
+```
+
+### Using Cron Jobs (Alternative - Not Needed)
 
 Schedule automatic balance reports:
 
