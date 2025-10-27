@@ -23,8 +23,8 @@ services:
     networks:
       - bill-barta-net
     ports:
-      - "3000:3000"
-      - "9091:9091"
+      - "${SERVER_PORT:-3000}:3000"
+      - "${SERVER_DEBUG_PORT:-9091}:9091"
     env_file:
       - ./server/.env
     environment:
@@ -45,7 +45,7 @@ services:
     networks:
       - bill-barta-net
     ports:
-      - "5173:5173"
+      - "${CLIENT_PORT:-5173}:5173"
     env_file:
       - ./client/.env
     volumes:

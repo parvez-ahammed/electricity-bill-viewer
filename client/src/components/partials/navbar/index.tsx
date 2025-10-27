@@ -25,7 +25,6 @@ export const Navbar = () => {
             setTimeout(() => setIsRefreshing(false), 1000);
         }
     };
-    const showOthers = false;
 
     return (
         <header className="sticky top-0 z-20 border-y-1 border-black bg-white/80 px-2 backdrop-blur-md supports-[backdrop-filter]:bg-white/70">
