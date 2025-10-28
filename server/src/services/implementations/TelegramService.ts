@@ -1,4 +1,5 @@
 import { appConfig } from '@configs/config';
+import logger from '@helpers/Logger';
 import { getCredentialsFromEnv } from '../../utility/credentialParser';
 import { ProviderAccountDetails } from '../interfaces/IProviderService';
 import { ITelegramService } from '../interfaces/ITelegramService';
@@ -45,7 +46,7 @@ export class TelegramService implements ITelegramService {
 
             return true;
         } catch (error) {
-            console.error('Failed to send Telegram message:', error);
+            logger.error('Failed to send Telegram message:' + error);
             return false;
         }
     }

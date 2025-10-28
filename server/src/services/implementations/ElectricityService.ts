@@ -1,5 +1,4 @@
 import {
-    ElectricityCredential,
     ElectricityUsageData,
     ElectricityUsageResponse,
     IElectricityService,
@@ -7,6 +6,7 @@ import {
 import {
     ElectricityProvider,
     IProviderService,
+    ProviderCredential,
 } from '../interfaces/IProviderService';
 import { DPDCService } from './DPDCService';
 import { NESCOService } from './NESCOService';
@@ -68,7 +68,7 @@ export class ElectricityService implements IElectricityService {
     }
 
     async getUsageData(
-        credentials: ElectricityCredential[],
+        credentials: ProviderCredential[],
         skipCache = false
     ): Promise<ElectricityUsageResponse> {
         // Fetch each credential individually (with its own cache)

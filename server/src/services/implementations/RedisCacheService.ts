@@ -1,5 +1,6 @@
 import { appConfig } from '@configs/config';
 import { redisClient } from '@configs/redis';
+import logger from '@helpers/Logger';
 import crypto from 'crypto';
 
 export interface CacheOptions {
@@ -60,7 +61,7 @@ export class RedisCacheService {
 
             return parsed.data as T;
         } catch (error) {
-            console.error('Redis Cache Get Error:', error);
+            logger.error('Redis Cache Get Error:' + error);
             return null;
         }
     }
@@ -86,7 +87,7 @@ export class RedisCacheService {
             await client.setEx(key, ttl, JSON.stringify(cacheData));
             return true;
         } catch (error) {
-            console.error('Redis Cache Set Error:', error);
+            logger.error('Redis Cache Set Error:' + error);
             return false;
         }
     }
@@ -100,7 +101,7 @@ export class RedisCacheService {
             await client.del(key);
             return true;
         } catch (error) {
-            console.error('Redis Cache Delete Error:', error);
+            logger.error('Redis Cache Delete Error:' + error);
             return false;
         }
     }
@@ -120,7 +121,7 @@ export class RedisCacheService {
             await client.del(keys);
             return keys.length;
         } catch (error) {
-            console.error('Redis Cache Delete Pattern Error:', error);
+            logger.error('Redis Cache Delete Pattern Error:' + error);
             return 0;
         }
     }
@@ -134,7 +135,7 @@ export class RedisCacheService {
             const exists = await client.exists(key);
             return exists === 1;
         } catch (error) {
-            console.error('Redis Cache Exists Error:', error);
+            logger.error('Redis Cache Exists Error:' + error);
             return false;
         }
     }
@@ -200,7 +201,7 @@ export class RedisCacheService {
             await client.flushDb();
             return true;
         } catch (error) {
-            console.error('Redis Cache Clear All Error:', error);
+            logger.error('Redis Cache Clear All Error:' + error);
             return false;
         }
     }
@@ -227,7 +228,7 @@ export class RedisCacheService {
                 memoryUsage,
             };
         } catch (error) {
-            console.error('Redis Cache Stats Error:', error);
+            logger.error('Redis Cache Stats Error:' + error);
             return {
                 connected: false,
                 totalKeys: 0,

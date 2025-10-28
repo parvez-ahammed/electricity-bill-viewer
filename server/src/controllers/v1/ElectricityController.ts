@@ -1,13 +1,20 @@
+import { ResponseBuilder } from '@helpers/ResponseBuilder';
 import { Request, Response } from 'express';
 import { ElectricityService } from '../../services/implementations/ElectricityService';
 import { ElectricityProvider } from '../../services/interfaces/IProviderService';
 import { getCredentialsFromEnv } from '../../utility/credentialParser';
 
 export class ElectricityController {
-    private electricityService: ElectricityService;
+    private static electricityService: ElectricityService;
 
     constructor() {
-        this.electricityService = new ElectricityService();
+        if (!ElectricityController.electricityService) {
+            ElectricityController.electricityService = new ElectricityService();
+        }
+    }
+
+    private get electricityService(): ElectricityService {
+        return ElectricityController.electricityService;
     }
 
     /**
@@ -23,12 +30,13 @@ export class ElectricityController {
             const credentials = getCredentialsFromEnv();
 
             if (credentials.length === 0) {
-                res.status(500).json({
-                    success: false,
-                    message: 'No credentials configured on server',
-                    error: 'ELECTRICITY_CREDENTIALS environment variable is not set or empty',
-                    timestamp: new Date().toISOString(),
-                });
+                new ResponseBuilder(res)
+                    .setStatus(500)
+                    .setMessage('No credentials configured on server')
+                    .setData({
+                        error: 'ELECTRICITY_CREDENTIALS environment variable is not set or empty',
+                    })
+                    .sendError();
                 return;
             }
 
@@ -37,26 +45,31 @@ export class ElectricityController {
                 skipCache
             );
 
-            res.status(200).json(result);
+            new ResponseBuilder(res)
+                .setStatus(200)
+                .setMessage('Usage data retrieved successfully')
+                .setData(result)
+                .send();
         } catch (error: unknown) {
             const errorMessage =
                 error instanceof Error ? error.message : 'Unknown error';
-            res.status(500).json({
-                success: false,
-                message: 'Internal server error',
-                error: errorMessage,
-                timestamp: new Date().toISOString(),
-            });
+            new ResponseBuilder(res)
+                .setStatus(500)
+                .setMessage('Internal server error')
+                .setData({ error: errorMessage })
+                .sendError();
         }
     };
 
     healthCheck = async (req: Request, res: Response): Promise<void> => {
-        res.status(200).json({
-            success: true,
-            service: 'Electricity Service',
-            status: 'healthy',
-            supportedProviders: Object.values(ElectricityProvider),
-            timestamp: new Date().toISOString(),
-        });
+        new ResponseBuilder(res)
+            .setStatus(200)
+            .setMessage('Electricity service is healthy')
+            .setData({
+                service: 'Electricity Service',
+                status: 'healthy',
+                supportedProviders: Object.values(ElectricityProvider),
+            })
+            .send();
     };
 }

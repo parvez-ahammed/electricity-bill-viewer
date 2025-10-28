@@ -1,21 +1,30 @@
+import logger from '@helpers/Logger';
 import { ResponseBuilder } from '@helpers/ResponseBuilder';
 import { Request, Response } from 'express';
 import { TelegramService } from '../../services/implementations/TelegramService';
 
 export class TelegramController {
-    private telegramService: TelegramService | null;
+    private static telegramService: TelegramService | null;
 
     constructor() {
-        try {
-            this.telegramService = new TelegramService();
-        } catch (error) {
-            // Service will be null if not configured
-            this.telegramService = null;
-            console.warn(
-                'Telegram service not configured:',
-                error instanceof Error ? error.message : 'Unknown error'
-            );
+        if (TelegramController.telegramService === undefined) {
+            try {
+                TelegramController.telegramService = new TelegramService();
+            } catch (error) {
+                // Service will be null if not configured
+                TelegramController.telegramService = null;
+                logger.warn(
+                    'Telegram service not configured:' +
+                        (error instanceof Error
+                            ? error.message
+                            : 'Unknown error')
+                );
+            }
         }
+    }
+
+    private get telegramService(): TelegramService | null {
+        return TelegramController.telegramService;
     }
 
     /**

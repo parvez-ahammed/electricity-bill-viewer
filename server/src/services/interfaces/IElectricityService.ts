@@ -16,12 +16,6 @@ export interface ElectricityUsageData {
     minRecharge: string | null;
 }
 
-export interface ElectricityCredential extends ProviderCredential {
-    username: string;
-    password: string;
-    provider: ElectricityProvider;
-}
-
 export interface ElectricityUsageResponse {
     success: boolean;
     totalAccounts: number;
@@ -39,7 +33,7 @@ export interface ElectricityUsageResponse {
 
 export interface IElectricityService {
     getUsageData(
-        credentials: ElectricityCredential[],
+        credentials: ProviderCredential[],
         skipCache?: boolean
     ): Promise<ElectricityUsageResponse>;
 

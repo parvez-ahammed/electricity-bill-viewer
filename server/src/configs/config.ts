@@ -36,10 +36,20 @@ const envSchema = z
 const parsedEnv = envSchema.safeParse(process.env);
 
 if (!parsedEnv.success) {
+    console.error('❌ Environment variable validation failed:');
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+    parsedEnv.error.errors.forEach((err) => {
+        const field = err.path.join('.');
+        console.error(`  • ${field}: ${err.message}`);
+    });
+
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.error(
-        'Config validation error:',
-        JSON.stringify(parsedEnv.error.format(), null, 2)
+        'Please check your .env file and ensure all required variables are set.'
     );
+    console.error('Refer to .env.example for the correct configuration.\n');
+
     throw new Error('App config validation failed.');
 }
 

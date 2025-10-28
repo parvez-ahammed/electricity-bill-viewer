@@ -1,35 +1,33 @@
 import { appConfig } from '@configs/config';
-import { ElectricityProvider } from '../services/interfaces/IProviderService';
-
-export interface ElectricityCredential {
-    username: string;
-    password?: string; // Optional - required for DPDC, not needed for NESCO
-    provider: ElectricityProvider;
-}
+import logger from '@helpers/Logger';
+import {
+    ElectricityProvider,
+    ProviderCredential,
+} from '../services/interfaces/IProviderService';
 
 /**
  * Validate credentials based on provider-specific requirements
  */
-const validateCredential = (cred: ElectricityCredential): boolean => {
+const validateCredential = (cred: ProviderCredential): boolean => {
     if (!cred.username) {
-        console.warn('Skipping credential: username is required');
+        logger.warn('Skipping credential: username is required');
         return false;
     }
 
     if (!cred.provider) {
-        console.warn('Skipping credential: provider is required');
+        logger.warn('Skipping credential: provider is required');
         return false;
     }
 
     if (!Object.values(ElectricityProvider).includes(cred.provider)) {
-        console.warn(
+        logger.warn(
             `Skipping credential with invalid provider: ${cred.provider}`
         );
         return false;
     }
 
     if (cred.provider === ElectricityProvider.DPDC && !cred.password) {
-        console.warn(
+        logger.warn(
             `Skipping DPDC credential for ${cred.username}: password is required for DPDC`
         );
         return false;
@@ -42,7 +40,7 @@ const validateCredential = (cred: ElectricityCredential): boolean => {
  * Parse and validate electricity credentials from environment variable
  * @returns Array of valid credentials
  */
-export const getCredentialsFromEnv = (): ElectricityCredential[] => {
+export const getCredentialsFromEnv = (): ProviderCredential[] => {
     try {
         const credentialsJson = appConfig.electricityCredentials;
 
@@ -53,22 +51,22 @@ export const getCredentialsFromEnv = (): ElectricityCredential[] => {
         const credentials = JSON.parse(credentialsJson);
 
         if (!Array.isArray(credentials)) {
-            console.error('ELECTRICITY_CREDENTIALS must be a JSON array');
+            logger.error('ELECTRICITY_CREDENTIALS must be a JSON array');
             return [];
         }
 
         // Validate and filter credentials with provider-specific rules
         return credentials
-            .filter((cred: ElectricityCredential) => {
+            .filter((cred: ProviderCredential) => {
                 return validateCredential(cred);
             })
-            .map((cred: ElectricityCredential) => ({
+            .map((cred: ProviderCredential) => ({
                 username: cred.username,
                 password: cred.password,
                 provider: cred.provider as ElectricityProvider,
             }));
     } catch (error) {
-        console.error('Failed to parse ELECTRICITY_CREDENTIALS:', error);
+        logger.error('Failed to parse ELECTRICITY_CREDENTIALS:' + error);
         return [];
     }
 };

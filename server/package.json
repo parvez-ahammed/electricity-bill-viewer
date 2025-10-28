@@ -1,12 +1,12 @@
 {
     "name": "bill-barta-backend",
     "version": "1.0.0",
-    "description": "A blog webapp that allows users to write down their thoughts quickly and interact with others through a simple web application.",
-    "main": "index.js",
+    "description": "Electricity bill viewer backend - A service to fetch and monitor electricity account balances from DPDC and NESCO providers with Telegram notifications.",
+    "main": "dist/index.js",
     "scripts": {
-        "start:dev": "nodemon -L --watch src --exec ts-node -r tsconfig-paths/register --require src/main.ts",
+        "start:dev": "nodemon -L --watch src --exec ts-node -r tsconfig-paths/register --require src/index.ts",
         "build": "tsc && tsc-alias",
-        "start": "node dist/main.js",
+        "start": "node dist/index.js",
         "lint": "eslint . ",
         "format": "prettier --write \"src/**/*\"",
         "prepare": "husky"
