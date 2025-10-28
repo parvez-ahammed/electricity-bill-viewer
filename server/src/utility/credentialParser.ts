@@ -3,9 +3,40 @@ import { ElectricityProvider } from '../services/interfaces/IProviderService';
 
 export interface ElectricityCredential {
     username: string;
-    password: string;
+    password?: string; // Optional - required for DPDC, not needed for NESCO
     provider: ElectricityProvider;
 }
+
+/**
+ * Validate credentials based on provider-specific requirements
+ */
+const validateCredential = (cred: ElectricityCredential): boolean => {
+    if (!cred.username) {
+        console.warn('Skipping credential: username is required');
+        return false;
+    }
+
+    if (!cred.provider) {
+        console.warn('Skipping credential: provider is required');
+        return false;
+    }
+
+    if (!Object.values(ElectricityProvider).includes(cred.provider)) {
+        console.warn(
+            `Skipping credential with invalid provider: ${cred.provider}`
+        );
+        return false;
+    }
+
+    if (cred.provider === ElectricityProvider.DPDC && !cred.password) {
+        console.warn(
+            `Skipping DPDC credential for ${cred.username}: password is required for DPDC`
+        );
+        return false;
+    }
+
+    return true;
+};
 
 /**
  * Parse and validate electricity credentials from environment variable
@@ -26,27 +57,10 @@ export const getCredentialsFromEnv = (): ElectricityCredential[] => {
             return [];
         }
 
-        // Validate and filter credentials
+        // Validate and filter credentials with provider-specific rules
         return credentials
             .filter((cred: ElectricityCredential) => {
-                if (!cred.username || !cred.password || !cred.provider) {
-                    console.warn('Skipping invalid credential:', {
-                        username: cred.username ? '***' : undefined,
-                        provider: cred.provider,
-                    });
-                    return false;
-                }
-
-                if (
-                    !Object.values(ElectricityProvider).includes(cred.provider)
-                ) {
-                    console.warn(
-                        `Skipping credential with invalid provider: ${cred.provider}`
-                    );
-                    return false;
-                }
-
-                return true;
+                return validateCredential(cred);
             })
             .map((cred: ElectricityCredential) => ({
                 username: cred.username,

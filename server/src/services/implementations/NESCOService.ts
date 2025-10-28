@@ -296,14 +296,13 @@ export class NESCOService implements IProviderService {
 
     async getAccountInfo(
         username: string,
-        password: string,
+        password?: string,
         retryCount: number = 0
     ): Promise<ProviderAccountResult> {
         const attemptNumber = retryCount + 1;
         const maxAttempts = this.config.MAX_RETRY_ATTEMPTS;
 
         try {
-            // Simplified: fetch data directly using the combined approach
             const htmlResponse = await this.fetchAccountData(username);
             const accountData = this.parseAccountData(htmlResponse, username);
 

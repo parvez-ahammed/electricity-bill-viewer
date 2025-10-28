@@ -6,7 +6,7 @@ export enum ElectricityProvider {
 
 export interface ProviderCredential {
     username: string;
-    password: string;
+    password?: string;
     provider: ElectricityProvider;
 }
 
@@ -59,12 +59,12 @@ export interface IProviderService {
     /**
      * Get account information for a single user
      * @param username - User's account number
-     * @param password - User's password
+     * @param password - User's password (optional for NESCO, required for DPDC)
      * @param retryCount - Current retry attempt (internal use)
      */
     getAccountInfo(
         username: string,
-        password: string,
+        password?: string,
         retryCount?: number
     ): Promise<ProviderAccountResult>;
 

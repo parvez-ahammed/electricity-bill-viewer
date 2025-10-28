@@ -309,11 +309,21 @@ export class DPDCService implements IProviderService {
 
     async getAccountInfo(
         username: string,
-        password: string,
+        password?: string,
         retryCount: number = 0
     ): Promise<ProviderAccountResult> {
         const attemptNumber = retryCount + 1;
         const maxAttempts = this.config.MAX_RETRY_ATTEMPTS;
+
+        if (!password) {
+            return {
+                success: false,
+                error: 'Password is required for DPDC',
+                username,
+                accounts: [],
+                attempts: 1,
+            };
+        }
 
         try {
             // Step 1: Generate bearer token

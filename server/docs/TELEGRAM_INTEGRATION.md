@@ -47,7 +47,8 @@ TELEGRAM_BOT_TOKEN=123456789:ABCdefGHIjklMNOpqrsTUVwxyz
 TELEGRAM_CHAT_ID=123456789
 
 # Electricity Credentials (JSON array)
-ELECTRICITY_CREDENTIALS='[{"provider":"DPDC","username":"01836430305","password":"YourPassword"},{"provider":"NESCO","username":"19900128","password":"YourPassword"}]'
+# Note: DPDC requires password, NESCO does not (username is customer number)
+ELECTRICITY_CREDENTIALS='[{"provider":"DPDC","username":"01836430305","password":"YourPassword"},{"provider":"NESCO","username":"19900128"}]'
 ```
 
 ### 4. Restart the Server
