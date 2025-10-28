@@ -10,8 +10,7 @@ export interface CacheService {
 
 class WebCacheService implements CacheService {
     async get(key: string): Promise<string | null> {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        return new Promise<string | null>((resolve, _) => {
+        return new Promise<string | null>((resolve) => {
             const data = window.localStorage.getItem(key);
             if (!data) {
                 resolve(null);
@@ -28,16 +27,14 @@ class WebCacheService implements CacheService {
     }
 
     async remove(key: string): Promise<void> {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        return new Promise<void>((resolve, _) => {
+        return new Promise<void>((resolve) => {
             window.localStorage.removeItem(key);
             resolve();
         });
     }
 
     async save(key: string, val: string): Promise<void> {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        return new Promise<void>((resolve, _) => {
+        return new Promise<void>((resolve) => {
             window.localStorage.setItem(key, val);
             resolve();
         });

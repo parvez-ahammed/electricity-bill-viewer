@@ -12,14 +12,15 @@ export const Navbar = () => {
         setIsRefreshing(true);
         try {
             // Call the global refresh function exposed by AccountBalance
-            const refreshFn = (
-                window as Window & {
-                    refreshElectricityData?: () => Promise<void>;
-                }
-            ).refreshElectricityData;
-            if (refreshFn) {
-                await refreshFn();
+            if (
+                typeof window !== "undefined" &&
+                window.refreshElectricityData
+            ) {
+                await window.refreshElectricityData();
             }
+        } catch (error) {
+            // eslint-disable-next-line no-console
+            console.error("Error refreshing data:", error);
         } finally {
             // Keep spinning for a bit to show feedback
             setTimeout(() => setIsRefreshing(false), 1000);

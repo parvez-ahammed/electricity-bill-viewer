@@ -17,14 +17,32 @@ export default defineConfig({
     },
     css: {
         postcss: {
-            plugins: [
-                autoprefixer({}), // add options if needed
-            ],
+            plugins: [autoprefixer({})],
         },
     },
     server: {
         host: "0.0.0.0",
         port: 5173,
         strictPort: true,
+    },
+    build: {
+        sourcemap: false,
+        minify: "terser",
+        terserOptions: {
+            compress: {
+                drop_console: true,
+                drop_debugger: true,
+            },
+        },
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    vendor: ["react", "react-dom", "react-router-dom"],
+                    ui: ["@radix-ui/react-slot", "lucide-react"],
+                    query: ["@tanstack/react-query"],
+                },
+            },
+        },
+        chunkSizeWarningLimit: 1000,
     },
 });
