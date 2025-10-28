@@ -8,9 +8,9 @@ const COLUMN_WIDTHS: Record<string, string> = {
     "Customer Name": "w-[140px] min-w-[140px] max-w-[140px]",
     Provider: "w-[120px] min-w-[120px]",
     "Account Type": "w-[140px] min-w-[140px]",
-    "Balance Remaining": "w-[160px] min-w-[160px]",
-    "Balance Latest Date": "w-[160px] min-w-[160px]",
-    "Last Payment Date": "w-[160px] min-w-[160px]",
+    Remaining: "w-[120px] min-w-[120px]",
+    Updated: "w-[120px] min-w-[120px]",
+    Recharged: "w-[120px] min-w-[120px]",
 };
 
 export const BalanceTableHeader = () => {

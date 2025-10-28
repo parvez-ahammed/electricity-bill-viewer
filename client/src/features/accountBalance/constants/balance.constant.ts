@@ -26,9 +26,9 @@ export const TABLE_HEADERS = [
     "Customer Name",
     "Provider",
     "Account Type",
-    "Balance Remaining",
-    "Balance Latest Date",
-    "Last Payment Date",
+    "Remaining",
+    "Updated",
+    "Recharged",
 ] as const;
 
 // Cache configuration

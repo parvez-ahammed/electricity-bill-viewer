@@ -1,3 +1,4 @@
+import { normalizeAccountType } from '@utility/accountTypeNormalizer';
 import {
     ElectricityUsageData,
     ElectricityUsageResponse,
@@ -55,7 +56,7 @@ export class ElectricityService implements IElectricityService {
             customerNumber: account.customerNumber,
             customerName: account.customerName,
             provider: account.provider,
-            accountType: account.accountType,
+            accountType: normalizeAccountType(account.accountType),
             balanceRemaining: account.balanceRemaining,
             connectionStatus: account.connectionStatus,
             lastPaymentAmount: account.lastPaymentAmount,

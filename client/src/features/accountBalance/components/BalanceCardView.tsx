@@ -103,10 +103,10 @@ export const BalanceCardView = ({ account, index }: BalanceCardViewProps) => {
                             {/* Divider */}
                             <div className="border-border border-t" />
 
-                            {/* Last Payment Info */}
+                            {/* Recharged Info */}
                             <div>
                                 <p className="text-muted-foreground text-xs font-medium">
-                                    Last Payment
+                                    Recharged
                                 </p>
                                 <div className="mt-0.5 flex items-center justify-between">
                                     <p className="text-sm font-medium">
