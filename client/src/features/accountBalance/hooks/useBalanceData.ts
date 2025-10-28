@@ -116,7 +116,7 @@ export const useBalanceData = () => {
     }, [error]);
 
     const accountsData =
-        data?.accounts.map(transformAccountData) ??
+        data?.accounts?.map(transformAccountData) ??
         ([] as PostBalanceDetails[]);
 
     const refreshWithSkipCache = async () => {

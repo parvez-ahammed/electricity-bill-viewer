@@ -3,7 +3,6 @@ import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { ArrowLeft, Home } from "lucide-react";
 import React from "react";
-import { Link } from "react-router-dom";
 
 import { Paragraph, Title } from "@/components/partials/typography";
 import { Button } from "@/components/ui/button";
@@ -56,20 +55,19 @@ export const ErrorCard = ({
                 {showButtons && (
                     <CardFooter className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <Button
-                            asChild
+                            onClick={() => window.history.back()}
                             className="text-black hover:bg-white/80"
                             variant="outline"
                         >
-                            <Link to="/">
-                                <ArrowLeft className="h-4 w-4" />
-                                <span>Go Back</span>
-                            </Link>
+                            <ArrowLeft className="h-4 w-4" />
+                            <span>Go Back</span>
                         </Button>
-                        <Button asChild className="bg-black hover:bg-black/80">
-                            <Link to="/" className="text-white">
-                                <Home className="h-4 w-4" />
-                                <span>Go Home</span>
-                            </Link>
+                        <Button
+                            onClick={() => (window.location.href = "/")}
+                            className="bg-black text-white hover:bg-black/80"
+                        >
+                            <Home className="h-4 w-4" />
+                            <span>Go Home</span>
                         </Button>
                     </CardFooter>
                 )}

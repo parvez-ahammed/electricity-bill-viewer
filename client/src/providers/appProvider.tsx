@@ -27,15 +27,15 @@ export const AppProvider = (props: AppProviderProps) => {
                 >
                     <QueryProvider>
                         <PreferencesProvider>
-                            <TooltipProvider>
-                                <Toaster position="top-right" richColors />
-                                <LoadingProvider>
-                                    <BrowserRouter>
+                            <BrowserRouter>
+                                <TooltipProvider>
+                                    <Toaster position="top-right" richColors />
+                                    <LoadingProvider>
                                         {props.children}
-                                    </BrowserRouter>
-                                    <LoadingSpinner />
-                                </LoadingProvider>
-                            </TooltipProvider>
+                                        <LoadingSpinner />
+                                    </LoadingProvider>
+                                </TooltipProvider>
+                            </BrowserRouter>
                         </PreferencesProvider>
                     </QueryProvider>
                 </ThemeProvider>

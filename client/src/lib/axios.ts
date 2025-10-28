@@ -26,5 +26,14 @@ export const apiRequest = async <T, TRequest = unknown>(
 
     const response = await axiosInstance(config);
 
+    // If the response has the ResponseBuilder structure, extract the data
+    if (
+        response.data &&
+        typeof response.data === "object" &&
+        "data" in response.data
+    ) {
+        return response.data.data as T;
+    }
+
     return response.data;
 };
