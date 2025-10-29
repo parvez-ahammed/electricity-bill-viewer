@@ -18,6 +18,9 @@ class RedisClient {
 
         this.isConnecting = true;
 
+        // Import logger here to avoid circular dependency issues
+        const logger = (await import('@helpers/Logger')).default;
+
         try {
             this.client = createClient({
                 socket: {
@@ -26,7 +29,7 @@ class RedisClient {
                     connectTimeout: 10000,
                     reconnectStrategy: (retries) => {
                         if (retries > 10) {
-                            console.error(
+                            logger.error(
                                 'Redis: Max reconnection attempts reached'
                             );
                             return new Error(
@@ -40,23 +43,23 @@ class RedisClient {
             });
 
             this.client.on('error', (err) => {
-                console.error('Redis Client Error:', err);
+                logger.error(`Redis Client Error: ${err}`);
             });
 
             this.client.on('connect', () => {
-                console.log('Redis: Connected successfully');
+                logger.info('Redis: Connected successfully');
             });
 
             this.client.on('ready', () => {
-                console.log('Redis: Ready to accept commands');
+                logger.info('Redis: Ready to accept commands');
             });
 
             this.client.on('reconnecting', () => {
-                console.log('Redis: Reconnecting...');
+                logger.info('Redis: Reconnecting...');
             });
 
             this.client.on('end', () => {
-                console.log('Redis: Connection closed');
+                logger.info('Redis: Connection closed');
             });
 
             await this.client.connect();
@@ -64,7 +67,8 @@ class RedisClient {
             return this.client;
         } catch (error) {
             this.isConnecting = false;
-            console.error('Redis: Failed to connect:', error);
+            const logger = (await import('@helpers/Logger')).default;
+            logger.error(`Redis: Failed to connect: ${error}`);
             throw error;
         }
     }

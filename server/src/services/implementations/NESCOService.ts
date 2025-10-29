@@ -2,12 +2,13 @@ import * as cheerio from 'cheerio';
 
 import {
     ElectricityProvider,
-    IProviderService,
     ProviderAccountDetails,
     ProviderAccountResult,
     ProviderBatchResult,
     ProviderCredential,
-} from '../interfaces/IProviderService';
+} from '@interfaces/Shared';
+import { formatNESCOPaymentDateToStandard } from '@utility/dateFormatter';
+import { IProviderService } from '../interfaces/IProviderService';
 
 export class NESCOService implements IProviderService {
     private readonly config = {
@@ -25,95 +26,7 @@ export class NESCOService implements IProviderService {
         return new Promise((resolve) => setTimeout(resolve, ms));
     }
 
-    private formatDateToStandard(dateString: string): string {
-        try {
-            const cleanDate = dateString.trim();
-            const datePattern =
-                /(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})\s+(AM|PM)/i;
-            const match = cleanDate.match(datePattern);
-
-            if (match) {
-                const day = match[1];
-                const month = match[2];
-                const year = match[3];
-
-                const monthMap: Record<string, string> = {
-                    january: '01',
-                    february: '02',
-                    march: '03',
-                    april: '04',
-                    may: '05',
-                    june: '06',
-                    july: '07',
-                    august: '08',
-                    september: '09',
-                    october: '10',
-                    november: '11',
-                    december: '12',
-                };
-
-                const monthNum =
-                    monthMap[month.toLowerCase()] ||
-                    new Date(`${month} 1, 2000`).getMonth() + 1;
-                const paddedMonth =
-                    typeof monthNum === 'string'
-                        ? monthNum
-                        : monthNum.toString().padStart(2, '0');
-                const paddedDay = day.padStart(2, '0');
-
-                return `${year}-${paddedMonth}-${paddedDay}`;
-            }
-
-            return cleanDate;
-        } catch {
-            return dateString;
-        }
-    }
-
-    private formatPaymentDateToStandard(dateString: string): string {
-        try {
-            const cleanDate = dateString.trim();
-            const datePattern =
-                /(\d{1,2})-([A-Z]{3})-(\d{4})\s+(\d{1,2}):(\d{2})\s+(AM|PM)/i;
-            const match = cleanDate.match(datePattern);
-
-            if (match) {
-                const day = match[1];
-                const month = match[2];
-                const year = match[3];
-
-                const monthMap: Record<string, string> = {
-                    jan: '01',
-                    feb: '02',
-                    mar: '03',
-                    apr: '04',
-                    may: '05',
-                    jun: '06',
-                    jul: '07',
-                    aug: '08',
-                    sep: '09',
-                    oct: '10',
-                    nov: '11',
-                    dec: '12',
-                };
-
-                const monthNum = monthMap[month.toLowerCase()] || '01';
-                const paddedDay = day.padStart(2, '0');
-
-                return `${year}-${monthNum}-${paddedDay}`;
-            }
-
-            return cleanDate;
-        } catch {
-            return dateString;
-        }
-    }
-
-    /**
-     * Simplified session management - extract cookies and CSRF token
-     */
     private extractCookies(response: Response): string {
-        // Type assertion for getSetCookie method (available in Node.js 19+)
         const headers = response.headers as Headers & {
             getSetCookie?: () => string[];
         };
@@ -159,9 +72,6 @@ export class NESCOService implements IProviderService {
         };
     }
 
-    /**
-     * Simplified data fetching - combines session and data fetch
-     */
     private async fetchAccountData(customerNumber: string): Promise<string> {
         // Get initial page for CSRF token
         const initResponse = await fetch(
@@ -212,9 +122,6 @@ export class NESCOService implements IProviderService {
         return htmlData;
     }
 
-    /**
-     * Simplified data extraction using positional mapping like the script
-     */
     private parseAccountData(
         html: string,
         username?: string
@@ -265,7 +172,9 @@ export class NESCOService implements IProviderService {
             /(\d{1,2}\s+\w+\s+\d{4}\s+\d{1,2}:\d{2}:\d{2}\s+(?:AM|PM))/i
         );
         if (timeMatch) {
-            data.balanceLatestDate = this.formatDateToStandard(timeMatch[1]);
+            data.balanceLatestDate = formatNESCOPaymentDateToStandard(
+                timeMatch[1]
+            );
         }
 
         // Extract recharge history using cheerio
@@ -281,7 +190,7 @@ export class NESCOService implements IProviderService {
                     // Use first (most recent) record for last payment info
                     data.lastPaymentAmount = rechargeAmount;
                     data.lastPaymentDate =
-                        this.formatPaymentDateToStandard(rechargeDate);
+                        formatNESCOPaymentDateToStandard(rechargeDate);
                 }
             }
         });

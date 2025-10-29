@@ -14,10 +14,6 @@ export class SchedulerService {
         }
     }
 
-    /**
-     * Starts the scheduled task to send balances at 12:00 PM BST (Bangladesh Standard Time)
-     * Cron expression: 0 12 * * * (runs at 12:00 PM every day in Asia/Dhaka timezone)
-     */
     startDailyBalanceNotification(): void {
         if (!this.telegramService) {
             logger.warn(
@@ -67,9 +63,6 @@ export class SchedulerService {
         );
     }
 
-    /**
-     * Stops the scheduled task
-     */
     stop(): void {
         if (this.scheduledTask) {
             this.scheduledTask.stop();
@@ -78,7 +71,6 @@ export class SchedulerService {
     }
 }
 
-// Export a singleton instance
 let schedulerInstance: SchedulerService | null = null;
 
 export function initializeScheduler(): SchedulerService {

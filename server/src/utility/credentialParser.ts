@@ -1,9 +1,6 @@
 import { appConfig } from '@configs/config';
 import logger from '@helpers/Logger';
-import {
-    ElectricityProvider,
-    ProviderCredential,
-} from '../services/interfaces/IProviderService';
+import { ElectricityProvider, ProviderCredential } from '@interfaces/Shared';
 
 /**
  * Validate credentials based on provider-specific requirements

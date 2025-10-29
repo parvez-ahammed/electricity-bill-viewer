@@ -1,5 +1,5 @@
-import { Request, Response, NextFunction, Express } from 'express';
 import ApiError from '@helpers/ApiError';
+import { Express, NextFunction, Request, Response } from 'express';
 import httpStatus from 'http-status';
 
 export const applyGlobalErrorHandler = (app: Express) => {

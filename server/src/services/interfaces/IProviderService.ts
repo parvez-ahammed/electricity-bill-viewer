@@ -1,59 +1,11 @@
-export enum ElectricityProvider {
-    DPDC = 'DPDC',
-    NESCO = 'NESCO',
-    DESCO = 'DESCO',
-}
+import {
+    ElectricityProvider,
+    ProviderAccountResult,
+    ProviderBatchResult,
+    ProviderCredential,
+} from '@interfaces/Shared';
 
-export interface ProviderCredential {
-    username: string;
-    password?: string;
-    provider: ElectricityProvider;
-}
-
-export interface ProviderAccountDetails {
-    accountId: string;
-    customerNumber: string;
-    customerName: string;
-    provider: string;
-    accountType: string;
-    balanceRemaining: string;
-    connectionStatus: string;
-    lastPaymentAmount: string;
-    lastPaymentDate: string;
-    balanceLatestDate: string;
-    location: string;
-    mobileNumber: string;
-    minRecharge: string | null;
-}
-
-export interface ProviderAccountResult {
-    success: boolean;
-    username: string;
-    accounts: ProviderAccountDetails[];
-    attempts: number;
-    error?: string;
-}
-
-export interface ProviderBatchResult {
-    totalCredentials: number;
-    successfulLogins: number;
-    totalAccounts: number;
-    accounts: ProviderAccountDetails[];
-    failedLogins: Array<{
-        username: string;
-        error: string;
-        attempts: number;
-    }>;
-}
-
-/**
- * Common interface for all electricity provider services
- * Implemented by DPDC, NESCO, DESCO, etc.
- */
 export interface IProviderService {
-    /**
-     * Get the provider name (DPDC, NESCO, DESCO, etc.)
-     */
     getProviderName(): ElectricityProvider;
 
     /**

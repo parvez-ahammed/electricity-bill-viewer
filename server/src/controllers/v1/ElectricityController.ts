@@ -1,7 +1,6 @@
 import { ResponseBuilder } from '@helpers/ResponseBuilder';
 import { Request, Response } from 'express';
 import { ElectricityService } from '../../services/implementations/ElectricityService';
-import { ElectricityProvider } from '../../services/interfaces/IProviderService';
 import { getCredentialsFromEnv } from '../../utility/credentialParser';
 
 export class ElectricityController {
@@ -17,10 +16,6 @@ export class ElectricityController {
         return ElectricityController.electricityService;
     }
 
-    /**
-     * GET /api/v1/electricity/usage
-     * Fetches electricity usage data using credentials from server .env
-     */
     getUsageData = async (req: Request, res: Response): Promise<void> => {
         try {
             // Check for x-skip-cache header
@@ -59,17 +54,5 @@ export class ElectricityController {
                 .setData({ error: errorMessage })
                 .sendError();
         }
-    };
-
-    healthCheck = async (req: Request, res: Response): Promise<void> => {
-        new ResponseBuilder(res)
-            .setStatus(200)
-            .setMessage('Electricity service is healthy')
-            .setData({
-                service: 'Electricity Service',
-                status: 'healthy',
-                supportedProviders: Object.values(ElectricityProvider),
-            })
-            .send();
     };
 }

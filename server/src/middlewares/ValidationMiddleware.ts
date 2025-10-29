@@ -1,8 +1,8 @@
-import { Request, Response, NextFunction } from 'express';
-import { ZodError, ZodIssue } from 'zod';
-import httpStatus from 'http-status';
 import logger from '@helpers/Logger';
-import { IZodValidationSchema } from '@interfaces/IZodValidationSchema.';
+import { IZodValidationSchema } from '@interfaces/IZodValidationSchema';
+import { NextFunction, Request, Response } from 'express';
+import httpStatus from 'http-status';
+import { ZodError, ZodIssue } from 'zod';
 
 export function validate(schema: IZodValidationSchema) {
     return (req: Request, res: Response, next: NextFunction) => {

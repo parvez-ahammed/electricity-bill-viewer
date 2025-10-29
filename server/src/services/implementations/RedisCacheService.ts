@@ -4,8 +4,8 @@ import logger from '@helpers/Logger';
 import crypto from 'crypto';
 
 export interface CacheOptions {
-    ttl?: number; // Time to live in seconds
-    skipCache?: boolean; // Skip cache and fetch fresh data
+    ttl?: number;
+    skipCache?: boolean;
 }
 
 export class RedisCacheService {
@@ -15,11 +15,7 @@ export class RedisCacheService {
         this.defaultTTL = appConfig.redis.ttl;
     }
 
-    /**
-     * Generate a consistent cache key from any object
-     */
     generateCacheKey(prefix: string, data: Record<string, unknown>): string {
-        // Sort keys to ensure consistent ordering
         const sortedData = Object.keys(data)
             .sort()
             .reduce(
@@ -30,7 +26,6 @@ export class RedisCacheService {
                 {} as Record<string, unknown>
             );
 
-        // Create a hash of the sorted data
         const hash = crypto
             .createHash('sha256')
             .update(JSON.stringify(sortedData))
@@ -39,9 +34,6 @@ export class RedisCacheService {
         return `${prefix}:${hash}`;
     }
 
-    /**
-     * Get data from cache
-     */
     async get<T>(key: string): Promise<T | null> {
         try {
             const client = await redisClient.getClient();
@@ -53,7 +45,6 @@ export class RedisCacheService {
 
             const parsed = JSON.parse(data);
 
-            // Check if data has expired (additional check beyond Redis TTL)
             if (parsed.expiresAt && new Date(parsed.expiresAt) < new Date()) {
                 await this.delete(key);
                 return null;
@@ -66,9 +57,6 @@ export class RedisCacheService {
         }
     }
 
-    /**
-     * Set data in cache with TTL
-     */
     async set<T>(
         key: string,
         value: T,
@@ -92,9 +80,6 @@ export class RedisCacheService {
         }
     }
 
-    /**
-     * Delete data from cache
-     */
     async delete(key: string): Promise<boolean> {
         try {
             const client = await redisClient.getClient();
@@ -106,9 +91,6 @@ export class RedisCacheService {
         }
     }
 
-    /**
-     * Delete multiple keys matching a pattern
-     */
     async deletePattern(pattern: string): Promise<number> {
         try {
             const client = await redisClient.getClient();
@@ -126,9 +108,6 @@ export class RedisCacheService {
         }
     }
 
-    /**
-     * Check if cache exists and is valid
-     */
     async exists(key: string): Promise<boolean> {
         try {
             const client = await redisClient.getClient();
@@ -140,9 +119,6 @@ export class RedisCacheService {
         }
     }
 
-    /**
-     * Get or set data with a factory function
-     */
     async getOrSet<T>(
         key: string,
         factory: () => Promise<T>,
@@ -178,9 +154,6 @@ export class RedisCacheService {
         return freshData;
     }
 
-    /**
-     * Check if data should be cached based on success criteria
-     */
     private shouldCacheData<T>(data: T): boolean {
         // Check if data has a success property
         if (typeof data === 'object' && data !== null && 'success' in data) {
@@ -192,9 +165,6 @@ export class RedisCacheService {
         return true;
     }
 
-    /**
-     * Clear all cache (use with caution)
-     */
     async clearAll(): Promise<boolean> {
         try {
             const client = await redisClient.getClient();
@@ -206,9 +176,6 @@ export class RedisCacheService {
         }
     }
 
-    /**
-     * Get cache statistics
-     */
     async getStats(): Promise<{
         connected: boolean;
         totalKeys: number;

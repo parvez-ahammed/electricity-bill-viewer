@@ -2,35 +2,15 @@ import * as crypto from 'crypto';
 
 import { appConfig } from '@configs/config';
 import {
+    DPDCAccountDetails,
     ElectricityProvider,
-    IProviderService,
     ProviderAccountDetails,
     ProviderAccountResult,
     ProviderBatchResult,
     ProviderCredential,
-} from '../interfaces/IProviderService';
-
-/**
- * DPDC-specific account details (internal use)
- */
-interface DPDCAccountDetails {
-    accountId: string;
-    customerNumber: string;
-    customerName: string;
-    customerClass: string;
-    mobileNumber: string;
-    emailId: string;
-    accountType: string;
-    balanceRemaining: string;
-    connectionStatus: string;
-    customerType: string | null;
-    minRecharge: string | null;
-    balanceLatestDate: string;
-    lastPayAmtOnSa: string;
-    lastPayDateOnSa: string;
-    flatNameOrLocation?: string;
-    provider?: string;
-}
+} from '@interfaces/Shared';
+import { formatDPDCDateToStandard } from '@utility/dateFormatter';
+import { IProviderService } from '../interfaces/IProviderService';
 
 export class DPDCService implements IProviderService {
     private readonly config = {
@@ -67,27 +47,6 @@ export class DPDCService implements IProviderService {
             id += chars[bytes[i] % chars.length];
         }
         return `rzp_unified_session_id=${id}; i18next=en`;
-    }
-
-    private formatDateToStandard(dateString: string): string {
-        try {
-            if (!dateString) return '';
-
-            // DPDC dates come in format like "2025-10-20 12:34:56" or "2025-10-20"
-            const datePattern = /^(\d{4})-(\d{2})-(\d{2})/;
-            const match = dateString.match(datePattern);
-
-            if (match) {
-                const year = match[1];
-                const month = match[2];
-                const day = match[3];
-                return `${year}-${month}-${day}`;
-            }
-
-            return dateString;
-        } catch {
-            return dateString;
-        }
     }
 
     private async generateBearerToken(): Promise<string> {
@@ -297,8 +256,8 @@ export class DPDCService implements IProviderService {
             balanceRemaining: account.balanceRemaining,
             connectionStatus: account.connectionStatus,
             lastPaymentAmount: account.lastPayAmtOnSa,
-            lastPaymentDate: this.formatDateToStandard(account.lastPayDateOnSa),
-            balanceLatestDate: this.formatDateToStandard(
+            lastPaymentDate: formatDPDCDateToStandard(account.lastPayDateOnSa),
+            balanceLatestDate: formatDPDCDateToStandard(
                 account.balanceLatestDate
             ),
             location: account.flatNameOrLocation || '',
