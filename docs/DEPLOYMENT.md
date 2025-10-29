@@ -40,7 +40,7 @@ See [COOLIFY_DEPLOYMENT.md](./COOLIFY_DEPLOYMENT.md) for detailed instructions.
 
 ## File Structure
 
-```
+```text
 .
 ├── docker-compose.yml           # Local development
 ├── docker-compose.prod.yml      # Production deployment
@@ -112,11 +112,10 @@ See [COOLIFY_DEPLOYMENT.md](./COOLIFY_DEPLOYMENT.md) for detailed instructions.
 
 All services include health checks:
 
-| Service | Endpoint                         | Interval |
-| ------- | -------------------------------- | -------- |
-| Redis   | `redis-cli ping`                 | 10s      |
-| Server  | `GET /api/v1/electricity/health` | 30s      |
-| Client  | `GET /`                          | 30s      |
+| Service | Endpoint         | Interval |
+| ------- | ---------------- | -------- |
+| Redis   | `redis-cli ping` | 10s      |
+| Client  | `GET /`          | 30s      |
 
 ## Ports
 

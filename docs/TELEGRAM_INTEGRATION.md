@@ -8,10 +8,8 @@ The Telegram bot integration allows you to receive electricity account balance r
 
 - ⚡ **Automated Balance Reports**: Get electricity account balances sent to Telegram
 - ⏰ **Daily Scheduled Reports**: Automatically sends balance at 12:00 PM BST every day
-- 📊 **Formatted Messages**: Beautiful HTML-formatted messages with emojis
 - 🔵🟢 **Multi-Provider Support**: DPDC and NESCO accounts in one report
 - 💰 **Balance Summary**: Total balance across all accounts
-- 🤖 **Test Command**: Verify bot configuration
 
 ## Setup
 
@@ -76,88 +74,45 @@ curl http://localhost:3000/api/v1/telegram/send-balances
 
 ```json
 {
-    "status": "success",
+  "status": "success",
+  "message": "Account balances sent to Telegram successfully",
+  "data": {
+    "success": true,
     "message": "Account balances sent to Telegram successfully",
-    "data": {
-        "success": true,
-        "message": "Account balances sent to Telegram successfully",
-        "sentAccounts": 3
-    }
-}
-```
-
-### 2. Test Connection
-
-**Endpoint:** `GET /api/v1/telegram/test`
-
-**Description:** Sends a test message to verify bot configuration.
-
-**Example:**
-
-```bash
-curl http://localhost:3000/api/v1/telegram/test
-```
-
-**Response:**
-
-```json
-{
-    "status": "success",
-    "message": "Test message sent to Telegram successfully",
-    "data": {
-        "sent": true
-    }
+    "sentAccounts": 3
+  }
 }
 ```
 
 ## Message Format
 
-The bot sends beautifully formatted HTML messages:
+The bot currently sends a simplified HTML message like this:
 
-```
+```text
 ⚡ Electricity Account Balances ⚡
-📅 Sunday, October 20, 2025 at 10:30 PM
+📅 [timestamp]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-🔵 DPDC (2 accounts)
+🔵 DPDC
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-1. John Doe
-📍 Location: Dhaka, Gulshan
-🆔 Account: 12345678
-💰 Balance: ৳1,250.50
-📊 Type: Prepaid
-🔌 Status: Active
+John Doe
+💰 Balance: ৳1250.50
 📅 Updated: 2025-10-20
-💳 Last Payment: ৳500 on 2025-10-15
 
-2. Jane Smith
-📍 Location: Dhaka, Banani
-🆔 Account: 87654321
-💰 Balance: ৳2,100.00
-📊 Type: Prepaid
-🔌 Status: Active
-📅 Updated: 2025-10-20
-💳 Last Payment: ৳1,000 on 2025-10-18
+Jane Smith
+💰 Balance: ৳2100.00
+ Updated: 2025-10-20
 
-🟢 NESCO (1 account)
+🟢 NESCO
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-1. Bob Johnson
-📍 Location: Rajshahi
-🆔 Account: 19900128
-💰 Balance: ৳850.00
-📊 Type: Prepaid
-🔌 Status: Active
-📅 Updated: 2025-10-20
-💳 Last Payment: ৳600 on 2025-10-16
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📊 Summary
-Total Accounts: 3
-💵 Total Balance: ৳4,200.50
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Bob Johnson
+ Balance: ৳850.00
+ Updated: 2025-10-20
 ```
+
+Only the customer name, balance, and last updated date are included for each account. Other details (location, account number, type, status, last payment, summary) are not shown in the current message format.
 
 ## Automation
 
@@ -223,19 +178,19 @@ crontab -e
 Add to your server code:
 
 ```typescript
-import cron from 'node-cron';
+import cron from "node-cron";
 
 // Send balance report every day at 9 AM
-cron.schedule('0 9 * * *', async () => {
-    try {
-        const response = await fetch(
-            'http://localhost:3000/api/v1/telegram/send-balances'
-        );
-        const data = await response.json();
-        console.log('Scheduled balance report sent:', data);
-    } catch (error) {
-        console.error('Failed to send scheduled report:', error);
-    }
+cron.schedule("0 9 * * *", async () => {
+  try {
+    const response = await fetch(
+      "http://localhost:3000/api/v1/telegram/send-balances"
+    );
+    const data = await response.json();
+    console.log("Scheduled balance report sent:", data);
+  } catch (error) {
+    console.error("Failed to send scheduled report:", error);
+  }
 });
 ```
 
@@ -293,54 +248,12 @@ cron.schedule('0 9 * * *', async () => {
 4. **Rotate Tokens**: Regenerate bot token periodically via @BotFather
 5. **Monitor Access**: Check bot messages for unauthorized access
 6. **Private Chats**: Use private chat, not public groups
-7. **HTTPS Only**: Telegram API requires HTTPS in production
-
-## Advanced Usage
-
-### Custom Formatting
-
-Edit `TelegramService.formatAccountMessage()` to customize message format:
-
-```typescript
-formatAccountMessage(accounts: ProviderAccountDetails[]): string {
-    // Your custom formatting logic
-    return customMessage;
-}
-```
-
-### Multiple Recipients
-
-To send to multiple chats, create multiple bot instances or loop through chat IDs:
-
-```typescript
-const chatIds = ['123456789', '987654321'];
-
-for (const chatId of chatIds) {
-    // Send message to each chat
-}
-```
-
-### Rich Media
-
-Telegram supports images, buttons, and more:
-
-```typescript
-// Send photo with caption
-await fetch(`${baseUrl}/bot${token}/sendPhoto`, {
-    method: 'POST',
-    body: JSON.stringify({
-        chat_id: chatId,
-        photo: 'https://example.com/chart.png',
-        caption: 'Balance Chart',
-    }),
-});
-```
 
 ## API Reference
 
 ### Telegram Bot API
 
-Official Documentation: https://core.telegram.org/bots/api
+Official Documentation: <https://core.telegram.org/bots/api>
 
 ### Available Methods
 
@@ -364,30 +277,25 @@ For issues or questions:
 
 1. **Setup**
 
-    ```bash
-    # Create bot with @BotFather
-    # Get chat ID from @userinfobot
-    # Update .env file
-    # Restart server
-    ```
+   ```bash
+   # Create bot with @BotFather
+   # Get chat ID from @userinfobot
+   # Update .env file
+   # Restart server
+   ```
 
-2. **Test**
+2. **Send Report**
 
-    ```bash
-    curl http://localhost:3000/api/v1/telegram/test
-    ```
+   ```bash
+   curl http://localhost:3000/api/v1/telegram/send-balances
+   ```
 
-3. **Send Report**
+3. **Automate** (Optional)
 
-    ```bash
-    curl http://localhost:3000/api/v1/telegram/send-balances
-    ```
-
-4. **Automate** (Optional)
-    ```bash
-    # Add cron job for daily reports
-    0 9 * * * curl http://localhost:3000/api/v1/telegram/send-balances
-    ```
+   ```bash
+   # Add cron job for daily reports
+   0 9 * * * curl http://localhost:3000/api/v1/telegram/send-balances
+   ```
 
 ## Credits
 

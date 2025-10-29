@@ -69,20 +69,11 @@ The application consists of 3 services:
 
    - Port: 3000
    - Node.js + Express + TypeScript
-   - Healthcheck: `/api/v1/electricity/health`
 
 3. **Client** (Frontend)
    - Port: 80
    - React + Vite (built to static files)
    - Served via Nginx
-
-## Health Checks
-
-All services have health checks configured:
-
-- **Redis**: `redis-cli ping`
-- **Server**: HTTP check on `/api/v1/electricity/health`
-- **Client**: HTTP check on `/`
 
 ## Accessing the Application
 
@@ -127,9 +118,8 @@ Check logs for:
 
 To deploy updates:
 
-1. Push changes to your repository
-2. In Coolify, click **Redeploy**
-3. Monitor deployment logs
+1. Push changes to your repository or In Coolify, click **Redeploy**
+2. Monitor deployment logs
 
 ## Rollback
 
@@ -138,14 +128,6 @@ If deployment fails:
 1. Go to **Deployments** tab
 2. Select a previous successful deployment
 3. Click **Redeploy**
-
-## Production Recommendations
-
-1. **Use HTTPS**: Configure SSL in Coolify
-2. **Set up monitoring**: Enable Coolify monitoring
-3. **Backup Redis data**: Configure volume backups
-4. **Rate limiting**: Already configured in server
-5. **CORS**: Set proper ALLOWED_ORIGINS for your domain
 
 ## Architecture Diagram
 
