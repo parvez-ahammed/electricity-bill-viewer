@@ -1,4 +1,4 @@
-import { ProviderAccountDetails } from './IProviderService';
+import { ProviderAccountDetails } from '@interfaces/Shared';
 
 export interface ITelegramService {
     sendAccountBalances(skipCache?: boolean): Promise<{

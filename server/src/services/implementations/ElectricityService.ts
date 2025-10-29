@@ -1,14 +1,11 @@
+import { ElectricityProvider, ProviderCredential } from '@interfaces/Shared';
 import { normalizeAccountType } from '@utility/accountTypeNormalizer';
 import {
     ElectricityUsageData,
     ElectricityUsageResponse,
     IElectricityService,
 } from '../interfaces/IElectricityService';
-import {
-    ElectricityProvider,
-    IProviderService,
-    ProviderCredential,
-} from '../interfaces/IProviderService';
+import { IProviderService } from '../interfaces/IProviderService';
 import { DPDCService } from './DPDCService';
 import { NESCOService } from './NESCOService';
 import { cacheService } from './RedisCacheService';

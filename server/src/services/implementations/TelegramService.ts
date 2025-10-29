@@ -1,7 +1,7 @@
 import { appConfig } from '@configs/config';
 import logger from '@helpers/Logger';
+import { ProviderAccountDetails } from '@interfaces/Shared';
 import { getCredentialsFromEnv } from '../../utility/credentialParser';
-import { ProviderAccountDetails } from '../interfaces/IProviderService';
 import { ITelegramService } from '../interfaces/ITelegramService';
 import { ElectricityService } from './ElectricityService';
 

@@ -8,6 +8,7 @@ import {
     ProviderCredential,
 } from '@interfaces/Shared';
 import { formatNESCOPaymentDateToStandard } from '@utility/dateFormatter';
+import { getNESCOHeaders } from '@utility/headers';
 import { IProviderService } from '../interfaces/IProviderService';
 
 export class NESCOService implements IProviderService {
@@ -60,24 +61,12 @@ export class NESCOService implements IProviderService {
         );
     }
 
-    private getHeaders(): Record<string, string> {
-        return {
-            accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'accept-language': 'en-GB,en;q=0.9',
-            'user-agent':
-                'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36',
-            'sec-fetch-dest': 'document',
-            'sec-fetch-mode': 'navigate',
-            'sec-fetch-site': 'same-origin',
-        };
-    }
-
     private async fetchAccountData(customerNumber: string): Promise<string> {
         // Get initial page for CSRF token
         const initResponse = await fetch(
             `${this.config.BASE_URL}${this.config.PANEL_ENDPOINT}`,
             {
-                headers: this.getHeaders(),
+                headers: getNESCOHeaders(),
             }
         );
 
@@ -101,7 +90,7 @@ export class NESCOService implements IProviderService {
             {
                 method: 'POST',
                 headers: {
-                    ...this.getHeaders(),
+                    ...getNESCOHeaders(),
                     'content-type': 'application/x-www-form-urlencoded',
                     cookie: cookies,
                     Referer: `${this.config.BASE_URL}${this.config.PANEL_ENDPOINT}`,
@@ -172,9 +161,14 @@ export class NESCOService implements IProviderService {
             /(\d{1,2}\s+\w+\s+\d{4}\s+\d{1,2}:\d{2}:\d{2}\s+(?:AM|PM))/i
         );
         if (timeMatch) {
-            data.balanceLatestDate = formatNESCOPaymentDateToStandard(
-                timeMatch[1]
-            );
+            const dateObj = new Date(timeMatch[1]);
+            if (!isNaN(dateObj.getTime())) {
+                // Pad month and day
+                const yyyy = dateObj.getFullYear();
+                const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+                const dd = String(dateObj.getDate()).padStart(2, '0');
+                data.balanceLatestDate = `${yyyy}-${mm}-${dd}`;
+            }
         }
 
         // Extract recharge history using cheerio

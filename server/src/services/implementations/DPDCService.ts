@@ -10,6 +10,7 @@ import {
     ProviderCredential,
 } from '@interfaces/Shared';
 import { formatDPDCDateToStandard } from '@utility/dateFormatter';
+import { getDPDCHeaders } from '@utility/headers';
 import { IProviderService } from '../interfaces/IProviderService';
 
 export class DPDCService implements IProviderService {
@@ -53,23 +54,11 @@ export class DPDCService implements IProviderService {
         const response = await fetch(
             `${this.config.BASE_URL}${this.config.BEARER_ENDPOINT}`,
             {
-                headers: {
-                    accept: 'application/json, text/plain, */*',
-                    'accept-language': this.config.ACCEPT_LANGUAGE,
-                    clientid: this.config.CLIENT_ID,
-                    clientsecret: this.config.CLIENT_SECRET,
-                    'content-type': 'application/json;charset=UTF-8',
-                    'sec-ch-ua':
-                        '"Google Chrome";v="141", "Not?A_Brand";v="8", "Chromium";v="141"',
-                    'sec-ch-ua-mobile': '?1',
-                    'sec-ch-ua-platform': '"Android"',
-                    'sec-fetch-dest': 'empty',
-                    'sec-fetch-mode': 'cors',
-                    'sec-fetch-site': 'same-origin',
-                    tenantcode: this.config.TENANT_CODE,
+                headers: getDPDCHeaders({
+                    config: this.config,
                     cookie: this.genRzpCookieString(),
-                    Referer: `${this.config.BASE_URL}/login/`,
-                },
+                    referer: `${this.config.BASE_URL}/login/`,
+                }),
                 body: '{}',
                 method: 'POST',
             }
@@ -99,23 +88,12 @@ export class DPDCService implements IProviderService {
         const response = await fetch(
             `${this.config.BASE_URL}${this.config.LOGIN_ENDPOINT}`,
             {
-                headers: {
-                    accept: 'application/json, text/plain, */*',
-                    'accept-language': this.config.ACCEPT_LANGUAGE,
-                    accesstoken: accessToken,
-                    authorization: `Bearer ${accessToken}`,
-                    'content-type': 'application/json;charset=UTF-8',
-                    'sec-ch-ua':
-                        '"Google Chrome";v="141", "Not?A_Brand";v="8", "Chromium";v="141"',
-                    'sec-ch-ua-mobile': '?1',
-                    'sec-ch-ua-platform': '"Android"',
-                    'sec-fetch-dest': 'empty',
-                    'sec-fetch-mode': 'cors',
-                    'sec-fetch-site': 'same-origin',
-                    tenantcode: this.config.TENANT_CODE,
+                headers: getDPDCHeaders({
+                    config: this.config,
+                    accessToken,
                     cookie: this.genRzpCookieString(),
-                    Referer: `${this.config.BASE_URL}/login/`,
-                },
+                    referer: `${this.config.BASE_URL}/login/`,
+                }),
                 body: JSON.stringify({
                     userName: username,
                     password: password,
