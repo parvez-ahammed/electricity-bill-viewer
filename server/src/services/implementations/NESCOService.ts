@@ -1,5 +1,7 @@
 import * as cheerio from 'cheerio';
 
+import { NESCO } from '@configs/constants';
+import { fetchHelper } from '@helpers/fetchHelper';
 import {
     ElectricityProvider,
     ProviderAccountDetails,
@@ -12,13 +14,6 @@ import { getNESCOHeaders } from '@utility/headers';
 import { IProviderService } from '../interfaces/IProviderService';
 
 export class NESCOService implements IProviderService {
-    private readonly config = {
-        BASE_URL: 'https://customer.nesco.gov.bd',
-        PANEL_ENDPOINT: '/pre/panel',
-        MAX_RETRY_ATTEMPTS: 3,
-        RETRY_DELAY_MS: 2000,
-    };
-
     getProviderName(): ElectricityProvider {
         return ElectricityProvider.NESCO;
     }
@@ -32,26 +27,26 @@ export class NESCOService implements IProviderService {
             getSetCookie?: () => string[];
         };
         const setCookieHeaders = headers.getSetCookie?.() || [];
-        const cookiePairs: string[] = [];
-
-        setCookieHeaders.forEach((cookie: string) => {
-            if (cookie.startsWith('XSRF-TOKEN=')) {
-                const token = cookie.match(/XSRF-TOKEN=([^;]+)/)?.[1];
-                if (token) cookiePairs.push(`XSRF-TOKEN=${token}`);
-            } else if (cookie.startsWith('customer_service_portal_session=')) {
-                const session = cookie.match(
-                    /customer_service_portal_session=([^;]+)/
-                )?.[1];
-                if (session)
-                    cookiePairs.push(
-                        `customer_service_portal_session=${session}`
-                    );
+        const cookieMap: Record<string, string> = {};
+        for (const cookie of setCookieHeaders) {
+            const [key, value] = cookie.split('=', 2);
+            if (
+                key === 'XSRF-TOKEN' ||
+                key === 'customer_service_portal_session'
+            ) {
+                cookieMap[key] = value?.split(';')[0] || '';
             }
-        });
-
-        return cookiePairs.join('; ');
+        }
+        return (
+            Object.entries(cookieMap)
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                .filter(([_, value]) => value)
+                .map(([key, value]) => `${key}=${value}`)
+                .join('; ')
+        );
     }
 
+    // Extract CSRF token from HTML
     private extractCSRFToken(html: string): string {
         const $ = cheerio.load(html);
         return (
@@ -61,54 +56,36 @@ export class NESCOService implements IProviderService {
         );
     }
 
+    // Fetch account HTML for a customer number
     private async fetchAccountData(customerNumber: string): Promise<string> {
-        // Get initial page for CSRF token
-        const initResponse = await fetch(
-            `${this.config.BASE_URL}${this.config.PANEL_ENDPOINT}`,
-            {
-                headers: getNESCOHeaders(),
-            }
-        );
-
+        const url = `${NESCO.BASE_URL}${NESCO.PANEL_ENDPOINT}`;
+        // Step 1: Get CSRF token and cookies
+        const initResponse = await fetchHelper.get(url, getNESCOHeaders());
         if (!initResponse.ok) {
             throw new Error(
                 `NESCO session fetch failed: ${initResponse.status} ${initResponse.statusText}`
             );
         }
-
-        // Extract cookies and CSRF token
         const cookies = this.extractCookies(initResponse);
         const csrfToken = this.extractCSRFToken(await initResponse.text());
+        if (!csrfToken) throw new Error('Could not find CSRF token in HTML');
 
-        if (!csrfToken) {
-            throw new Error('Could not find CSRF token in HTML');
-        }
-
-        // Fetch account data
-        const dataResponse = await fetch(
-            `${this.config.BASE_URL}${this.config.PANEL_ENDPOINT}`,
-            {
-                method: 'POST',
-                headers: {
-                    ...getNESCOHeaders(),
-                    'content-type': 'application/x-www-form-urlencoded',
-                    cookie: cookies,
-                    Referer: `${this.config.BASE_URL}${this.config.PANEL_ENDPOINT}`,
-                    Origin: this.config.BASE_URL,
-                },
-                body: `_token=${csrfToken}&cust_no=${customerNumber}&submit=রিচার্জ+হিস্ট্রি`,
-            }
-        );
-
+        // Step 2: Post to get account data
+        const headers = {
+            ...getNESCOHeaders(),
+            'content-type': 'application/x-www-form-urlencoded',
+            cookie: cookies,
+            Referer: url,
+            Origin: NESCO.BASE_URL,
+        };
+        const body = `_token=${csrfToken}&cust_no=${customerNumber}&submit=রিচার্জ+হিস্ট্রি`;
+        const dataResponse = await fetchHelper.post(url, headers, body);
         if (!dataResponse.ok) {
             throw new Error(
                 `NESCO API request failed: ${dataResponse.status} ${dataResponse.statusText}`
             );
         }
-
-        const htmlData = await dataResponse.text();
-
-        return htmlData;
+        return await dataResponse.text();
     }
 
     private parseAccountData(
@@ -155,7 +132,6 @@ export class NESCOService implements IProviderService {
             data.balanceRemaining = inputValues[13]; // Position 13: Balance
         }
 
-        // Extract balance date from the label text
         const balanceLabel = $('label:contains("অবশিষ্ট ব্যালেন্স")').text();
         const timeMatch = balanceLabel.match(
             /(\d{1,2}\s+\w+\s+\d{4}\s+\d{1,2}:\d{2}:\d{2}\s+(?:AM|PM))/i
@@ -163,7 +139,6 @@ export class NESCOService implements IProviderService {
         if (timeMatch) {
             const dateObj = new Date(timeMatch[1]);
             if (!isNaN(dateObj.getTime())) {
-                // Pad month and day
                 const yyyy = dateObj.getFullYear();
                 const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
                 const dd = String(dateObj.getDate()).padStart(2, '0');
@@ -171,74 +146,59 @@ export class NESCOService implements IProviderService {
             }
         }
 
-        // Extract recharge history using cheerio
-        $('tbody.text-center tr').each((i, row) => {
-            const $row = $(row);
-            const cells = $row.find('td');
-
-            if (cells.length >= 14) {
-                const rechargeAmount = $(cells[10]).text().trim();
-                const rechargeDate = $(cells[13]).text().trim();
-
-                if (rechargeDate && rechargeAmount && i === 0) {
-                    // Use first (most recent) record for last payment info
-                    data.lastPaymentAmount = rechargeAmount;
-                    data.lastPaymentDate =
-                        formatNESCOPaymentDateToStandard(rechargeDate);
-                }
+        // Extract recharge history (first row = most recent)
+        const firstRow = $('tbody.text-center tr').first();
+        const cells = firstRow.find('td');
+        if (cells.length >= 14) {
+            const rechargeAmount = $(cells[10]).text().trim();
+            const rechargeDate = $(cells[13]).text().trim();
+            if (rechargeDate && rechargeAmount) {
+                data.lastPaymentAmount = rechargeAmount;
+                data.lastPaymentDate =
+                    formatNESCOPaymentDateToStandard(rechargeDate);
             }
-        });
+        }
 
-        // Set customer number from input if not extracted
+        // Fallback for customer number
         if (!data.customerNumber && username) {
             data.customerNumber = username;
         }
-
         return data;
     }
 
     async getAccountInfo(
         username: string,
         password?: string,
-        retryCount: number = 0
+        retryCount = 0
     ): Promise<ProviderAccountResult> {
-        const attemptNumber = retryCount + 1;
-        const maxAttempts = this.config.MAX_RETRY_ATTEMPTS;
-
         try {
-            const htmlResponse = await this.fetchAccountData(username);
-            const accountData = this.parseAccountData(htmlResponse, username);
-
-            // Validate that we got essential data
-            if (!accountData.customerNumber || !accountData.accountId) {
+            const html = await this.fetchAccountData(username);
+            const account = this.parseAccountData(html, username);
+            if (!account.customerNumber || !account.accountId) {
                 throw new Error(
                     'No account information found in NESCO response'
                 );
             }
-
             return {
                 success: true,
                 username,
-                accounts: [accountData],
-                attempts: attemptNumber,
+                accounts: [account],
+                attempts: retryCount + 1,
             };
         } catch (error: unknown) {
-            if (retryCount < maxAttempts - 1) {
-                const retryDelay = this.config.RETRY_DELAY_MS;
-                await this.sleep(retryDelay);
-
+            const errMsg =
+                error instanceof Error ? error.message : 'Unknown error';
+            if (retryCount < NESCO.MAX_RETRY_ATTEMPTS - 1) {
+                await this.sleep(NESCO.RETRY_DELAY_MS);
                 return this.getAccountInfo(username, password, retryCount + 1);
-            } else {
-                const errorMsg =
-                    error instanceof Error ? error.message : 'Unknown error';
-                return {
-                    success: false,
-                    error: errorMsg,
-                    username,
-                    accounts: [],
-                    attempts: maxAttempts,
-                };
             }
+            return {
+                success: false,
+                error: errMsg,
+                username,
+                accounts: [],
+                attempts: NESCO.MAX_RETRY_ATTEMPTS,
+            };
         }
     }
 
@@ -268,7 +228,7 @@ export class NESCOService implements IProviderService {
             }
 
             if (i < credentials.length - 1) {
-                await this.sleep(2000);
+                await this.sleep(NESCO.RETRY_DELAY_MS);
             }
         }
 

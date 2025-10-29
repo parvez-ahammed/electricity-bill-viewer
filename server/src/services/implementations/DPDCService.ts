@@ -1,31 +1,24 @@
 import * as crypto from 'crypto';
 
-import { appConfig } from '@configs/config';
+import { DPDC } from '@configs/constants';
+import { fetchHelper } from '@helpers/fetchHelper';
 import {
+    Account,
     DPDCAccountDetails,
     ElectricityProvider,
+    PremiseDetails,
+    PrepaidDetails,
     ProviderAccountDetails,
     ProviderAccountResult,
     ProviderBatchResult,
     ProviderCredential,
+    SaDetails,
 } from '@interfaces/Shared';
 import { formatDPDCDateToStandard } from '@utility/dateFormatter';
 import { getDPDCHeaders } from '@utility/headers';
 import { IProviderService } from '../interfaces/IProviderService';
 
 export class DPDCService implements IProviderService {
-    private readonly config = {
-        BASE_URL: 'https://amiapp.dpdc.org.bd',
-        BEARER_ENDPOINT: '/auth/login/generate-bearer',
-        LOGIN_ENDPOINT: '/auth/login',
-        CLIENT_ID: 'auth-ui',
-        CLIENT_SECRET: appConfig.dpdc.clientSecret,
-        TENANT_CODE: 'DPDC',
-        MAX_RETRY_ATTEMPTS: 3,
-        RETRY_DELAY_MS: 2000,
-        ACCEPT_LANGUAGE: 'en-GB,en;q=0.9',
-    };
-
     getProviderName(): ElectricityProvider {
         return ElectricityProvider.DPDC;
     }
@@ -51,32 +44,24 @@ export class DPDCService implements IProviderService {
     }
 
     private async generateBearerToken(): Promise<string> {
-        const response = await fetch(
-            `${this.config.BASE_URL}${this.config.BEARER_ENDPOINT}`,
-            {
-                headers: getDPDCHeaders({
-                    config: this.config,
-                    cookie: this.genRzpCookieString(),
-                    referer: `${this.config.BASE_URL}/login/`,
-                }),
-                body: '{}',
-                method: 'POST',
-            }
-        );
-
+        const url = `${DPDC.BASE_URL}${DPDC.BEARER_ENDPOINT}`;
+        const headers = getDPDCHeaders({
+            config: DPDC,
+            cookie: this.genRzpCookieString(),
+            referer: `${DPDC.BASE_URL}/login/`,
+        });
+        const body = '{}';
+        const response = await fetchHelper.post(url, headers, body);
         if (!response.ok) {
             throw new Error(
                 `Bearer token generation failed: ${response.status} ${response.statusText}`
             );
         }
-
         const data = await response.json();
         const accessToken = data.access_token;
-
         if (!accessToken) {
             throw new Error('No access_token found in bearer response');
         }
-
         return accessToken;
     }
 
@@ -85,35 +70,27 @@ export class DPDCService implements IProviderService {
         username: string,
         password: string
     ): Promise<unknown> {
-        const response = await fetch(
-            `${this.config.BASE_URL}${this.config.LOGIN_ENDPOINT}`,
-            {
-                headers: getDPDCHeaders({
-                    config: this.config,
-                    accessToken,
-                    cookie: this.genRzpCookieString(),
-                    referer: `${this.config.BASE_URL}/login/`,
-                }),
-                body: JSON.stringify({
-                    userName: username,
-                    password: password,
-                }),
-                method: 'POST',
-            }
-        );
-
+        const url = `${DPDC.BASE_URL}${DPDC.LOGIN_ENDPOINT}`;
+        const headers = getDPDCHeaders({
+            config: DPDC,
+            accessToken,
+            cookie: this.genRzpCookieString(),
+            referer: `${DPDC.BASE_URL}/login/`,
+        });
+        const body = JSON.stringify({
+            userName: username,
+            password: password,
+        });
+        const response = await fetchHelper.post(url, headers, body);
         if (!response.ok) {
             throw new Error(
                 `Login failed: ${response.status} ${response.statusText}`
             );
         }
-
         const data = await response.json();
-
         if (!data || Object.keys(data).length === 0) {
             throw new Error('Empty response received. Login failed.');
         }
-
         return data;
     }
 
@@ -138,54 +115,43 @@ export class DPDCService implements IProviderService {
 
     private parseSingleAccount(
         accountDetails: unknown,
-        personDetails: unknown,
-        provider: string
+        personDetails: unknown
     ): DPDCAccountDetails {
-        const account = accountDetails as Record<string, unknown>;
-        const saDetails = (
-            account?.accountSaList as Array<Record<string, unknown>>
-        )?.[0];
-        const prepaidDetails = saDetails?.prepaidSaDetail as Record<
-            string,
-            unknown
-        >;
-        const premiseDetails = (
-            account?.accountPersonDetail as Record<string, unknown>
-        )?.accountPremiseDetailList;
+        const account: Account = accountDetails as Account;
+        const saDetails: SaDetails | undefined = account.accountSaList?.[0];
+        const prepaidDetails: PrepaidDetails | undefined =
+            saDetails?.prepaidSaDetail;
+        const premiseDetails: PremiseDetails | undefined =
+            account.accountPersonDetail?.accountPremiseDetailList;
 
         return {
-            accountId: (account?.accountId as string) || '',
-            customerNumber: (account?.customerNumber as string) || '',
-            customerName: (account?.customerName as string) || '',
-            customerClass: (account?.customerClassDesc as string) || '',
+            accountId: account.accountId ?? '',
+            customerNumber: account.customerNumber ?? '',
+            customerName: account.customerName ?? '',
+            customerClass: account.customerClassDesc ?? '',
             mobileNumber: this.extractMobileNumber(personDetails),
             emailId: '', // Not available in API response
-            accountType: (saDetails?.saTypeDesc as string) || '',
+            accountType: saDetails?.saTypeDesc ?? '',
             balanceRemaining:
-                (prepaidDetails?.prepaidBalance as string) ||
-                (account?.currentBalance as string) ||
-                '',
+                prepaidDetails?.prepaidBalance ?? account.currentBalance ?? '',
             connectionStatus:
-                (saDetails?.saStatus as string) === '20'
+                saDetails?.saStatus === '20'
                     ? 'Active'
-                    : (saDetails?.saStatus as string) || '',
-            customerType: (account?.customerClassCd as string) || null,
-            minRecharge: (account?.minAmtTopay as string) || null,
-            balanceLatestDate: (saDetails?.balanceLatestDate as string) || '',
+                    : (saDetails?.saStatus ?? ''),
+            customerType: account.customerClassCd ?? null,
+            minRecharge: account.minAmtTopay ?? null,
+            balanceLatestDate: saDetails?.balanceLatestDate ?? '',
             lastPayAmtOnSa:
-                (prepaidDetails?.lastPayAmtOnSa as string) ||
-                (account?.lastPaymentAmount as string) ||
+                prepaidDetails?.lastPayAmtOnSa ??
+                account.lastPaymentAmount ??
                 '',
             lastPayDateOnSa:
-                (prepaidDetails?.lastPayDateOnSa as string) ||
-                (account?.lastPaymentDate as string) ||
+                prepaidDetails?.lastPayDateOnSa ??
+                account.lastPaymentDate ??
                 '',
             flatNameOrLocation:
-                ((premiseDetails as Record<string, unknown>)
-                    ?.address1 as string) ||
-                (account?.mailingAddress as string) ||
-                '',
-            provider: provider,
+                premiseDetails?.address1 ?? account.mailingAddress ?? '',
+            provider: DPDC.TENANT_CODE,
         };
     }
 
@@ -214,11 +180,7 @@ export class DPDCService implements IProviderService {
         }
 
         return personAccountList.map((account) =>
-            this.parseSingleAccount(
-                account,
-                personDetails,
-                this.config.TENANT_CODE
-            )
+            this.parseSingleAccount(account, personDetails)
         );
     }
 
@@ -250,7 +212,7 @@ export class DPDCService implements IProviderService {
         retryCount: number = 0
     ): Promise<ProviderAccountResult> {
         const attemptNumber = retryCount + 1;
-        const maxAttempts = this.config.MAX_RETRY_ATTEMPTS;
+        const maxAttempts = DPDC.MAX_RETRY_ATTEMPTS;
 
         if (!password) {
             return {
@@ -293,7 +255,7 @@ export class DPDCService implements IProviderService {
             };
         } catch (error: unknown) {
             if (retryCount < maxAttempts - 1) {
-                const retryDelay = this.config.RETRY_DELAY_MS;
+                const retryDelay = DPDC.RETRY_DELAY_MS;
                 await this.sleep(retryDelay);
 
                 return this.getAccountInfo(username, password, retryCount + 1);

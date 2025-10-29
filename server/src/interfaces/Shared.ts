@@ -63,3 +63,32 @@ export interface ProviderBatchResult {
         attempts: number;
     }>;
 }
+
+export type Account = {
+    accountId?: string;
+    customerNumber?: string;
+    customerName?: string;
+    customerClassDesc?: string;
+    customerClassCd?: string;
+    minAmtTopay?: string;
+    currentBalance?: string;
+    lastPaymentAmount?: string;
+    lastPaymentDate?: string;
+    mailingAddress?: string;
+    accountSaList?: SaDetails[];
+    accountPersonDetail?: { accountPremiseDetailList?: PremiseDetails };
+};
+export type SaDetails = {
+    saTypeDesc?: string;
+    saStatus?: string;
+    balanceLatestDate?: string;
+    prepaidSaDetail?: PrepaidDetails;
+};
+export type PrepaidDetails = {
+    prepaidBalance?: string;
+    lastPayAmtOnSa?: string;
+    lastPayDateOnSa?: string;
+};
+export type PremiseDetails = {
+    address1?: string;
+};
