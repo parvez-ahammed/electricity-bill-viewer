@@ -1,4 +1,4 @@
-import { ElectricityProvider, ProviderCredential } from './IProviderService';
+import { ElectricityProvider, ProviderCredential } from '@interfaces/Shared';
 
 export interface ElectricityUsageData {
     accountId: string;
