@@ -21,11 +21,27 @@ export class TelegramService implements ITelegramService {
         this.botToken = appConfig.telegram.botToken;
         this.chatId = appConfig.telegram.chatId;
         this.electricityService = new ElectricityService();
+        try {
+            const masked = this.botToken
+                ? `****${this.botToken.slice(-4)}`
+                : 'none';
+            logger.info(
+                `TelegramService initialized (chatId=${this.chatId}, botTokenSuffix=${masked})`
+            );
+        } catch (err) {
+            logger.debug(
+                'TelegramService initialization logging failed: ' +
+                    (err instanceof Error ? err.message : String(err))
+            );
+        }
     }
 
     async sendMessage(message: string): Promise<boolean> {
         try {
             const url = `${this.baseUrl}/bot${this.botToken}/sendMessage`;
+            logger.debug(
+                `Sending Telegram message to chatId=${this.chatId} (messageLength=${message.length})`
+            );
 
             const response = await fetch(url, {
                 method: 'POST',
@@ -40,18 +56,46 @@ export class TelegramService implements ITelegramService {
             });
 
             if (!response.ok) {
-                const error = await response.json();
-                throw new Error(`Telegram API error: ${JSON.stringify(error)}`);
+                let errorBody: unknown = null;
+                try {
+                    errorBody = await response.json();
+                } catch {
+                    try {
+                        errorBody = await response.text();
+                    } catch {
+                        errorBody = null;
+                    }
+                }
+                logger.error(
+                    `Telegram API responded with status ${response.status}: ${JSON.stringify(errorBody)}`
+                );
+                throw new Error(
+                    `Telegram API error: ${JSON.stringify(errorBody)}`
+                );
             }
 
+            logger.info(`Telegram message sent to chatId=${this.chatId}`);
             return true;
         } catch (error) {
-            logger.error('Failed to send Telegram message:' + error);
+            logger.error(
+                'Failed to send Telegram message:' +
+                    (error instanceof Error ? error.message : String(error))
+            );
             return false;
         }
     }
 
     formatAccountMessage(accounts: ProviderAccountDetails[]): string {
+        try {
+            logger.debug(
+                `Formatting Telegram message for ${accounts.length} accounts`
+            );
+        } catch (err) {
+            logger.debug(
+                'Failed to log formatAccountMessage details: ' +
+                    (err instanceof Error ? err.message : String(err))
+            );
+        }
         const timestamp = new Date().toLocaleString('en-US', {
             timeZone: 'Asia/Dhaka',
             dateStyle: 'full',
@@ -106,10 +150,18 @@ export class TelegramService implements ITelegramService {
         error?: string;
     }> {
         try {
+            logger.info('Preparing to send account balances to Telegram');
+
             // Get credentials
             const credentials = getCredentialsFromEnv();
+            logger.debug(
+                `Found ${credentials.length} credential(s) from environment`
+            );
 
             if (credentials.length === 0) {
+                logger.warn(
+                    'No credentials configured for electricity accounts'
+                );
                 return {
                     success: false,
                     message: 'No credentials configured',
@@ -118,12 +170,26 @@ export class TelegramService implements ITelegramService {
             }
 
             // Fetch account data with skipCache parameter
+            logger.debug(
+                `Invoking ElectricityService.getUsageData(skipCache=${skipCache})`
+            );
             const result = await this.electricityService.getUsageData(
                 credentials,
                 skipCache
             );
+            logger.info(
+                `Fetched account data: ${result.accounts.length} accounts (successful)`
+            );
+            logger.debug(
+                'getUsageData result summary: ' +
+                    JSON.stringify({
+                        accounts: result.accounts.length,
+                        errors: result.errors?.length ?? 0,
+                    })
+            );
 
             if (result.accounts.length === 0) {
+                logger.warn('No account data retrieved from providers');
                 return {
                     success: false,
                     message: 'No account data retrieved',
@@ -138,6 +204,7 @@ export class TelegramService implements ITelegramService {
             const sent = await this.sendMessage(message);
 
             if (!sent) {
+                logger.error('Telegram sendMessage returned false');
                 return {
                     success: false,
                     message: 'Failed to send message to Telegram',
@@ -145,12 +212,19 @@ export class TelegramService implements ITelegramService {
                 };
             }
 
+            logger.info(
+                `Account balances sent to Telegram successfully. Accounts sent: ${result.accounts.length}`
+            );
             return {
                 success: true,
                 message: 'Account balances sent to Telegram successfully',
                 sentAccounts: result.accounts.length,
             };
         } catch (error) {
+            logger.error(
+                'Failed to send account balances: ' +
+                    (error instanceof Error ? error.message : String(error))
+            );
             return {
                 success: false,
                 message: 'Failed to send account balances',

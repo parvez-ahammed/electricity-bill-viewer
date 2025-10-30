@@ -1,3 +1,4 @@
+import logger from '@helpers/Logger';
 import { ElectricityProvider, ProviderCredential } from '@interfaces/Shared';
 import { normalizeAccountType } from '@utility/accountTypeNormalizer';
 import {
@@ -69,7 +70,9 @@ export class ElectricityService implements IElectricityService {
         credentials: ProviderCredential[],
         skipCache = false
     ): Promise<ElectricityUsageResponse> {
-        // Fetch each credential individually (with its own cache)
+        logger.info(
+            `[ElectricityService] Fetching usage data for ${credentials.length} credential(s)`
+        );
         const individualResults = await Promise.all(
             credentials.map((cred) =>
                 this.getSingleAccountUsage(
@@ -101,6 +104,14 @@ export class ElectricityService implements IElectricityService {
             }
         });
 
+        logger.info(
+            `[ElectricityService] Usage data fetch complete. Accounts: ${allAccounts.length}, Success: ${successfulLogins}, Failed: ${failedLogins}`
+        );
+        if (allErrors.length > 0) {
+            logger.warn(
+                `[ElectricityService] Errors encountered for ${allErrors.length} credential(s)`
+            );
+        }
         return {
             success: allAccounts.length > 0,
             totalAccounts: allAccounts.length,
@@ -118,17 +129,29 @@ export class ElectricityService implements IElectricityService {
         provider: ElectricityProvider,
         skipCache = false
     ): Promise<ElectricityUsageResponse> {
-        // Generate cache key based on single account credentials
         const cacheKey = cacheService.generateCacheKey(this.CACHE_PREFIX, {
             username,
             password,
             provider,
         });
 
+        if (skipCache) {
+            logger.debug(
+                `[ElectricityService] Skipping cache for user: ${username}, provider: ${provider}`
+            );
+        } else {
+            logger.debug(
+                `[ElectricityService] Attempting cache lookup for user: ${username}, provider: ${provider}`
+            );
+        }
+
         // Use cache service to get or set data
         return cacheService.getOrSet<ElectricityUsageResponse>(
             cacheKey,
             async () => {
+                logger.debug(
+                    `[ElectricityService] Fetching fresh data for user: ${username}, provider: ${provider}`
+                );
                 return this.fetchSingleAccountUsage(
                     username,
                     password,
@@ -145,10 +168,17 @@ export class ElectricityService implements IElectricityService {
         provider: ElectricityProvider
     ): Promise<ElectricityUsageResponse> {
         try {
+            logger.debug(
+                `[ElectricityService] Fetching account info for user: ${username}, provider: ${provider}`
+            );
             const service = this.getProviderService(provider);
             const result = await service.getAccountInfo(username, password);
 
             const usageData = this.transformToUsageData(result.accounts);
+
+            logger.info(
+                `[ElectricityService] Account info fetch result for user: ${username}, provider: ${provider} - Success: ${result.success}, Accounts: ${usageData.length}`
+            );
 
             return {
                 success: result.success,
@@ -171,6 +201,9 @@ export class ElectricityService implements IElectricityService {
         } catch (error: unknown) {
             const errorMessage =
                 error instanceof Error ? error.message : 'Unknown error';
+            logger.error(
+                `[ElectricityService] Failed to fetch account info for user: ${username}, provider: ${provider}. Error: ${errorMessage}`
+            );
             return {
                 success: false,
                 totalAccounts: 0,

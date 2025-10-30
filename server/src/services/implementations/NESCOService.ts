@@ -1,3 +1,4 @@
+import logger from '@helpers/Logger';
 import * as cheerio from 'cheerio';
 
 import { NESCO } from '@configs/constants';
@@ -59,16 +60,27 @@ export class NESCOService implements IProviderService {
     // Fetch account HTML for a customer number
     private async fetchAccountData(customerNumber: string): Promise<string> {
         const url = `${NESCO.BASE_URL}${NESCO.PANEL_ENDPOINT}`;
+        logger.debug(
+            `[NESCO] Fetching account HTML for customer: ${customerNumber}`
+        );
         // Step 1: Get CSRF token and cookies
         const initResponse = await fetchHelper.get(url, getNESCOHeaders());
         if (!initResponse.ok) {
+            logger.error(
+                `[NESCO] Session fetch failed for customer ${customerNumber}: ${initResponse.status} ${initResponse.statusText}`
+            );
             throw new Error(
                 `NESCO session fetch failed: ${initResponse.status} ${initResponse.statusText}`
             );
         }
         const cookies = this.extractCookies(initResponse);
         const csrfToken = this.extractCSRFToken(await initResponse.text());
-        if (!csrfToken) throw new Error('Could not find CSRF token in HTML');
+        if (!csrfToken) {
+            logger.warn(
+                `[NESCO] Could not find CSRF token in HTML for customer: ${customerNumber}`
+            );
+            throw new Error('Could not find CSRF token in HTML');
+        }
 
         // Step 2: Post to get account data
         const headers = {
@@ -81,10 +93,16 @@ export class NESCOService implements IProviderService {
         const body = `_token=${csrfToken}&cust_no=${customerNumber}&submit=রিচার্জ+হিস্ট্রি`;
         const dataResponse = await fetchHelper.post(url, headers, body);
         if (!dataResponse.ok) {
+            logger.error(
+                `[NESCO] API request failed for customer ${customerNumber}: ${dataResponse.status} ${dataResponse.statusText}`
+            );
             throw new Error(
                 `NESCO API request failed: ${dataResponse.status} ${dataResponse.statusText}`
             );
         }
+        logger.info(
+            `[NESCO] Successfully fetched account HTML for customer: ${customerNumber}`
+        );
         return await dataResponse.text();
     }
 
@@ -132,6 +150,10 @@ export class NESCOService implements IProviderService {
             data.balanceRemaining = inputValues[13]; // Position 13: Balance
         }
 
+        logger.debug(
+            `[NESCO] Parsed account values for username=${username || 'unknown'}: customerName=${data.customerName}, customerNumber=${data.customerNumber}, balance=${data.balanceRemaining}`
+        );
+
         const balanceLabel = $('label:contains("অবশিষ্ট ব্যালেন্স")').text();
         const timeMatch = balanceLabel.match(
             /(\d{1,2}\s+\w+\s+\d{4}\s+\d{1,2}:\d{2}:\d{2}\s+(?:AM|PM))/i
@@ -171,14 +193,23 @@ export class NESCOService implements IProviderService {
         password?: string,
         retryCount = 0
     ): Promise<ProviderAccountResult> {
+        logger.debug(
+            `[NESCO] Starting getAccountInfo for username: ${username} (attempt ${retryCount + 1})`
+        );
         try {
             const html = await this.fetchAccountData(username);
             const account = this.parseAccountData(html, username);
             if (!account.customerNumber || !account.accountId) {
+                logger.warn(
+                    `[NESCO] No account information found in response for username: ${username}`
+                );
                 throw new Error(
                     'No account information found in NESCO response'
                 );
             }
+            logger.info(
+                `[NESCO] Retrieved account info for username: ${username}`
+            );
             return {
                 success: true,
                 username,
@@ -188,7 +219,13 @@ export class NESCOService implements IProviderService {
         } catch (error: unknown) {
             const errMsg =
                 error instanceof Error ? error.message : 'Unknown error';
+            logger.error(
+                `[NESCO] Error fetching account for username: ${username}: ${errMsg}`
+            );
             if (retryCount < NESCO.MAX_RETRY_ATTEMPTS - 1) {
+                logger.debug(
+                    `[NESCO] Retrying for username: ${username} after ${NESCO.RETRY_DELAY_MS}ms`
+                );
                 await this.sleep(NESCO.RETRY_DELAY_MS);
                 return this.getAccountInfo(username, password, retryCount + 1);
             }
@@ -212,14 +249,23 @@ export class NESCOService implements IProviderService {
             attempts: number;
         }> = [];
 
+        logger.info(
+            `[NESCO] Starting batch fetch for ${credentials.length} credential(s)`
+        );
         for (let i = 0; i < credentials.length; i++) {
             const { username, password } = credentials[i];
 
             const result = await this.getAccountInfo(username, password);
 
             if (result.success) {
+                logger.info(
+                    `[NESCO] Account info fetched successfully for username: ${username}`
+                );
                 allAccounts.push(...result.accounts);
             } else {
+                logger.error(
+                    `[NESCO] Failed to fetch account info for username: ${username}. Error: ${result.error || 'Unknown error'}`
+                );
                 failedLogins.push({
                     username,
                     error: result.error || 'Unknown error',
@@ -231,6 +277,10 @@ export class NESCOService implements IProviderService {
                 await this.sleep(NESCO.RETRY_DELAY_MS);
             }
         }
+
+        logger.info(
+            `[NESCO] Batch fetch complete. Successful: ${credentials.length - failedLogins.length}, Failed: ${failedLogins.length}`
+        );
 
         return {
             totalCredentials: credentials.length,

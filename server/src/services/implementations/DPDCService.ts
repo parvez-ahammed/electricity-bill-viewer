@@ -2,6 +2,7 @@ import * as crypto from 'crypto';
 
 import { DPDC } from '@configs/constants';
 import { fetchHelper } from '@helpers/fetchHelper';
+import logger from '@helpers/Logger';
 import {
     Account,
     DPDCAccountDetails,
@@ -81,16 +82,26 @@ export class DPDCService implements IProviderService {
             userName: username,
             password: password,
         });
+        logger.debug(`[DPDC] Fetching account data for user: ${username}`);
         const response = await fetchHelper.post(url, headers, body);
         if (!response.ok) {
+            logger.error(
+                `[DPDC] Login failed for user ${username}: ${response.status} ${response.statusText}`
+            );
             throw new Error(
                 `Login failed: ${response.status} ${response.statusText}`
             );
         }
         const data = await response.json();
         if (!data || Object.keys(data).length === 0) {
+            logger.warn(
+                `[DPDC] Empty response received for user ${username}. Login failed.`
+            );
             throw new Error('Empty response received. Login failed.');
         }
+        logger.info(
+            `[DPDC] Successfully fetched account data for user: ${username}`
+        );
         return data;
     }
 
@@ -225,6 +236,9 @@ export class DPDCService implements IProviderService {
         }
 
         try {
+            logger.debug(
+                `[DPDC] Starting account info fetch for user: ${username} (Attempt ${attemptNumber}/${maxAttempts})`
+            );
             // Step 1: Generate bearer token
             const accessToken = await this.generateBearerToken();
 
@@ -240,6 +254,9 @@ export class DPDCService implements IProviderService {
 
             // Check if we got valid data
             if (accountList.length === 0) {
+                logger.warn(
+                    `[DPDC] No account information found in response for user: ${username}`
+                );
                 throw new Error('No account information found in response');
             }
 
@@ -247,6 +264,9 @@ export class DPDCService implements IProviderService {
             const standardizedAccounts =
                 this.transformToProviderFormat(accountList);
 
+            logger.info(
+                `[DPDC] Successfully retrieved and transformed account info for user: ${username}`
+            );
             return {
                 success: true,
                 username,
@@ -255,13 +275,18 @@ export class DPDCService implements IProviderService {
             };
         } catch (error: unknown) {
             if (retryCount < maxAttempts - 1) {
+                logger.warn(
+                    `[DPDC] Error fetching account info for user: ${username} (Attempt ${attemptNumber}/${maxAttempts}): ${error instanceof Error ? error.message : error}`
+                );
                 const retryDelay = DPDC.RETRY_DELAY_MS;
                 await this.sleep(retryDelay);
-
                 return this.getAccountInfo(username, password, retryCount + 1);
             } else {
                 const errorMsg =
                     error instanceof Error ? error.message : 'Unknown error';
+                logger.error(
+                    `[DPDC] Failed to fetch account info for user: ${username} after ${maxAttempts} attempts. Error: ${errorMsg}`
+                );
                 return {
                     success: false,
                     error: errorMsg,
@@ -283,14 +308,23 @@ export class DPDCService implements IProviderService {
             attempts: number;
         }> = [];
 
+        logger.info(
+            `[DPDC] Starting batch account info fetch for ${credentials.length} credential(s)`
+        );
         for (let i = 0; i < credentials.length; i++) {
             const { username, password } = credentials[i];
 
             const result = await this.getAccountInfo(username, password);
 
             if (result.success) {
+                logger.info(
+                    `[DPDC] Account info fetched successfully for user: ${username}`
+                );
                 allAccounts.push(...result.accounts);
             } else {
+                logger.error(
+                    `[DPDC] Failed to fetch account info for user: ${username}. Error: ${result.error || 'Unknown error'}`
+                );
                 failedLogins.push({
                     username,
                     error: result.error || 'Unknown error',
@@ -302,6 +336,9 @@ export class DPDCService implements IProviderService {
                 await this.sleep(2000);
             }
         }
+        logger.info(
+            `[DPDC] Batch fetch complete. Successful: ${credentials.length - failedLogins.length}, Failed: ${failedLogins.length}`
+        );
 
         return {
             totalCredentials: credentials.length,

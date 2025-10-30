@@ -25,6 +25,10 @@ class Logger {
     public warn(message: string): void {
         winston.warn(message);
     }
+
+    public debug(message: string): void {
+        winston.debug(message);
+    }
 }
 const logger = Logger.getInstance();
 export default logger;
