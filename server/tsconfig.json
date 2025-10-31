@@ -17,7 +17,9 @@
             "@interfaces/*": ["src/interfaces/*"],
             "@dtos/*": ["src/dtos/*"],
             "@helpers/*": ["src/helpers/*"],
-            "@utility/*": ["src/utility/*"]
+            "@utility/*": ["src/utility/*"],
+            "@schemas/*": ["src/schemas/*"],
+            "@entities/*": ["src/entities/*"]
         },
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true

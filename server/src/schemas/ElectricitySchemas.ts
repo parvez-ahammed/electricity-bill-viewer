@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
-export const electricityProviderSchema = z.enum(['DPDC', 'NESCO', 'DESCO'], {
+export const electricityProviderSchema = z.enum(['DPDC', 'NESCO'], {
     errorMap: () => ({
-        message: 'Provider must be one of: DPDC, NESCO, DESCO',
+        message: 'Provider must be one of: DPDC, NESCO',
     }),
 });
 

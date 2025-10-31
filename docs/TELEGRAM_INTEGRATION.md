@@ -44,11 +44,6 @@ Add the following to your `.env` file:
 TELEGRAM_BOT_TOKEN=123456789:ABCdefGHIjklMNOpqrsTUVwxyz
 TELEGRAM_CHAT_ID=123456789
 
-# Electricity Credentials (JSON array)
-# Note: DPDC requires password, NESCO does not (username is customer number)
-ELECTRICITY_CREDENTIALS='[{"provider":"DPDC","username":"01836430305","password":"YourPassword"},{"provider":"NESCO","username":"19900128"}]'
-```
-
 ### 4. Restart the Server
 
 ```bash
@@ -132,7 +127,6 @@ The server automatically sends balance reports **every day at 12:00 PM BST (Bang
 
 - `TELEGRAM_BOT_TOKEN`
 - `TELEGRAM_CHAT_ID`
-- `ELECTRICITY_CREDENTIALS`
 
 **Check logs:**
 
@@ -222,10 +216,9 @@ cron.schedule("0 9 * * *", async () => {
 
 **Solution:**
 
-1. Verify `ELECTRICITY_CREDENTIALS` is valid JSON
-2. Check DPDC/NESCO credentials are correct
-3. Ensure cookies and tokens are fresh
-4. Test individual credentials first
+1. Check DPDC/NESCO credentials are correct
+2. Ensure cookies and tokens are fresh
+3. Test individual credentials first
 
 ### Message Not Received
 

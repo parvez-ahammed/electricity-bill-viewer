@@ -1,7 +1,7 @@
 import { appConfig } from '@configs/config';
 import logger from '@helpers/Logger';
 import { ProviderAccountDetails } from '@interfaces/Shared';
-import { getCredentialsFromEnv } from '../../utility/credentialParser';
+import { getCredentialsFromDatabase } from '@utility/accountCredentialParser';
 import { ITelegramService } from '../interfaces/ITelegramService';
 import { ElectricityService } from './ElectricityService';
 
@@ -153,7 +153,7 @@ export class TelegramService implements ITelegramService {
             logger.info('Preparing to send account balances to Telegram');
 
             // Get credentials
-            const credentials = getCredentialsFromEnv();
+            const credentials = await getCredentialsFromDatabase();
             logger.debug(
                 `Found ${credentials.length} credential(s) from environment`
             );

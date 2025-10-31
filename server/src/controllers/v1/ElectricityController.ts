@@ -1,7 +1,7 @@
 import { ResponseBuilder } from '@helpers/ResponseBuilder';
 import { Request, Response } from 'express';
 import { ElectricityService } from '../../services/implementations/ElectricityService';
-import { getCredentialsFromEnv } from '../../utility/credentialParser';
+import { getCredentialsFromDatabase } from '../../utility/accountCredentialParser';
 
 export class ElectricityController {
     private static electricityService: ElectricityService;
@@ -21,15 +21,15 @@ export class ElectricityController {
             // Check for x-skip-cache header
             const skipCache = req.headers['x-skip-cache'] === 'true';
 
-            // Get credentials from environment variable
-            const credentials = getCredentialsFromEnv();
+            // Get credentials from database
+            const credentials = await getCredentialsFromDatabase();
 
             if (credentials.length === 0) {
                 new ResponseBuilder(res)
                     .setStatus(500)
                     .setMessage('No credentials configured on server')
                     .setData({
-                        error: 'ELECTRICITY_CREDENTIALS environment variable is not set or empty',
+                        error: 'No accounts found in database. Please add accounts using the /accounts endpoint.',
                     })
                     .sendError();
                 return;

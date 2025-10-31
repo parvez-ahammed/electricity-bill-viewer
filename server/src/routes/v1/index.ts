@@ -1,3 +1,4 @@
+import accountRouter from '@routes/v1/account.routes';
 import electricityRouter from '@routes/v1/electricity.routes';
 import telegramRouter from '@routes/v1/telegram.routes';
 import Router from 'express';
@@ -19,6 +20,10 @@ const defaultRoutes = [
     {
         prefix: '/telegram',
         router: telegramRouter,
+    },
+    {
+        prefix: '/accounts',
+        router: accountRouter,
     },
 ];
 

@@ -37,12 +37,9 @@ REDIS_PORT=6379
 
 # Redis
 REDIS_TTL=86400
-
-# DPDC API
-DPDC_CLIENT_SECRET=your_dpdc_client_secret
-
-# Electricity Credentials (JSON array)
-ELECTRICITY_CREDENTIALS=[{"username":"user1","password":"pass1","provider":"DPDC"},{"username":"user2","password":"pass2","provider":"NESCO"}]
+# Encryption Key for Database Security (Required for production)
+# Generate a strong random key for production: openssl rand -base64 32
+ENCRYPTION_KEY=your-super-secret-encryption-key-change-this-in-production
 
 # Telegram (optional)
 TELEGRAM_BOT_TOKEN=your_bot_token
@@ -97,8 +94,7 @@ View logs in Coolify:
 If build fails, check:
 
 1. Environment variables are set correctly
-2. `ELECTRICITY_CREDENTIALS` is valid JSON
-3. Build logs for specific errors
+2. Build logs for specific errors
 
 ### Container Crashes
 

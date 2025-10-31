@@ -1,5 +1,6 @@
 import { RouteObject } from "react-router-dom";
 
+import { AccountManagementPage } from "@/pages/accountManagement.page";
 import { ErrorPage } from "@/pages/error.page";
 import { HomePage } from "@/pages/home.page";
 
@@ -9,7 +10,10 @@ export const publicRoutes: RouteObject[] = [
     {
         path: "/",
         element: <MainLayout />,
-        children: [{ path: "", element: <HomePage /> }],
+        children: [
+            { path: "", element: <HomePage /> },
+            { path: "accounts", element: <AccountManagementPage /> },
+        ],
     },
     {
         path: "/unauthorized",

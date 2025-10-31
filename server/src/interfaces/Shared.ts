@@ -20,7 +20,6 @@ export interface DPDCAccountDetails {
 export enum ElectricityProvider {
     DPDC = 'DPDC',
     NESCO = 'NESCO',
-    DESCO = 'DESCO',
 }
 
 export interface ProviderCredential {

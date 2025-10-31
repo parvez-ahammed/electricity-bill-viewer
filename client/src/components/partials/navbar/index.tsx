@@ -1,12 +1,13 @@
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Settings } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 import { Text } from "@/components/partials/typography";
 import { Button } from "@/components/ui";
 
 export const Navbar = () => {
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const location = useLocation();
 
     const handleRefresh = async () => {
         setIsRefreshing(true);
@@ -31,16 +32,50 @@ export const Navbar = () => {
         <header className="sticky top-0 z-20 border-y border-black bg-white/80 px-2 backdrop-blur-md supports-backdrop-filter:bg-white/70">
             <div className="container mx-auto max-w-7xl">
                 <div className="flex h-16 items-center justify-between">
-                    <div className="flex items-center">
+                    <div className="flex items-center gap-6">
                         <Link to="/" className="flex items-center">
                             <Text className="bg-black px-3 py-1 text-xl font-bold text-white">
                                 BillBarta
                             </Text>
                         </Link>
+                        
+                        {/* Navigation Links */}
+                        <nav className="hidden md:flex items-center gap-4">
+                            <Link 
+                                to="/" 
+                                className={`text-sm font-medium transition-colors hover:text-primary ${
+                                    location.pathname === "/" ? "text-primary" : "text-muted-foreground"
+                                }`}
+                            >
+                                Dashboard
+                            </Link>
+                            <Link 
+                                to="/accounts" 
+                                className={`text-sm font-medium transition-colors hover:text-primary ${
+                                    location.pathname === "/accounts" ? "text-primary" : "text-muted-foreground"
+                                }`}
+                            >
+                                Account Management
+                            </Link>
+                        </nav>
                     </div>
 
-                    {/* Cache Refresh Button */}
                     <div className="flex items-center gap-2">
+                        {/* Mobile Navigation */}
+                        <div className="md:hidden">
+                            <Link to="/accounts">
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="flex items-center gap-2"
+                                    title="Account Management"
+                                >
+                                    <Settings className="h-4 w-4" />
+                                </Button>
+                            </Link>
+                        </div>
+
+                        {/* Cache Refresh Button */}
                         <Button
                             onClick={handleRefresh}
                             variant="outline"

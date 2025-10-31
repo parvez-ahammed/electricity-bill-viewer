@@ -186,7 +186,6 @@ docker ps
 ## Security Checklist
 
 - [ ] Change default ports in production
-- [ ] Set strong DPDC_CLIENT_SECRET
 - [ ] Configure ALLOWED_ORIGINS for CORS
 - [ ] Use HTTPS in production
 - [ ] Don't commit .env files

@@ -21,15 +21,12 @@ const envSchema = z
         REDIS_PASSWORD: z.string().optional().default(''),
         REDIS_TTL: z.coerce.number().default(86400), // 24 hours in seconds
 
-        // DPDC Service Configuration
-        DPDC_CLIENT_SECRET: z.string(),
-
         // Telegram Bot Configuration
         TELEGRAM_BOT_TOKEN: z.string().optional(),
         TELEGRAM_CHAT_ID: z.string().optional(),
 
-        // Electricity Credentials for automated reports
-        ELECTRICITY_CREDENTIALS: z.string().optional(),
+        // Encryption key for sensitive data
+        ENCRYPTION_KEY: z.string().optional(),
     })
     .passthrough();
 
@@ -69,10 +66,6 @@ export const appConfig = {
         ttl: parsedEnv.data.REDIS_TTL,
     },
 
-    // DPDC Configuration
-    dpdc: {
-        clientSecret: parsedEnv.data.DPDC_CLIENT_SECRET,
-    },
 
     // Telegram Configuration
     telegram: {
@@ -80,6 +73,7 @@ export const appConfig = {
         chatId: parsedEnv.data.TELEGRAM_CHAT_ID,
     },
 
-    // Electricity Credentials
-    electricityCredentials: parsedEnv.data.ELECTRICITY_CREDENTIALS,
+
+    // Encryption Key
+    encryptionKey: parsedEnv.data.ENCRYPTION_KEY,
 };

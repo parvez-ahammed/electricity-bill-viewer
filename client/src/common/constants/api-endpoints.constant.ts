@@ -6,4 +6,7 @@ export const API_ENDPOINTS = {
     ELECTRICITY: {
         USAGE: `${API_PATH}/electricity/usage`,
     },
+    ACCOUNTS: {
+        BASE: `${API_PATH}/accounts`,
+    },
 } as const;

@@ -178,3 +178,5 @@ build/Release
 # Snowpack
 # ===========================================
 web_modules/
+
+*.db
