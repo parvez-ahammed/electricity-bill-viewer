@@ -23,6 +23,15 @@ FROM node:22.12.0-alpine
 
 WORKDIR /app
 
+# Create a non-root user first
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
+
+# Create data directory with proper permissions
+RUN mkdir -p /app/data && \
+    chown -R nodejs:nodejs /app/data && \
+    chmod 755 /app/data
+
 # Copy package files
 COPY server/package*.json ./
 
@@ -30,10 +39,10 @@ COPY server/package*.json ./
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 
-# Create a non-root user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
+# Change ownership of the entire app directory to nodejs user
+RUN chown -R nodejs:nodejs /app
 
+# Switch to non-root user
 USER nodejs
 
 # Expose port

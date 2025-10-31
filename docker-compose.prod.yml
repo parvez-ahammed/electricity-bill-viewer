@@ -37,10 +37,19 @@ services:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+    volumes:
+      # Mount a named volume for persistent SQLite database storage
+      - accounts_data:/app/data
     depends_on:
       redis:
         condition: service_healthy
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/v1', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   client:
     build:
@@ -76,4 +85,6 @@ networks:
 
 volumes:
   redis-data:
+    driver: local
+  accounts_data:
     driver: local
