@@ -12,11 +12,13 @@ export interface IProviderService {
      * Get account information for a single user
      * @param username - User's account number
      * @param password - User's password (optional for NESCO, required for DPDC)
+     * @param clientSecret - Client secret (required for DPDC, optional for NESCO)
      * @param retryCount - Current retry attempt (internal use)
      */
     getAccountInfo(
         username: string,
         password?: string,
+        clientSecret?: string,
         retryCount?: number
     ): Promise<ProviderAccountResult>;
 

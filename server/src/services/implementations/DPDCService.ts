@@ -44,10 +44,10 @@ export class DPDCService implements IProviderService {
         return `rzp_unified_session_id=${id}; i18next=en`;
     }
 
-    private async generateBearerToken(): Promise<string> {
+    private async generateBearerToken(clientSecret: string): Promise<string> {
         const url = `${DPDC.BASE_URL}${DPDC.BEARER_ENDPOINT}`;
         const headers = getDPDCHeaders({
-            config: DPDC,
+            config: { ...DPDC, CLIENT_SECRET: clientSecret },
             cookie: this.genRzpCookieString(),
             referer: `${DPDC.BASE_URL}/login/`,
         });
@@ -69,11 +69,12 @@ export class DPDCService implements IProviderService {
     private async fetchAccountData(
         accessToken: string,
         username: string,
-        password: string
+        password: string,
+        clientSecret: string
     ): Promise<unknown> {
         const url = `${DPDC.BASE_URL}${DPDC.LOGIN_ENDPOINT}`;
         const headers = getDPDCHeaders({
-            config: DPDC,
+            config: { ...DPDC, CLIENT_SECRET: clientSecret },
             accessToken,
             cookie: this.genRzpCookieString(),
             referer: `${DPDC.BASE_URL}/login/`,
@@ -220,6 +221,7 @@ export class DPDCService implements IProviderService {
     async getAccountInfo(
         username: string,
         password?: string,
+        clientSecret?: string,
         retryCount: number = 0
     ): Promise<ProviderAccountResult> {
         const attemptNumber = retryCount + 1;
@@ -235,18 +237,29 @@ export class DPDCService implements IProviderService {
             };
         }
 
+        if (!clientSecret) {
+            return {
+                success: false,
+                error: 'Client Secret is required for DPDC',
+                username,
+                accounts: [],
+                attempts: 1,
+            };
+        }
+
         try {
             logger.debug(
                 `[DPDC] Starting account info fetch for user: ${username} (Attempt ${attemptNumber}/${maxAttempts})`
             );
             // Step 1: Generate bearer token
-            const accessToken = await this.generateBearerToken();
+            const accessToken = await this.generateBearerToken(clientSecret);
 
             // Step 2: Fetch account data
             const rawData = await this.fetchAccountData(
                 accessToken,
                 username,
-                password
+                password,
+                clientSecret
             );
 
             // Step 3: Parse raw data into structured format
@@ -280,7 +293,7 @@ export class DPDCService implements IProviderService {
                 );
                 const retryDelay = DPDC.RETRY_DELAY_MS;
                 await this.sleep(retryDelay);
-                return this.getAccountInfo(username, password, retryCount + 1);
+                return this.getAccountInfo(username, password, clientSecret, retryCount + 1);
             } else {
                 const errorMsg =
                     error instanceof Error ? error.message : 'Unknown error';
@@ -312,9 +325,9 @@ export class DPDCService implements IProviderService {
             `[DPDC] Starting batch account info fetch for ${credentials.length} credential(s)`
         );
         for (let i = 0; i < credentials.length; i++) {
-            const { username, password } = credentials[i];
+            const { username, password, clientSecret } = credentials[i];
 
-            const result = await this.getAccountInfo(username, password);
+            const result = await this.getAccountInfo(username, password, clientSecret);
 
             if (result.success) {
                 logger.info(

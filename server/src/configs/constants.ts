@@ -1,4 +1,3 @@
-import { appConfig } from './config';
 
 export const NESCO = {
     BASE_URL: 'https://customer.nesco.gov.bd',
@@ -12,7 +11,6 @@ export const DPDC = {
     BEARER_ENDPOINT: '/auth/login/generate-bearer',
     LOGIN_ENDPOINT: '/auth/login',
     CLIENT_ID: 'auth-ui',
-    CLIENT_SECRET: appConfig.dpdc.clientSecret,
     TENANT_CODE: 'DPDC',
     MAX_RETRY_ATTEMPTS: 3,
     RETRY_DELAY_MS: 2000,

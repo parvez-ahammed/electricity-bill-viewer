@@ -191,6 +191,7 @@ export class NESCOService implements IProviderService {
     async getAccountInfo(
         username: string,
         password?: string,
+        clientSecret? : string,
         retryCount = 0
     ): Promise<ProviderAccountResult> {
         logger.debug(
@@ -227,7 +228,7 @@ export class NESCOService implements IProviderService {
                     `[NESCO] Retrying for username: ${username} after ${NESCO.RETRY_DELAY_MS}ms`
                 );
                 await this.sleep(NESCO.RETRY_DELAY_MS);
-                return this.getAccountInfo(username, password, retryCount + 1);
+                return this.getAccountInfo(username, password, "client_secret" , retryCount + 1);
             }
             return {
                 success: false,

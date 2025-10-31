@@ -25,6 +25,7 @@ export enum ElectricityProvider {
 export interface ProviderCredential {
     username: string;
     password?: string;
+    clientSecret?: string;
     provider: ElectricityProvider;
 }
 
