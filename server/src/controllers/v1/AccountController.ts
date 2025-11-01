@@ -1,7 +1,5 @@
 import { ResponseBuilder } from '@helpers/ResponseBuilder';
 import { AccountResponse } from '@interfaces/Account';
-import { ElectricityProvider } from '@interfaces/Shared';
-import { AccountParamsSchema, CreateAccountSchema, UpdateAccountSchema } from '@schemas/AccountSchemas';
 import { Request, Response } from 'express';
 import { AccountService } from '../../services/implementations/AccountService';
 
@@ -30,18 +28,7 @@ export class AccountController {
 
     createAccount = async (req: Request, res: Response): Promise<void> => {
         try {
-            const validationResult = CreateAccountSchema.safeParse(req.body);
-            
-            if (!validationResult.success) {
-                new ResponseBuilder(res)
-                    .setStatus(400)
-                    .setMessage('Validation failed')
-                    .setData({ errors: validationResult.error.errors })
-                    .sendError();
-                return;
-            }
-
-            const account = await this.accountService.createAccount(validationResult.data as any);
+            const account = await this.accountService.createAccount(req.body);
             const response = this.mapToResponse(account);
 
             new ResponseBuilder(res)
@@ -61,18 +48,8 @@ export class AccountController {
 
     getAccountById = async (req: Request, res: Response): Promise<void> => {
         try {
-            const paramsValidation = AccountParamsSchema.safeParse(req.params);
-            
-            if (!paramsValidation.success) {
-                new ResponseBuilder(res)
-                    .setStatus(400)
-                    .setMessage('Invalid account ID')
-                    .setData({ errors: paramsValidation.error.errors })
-                    .sendError();
-                return;
-            }
-
-            const account = await this.accountService.getAccountById(paramsValidation.data.id);
+            const { id } = req.params;
+            const account = await this.accountService.getAccountById(id);
             
             if (!account) {
                 new ResponseBuilder(res)
@@ -122,31 +99,8 @@ export class AccountController {
 
     updateAccount = async (req: Request, res: Response): Promise<void> => {
         try {
-            const paramsValidation = AccountParamsSchema.safeParse(req.params);
-            const bodyValidation = UpdateAccountSchema.safeParse(req.body);
-            
-            if (!paramsValidation.success) {
-                new ResponseBuilder(res)
-                    .setStatus(400)
-                    .setMessage('Invalid account ID')
-                    .setData({ errors: paramsValidation.error.errors })
-                    .sendError();
-                return;
-            }
-
-            if (!bodyValidation.success) {
-                new ResponseBuilder(res)
-                    .setStatus(400)
-                    .setMessage('Validation failed')
-                    .setData({ errors: bodyValidation.error.errors })
-                    .sendError();
-                return;
-            }
-
-            const account = await this.accountService.updateAccount(
-                paramsValidation.data.id,
-                bodyValidation.data as any
-            );
+            const { id } = req.params;
+            const account = await this.accountService.updateAccount(id, req.body);
             
             if (!account) {
                 new ResponseBuilder(res)
@@ -176,18 +130,8 @@ export class AccountController {
 
     deleteAccount = async (req: Request, res: Response): Promise<void> => {
         try {
-            const paramsValidation = AccountParamsSchema.safeParse(req.params);
-            
-            if (!paramsValidation.success) {
-                new ResponseBuilder(res)
-                    .setStatus(400)
-                    .setMessage('Invalid account ID')
-                    .setData({ errors: paramsValidation.error.errors })
-                    .sendError();
-                return;
-            }
-
-            const deleted = await this.accountService.deleteAccount(paramsValidation.data.id);
+            const { id } = req.params;
+            const deleted = await this.accountService.deleteAccount(id);
             
             if (!deleted) {
                 new ResponseBuilder(res)
@@ -215,18 +159,8 @@ export class AccountController {
 
     forceDeleteAccount = async (req: Request, res: Response): Promise<void> => {
         try {
-            const paramsValidation = AccountParamsSchema.safeParse(req.params);
-            
-            if (!paramsValidation.success) {
-                new ResponseBuilder(res)
-                    .setStatus(400)
-                    .setMessage('Invalid account ID')
-                    .setData({ errors: paramsValidation.error.errors })
-                    .sendError();
-                return;
-            }
-
-            const deleted = await this.accountService.forceDeleteAccount(paramsValidation.data.id);
+            const { id } = req.params;
+            const deleted = await this.accountService.forceDeleteAccount(id);
             
             if (!deleted) {
                 new ResponseBuilder(res)
@@ -255,16 +189,6 @@ export class AccountController {
     getAccountsByProvider = async (req: Request, res: Response): Promise<void> => {
         try {
             const { provider } = req.params;
-            
-            if (!Object.values(ElectricityProvider).includes(provider as ElectricityProvider)) {
-                new ResponseBuilder(res)
-                    .setStatus(400)
-                    .setMessage('Invalid provider')
-                    .setData({ error: 'Provider must be one of: DPDC, NESCO, DESCO' })
-                    .sendError();
-                return;
-            }
-
             const accounts = await this.accountService.getAccountsByProvider(provider);
             const response = accounts.map(account => this.mapToResponse(account));
 

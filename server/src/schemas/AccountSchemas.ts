@@ -1,3 +1,4 @@
+import { IZodValidationSchema } from '@interfaces/IZodValidationSchema';
 import { ElectricityProvider } from '@interfaces/Shared';
 import { z } from 'zod';
 
@@ -32,3 +33,23 @@ export const UpdateAccountSchema = z.object({
 export const AccountParamsSchema = z.object({
     id: z.string().uuid('Invalid account ID format'),
 });
+
+// Validation schemas for middleware
+export const createAccountValidation: IZodValidationSchema = {
+    body: CreateAccountSchema,
+};
+
+export const updateAccountValidation: IZodValidationSchema = {
+    params: AccountParamsSchema,
+    body: UpdateAccountSchema,
+};
+
+export const accountParamsValidation: IZodValidationSchema = {
+    params: AccountParamsSchema,
+};
+
+export const providerParamsValidation: IZodValidationSchema = {
+    params: z.object({
+        provider: z.nativeEnum(ElectricityProvider),
+    }),
+};
