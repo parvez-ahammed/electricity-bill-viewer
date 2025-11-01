@@ -11,6 +11,9 @@ router.get('/:id', accountController.getAccountById);
 router.put('/:id', accountController.updateAccount);
 router.delete('/:id', accountController.deleteAccount);
 
+// Force delete corrupted accounts
+router.delete('/:id/force', accountController.forceDeleteAccount);
+
 // Get accounts by provider
 router.get('/provider/:provider', accountController.getAccountsByProvider);
 

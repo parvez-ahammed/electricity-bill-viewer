@@ -39,7 +39,8 @@ export interface IElectricityService {
 
     getSingleAccountUsage(
         username: string,
-        password: string,
+        password: string | undefined,
+        clientSecret: string | undefined,
         provider: ElectricityProvider,
         skipCache?: boolean
     ): Promise<ElectricityUsageResponse>;

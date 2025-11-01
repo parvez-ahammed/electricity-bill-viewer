@@ -213,6 +213,45 @@ export class AccountController {
         }
     };
 
+    forceDeleteAccount = async (req: Request, res: Response): Promise<void> => {
+        try {
+            const paramsValidation = AccountParamsSchema.safeParse(req.params);
+            
+            if (!paramsValidation.success) {
+                new ResponseBuilder(res)
+                    .setStatus(400)
+                    .setMessage('Invalid account ID')
+                    .setData({ errors: paramsValidation.error.errors })
+                    .sendError();
+                return;
+            }
+
+            const deleted = await this.accountService.forceDeleteAccount(paramsValidation.data.id);
+            
+            if (!deleted) {
+                new ResponseBuilder(res)
+                    .setStatus(404)
+                    .setMessage('Account not found')
+                    .setData({})
+                    .sendError();
+                return;
+            }
+
+            new ResponseBuilder(res)
+                .setStatus(200)
+                .setMessage('Corrupted account deleted successfully')
+                .setData({})
+                .send();
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            new ResponseBuilder(res)
+                .setStatus(500)
+                .setMessage('Internal server error')
+                .setData({ error: errorMessage })
+                .sendError();
+        }
+    };
+
     getAccountsByProvider = async (req: Request, res: Response): Promise<void> => {
         try {
             const { provider } = req.params;

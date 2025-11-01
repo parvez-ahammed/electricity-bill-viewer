@@ -6,5 +6,6 @@ export interface IAccountService {
     getAllAccounts(): Promise<AccountRecord[]>;
     updateAccount(id: string, data: UpdateAccountRequest): Promise<AccountRecord | null>;
     deleteAccount(id: string): Promise<boolean>;
+    forceDeleteAccount(id: string): Promise<boolean>;
     getAccountsByProvider(provider: string): Promise<AccountRecord[]>;
 }

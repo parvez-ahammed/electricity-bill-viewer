@@ -29,7 +29,14 @@ export const AppProvider = (props: AppProviderProps) => {
                         <PreferencesProvider>
                             <BrowserRouter>
                                 <TooltipProvider>
-                                    <Toaster position="top-right" richColors />
+                                    <Toaster 
+                                        position="top-right" 
+                                        richColors 
+                                        expand={true}
+                                        visibleToasts={5}
+                                        closeButton={true}
+                                        duration={4000}
+                                    />
                                     <LoadingProvider>
                                         {props.children}
                                         <LoadingSpinner />

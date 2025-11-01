@@ -35,6 +35,10 @@ export class AccountService implements IAccountService {
         return await this.accountRepository.delete(id);
     }
 
+    async forceDeleteAccount(id: string): Promise<boolean> {
+        return await this.accountRepository.forceDelete(id);
+    }
+
     async getAccountsByProvider(provider: string): Promise<AccountRecord[]> {
         const accounts = await this.accountRepository.findByProvider(provider as ElectricityProvider);
         return accounts.map(account => this.mapToAccountRecord(account));

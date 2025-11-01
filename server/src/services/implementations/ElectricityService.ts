@@ -78,6 +78,7 @@ export class ElectricityService implements IElectricityService {
                 this.getSingleAccountUsage(
                     cred.username,
                     cred.password,
+                    cred.clientSecret,
                     cred.provider,
                     skipCache
                 )
@@ -125,13 +126,16 @@ export class ElectricityService implements IElectricityService {
 
     async getSingleAccountUsage(
         username: string,
-        password: string,
+        password: string | undefined,
+        clientSecret: string | undefined,
         provider: ElectricityProvider,
-        skipCache = false
+        skipCache?: boolean
     ): Promise<ElectricityUsageResponse> {
+        skipCache = skipCache ?? false;
         const cacheKey = cacheService.generateCacheKey(this.CACHE_PREFIX, {
             username,
             password,
+            clientSecret,
             provider,
         });
 
@@ -155,6 +159,7 @@ export class ElectricityService implements IElectricityService {
                 return this.fetchSingleAccountUsage(
                     username,
                     password,
+                    clientSecret,
                     provider
                 );
             },
@@ -164,7 +169,8 @@ export class ElectricityService implements IElectricityService {
 
     private async fetchSingleAccountUsage(
         username: string,
-        password: string,
+        password: string | undefined,
+        clientSecret: string | undefined,
         provider: ElectricityProvider
     ): Promise<ElectricityUsageResponse> {
         try {
@@ -172,7 +178,7 @@ export class ElectricityService implements IElectricityService {
                 `[ElectricityService] Fetching account info for user: ${username}, provider: ${provider}`
             );
             const service = this.getProviderService(provider);
-            const result = await service.getAccountInfo(username, password);
+            const result = await service.getAccountInfo(username, password, clientSecret);
 
             const usageData = this.transformToUsageData(result.accounts);
 

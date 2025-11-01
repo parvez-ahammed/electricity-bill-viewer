@@ -198,3 +198,40 @@ div {
 .dark .table-scroll {
     scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
+
+/* Toast stacking improvements */
+[data-sonner-toaster] {
+    --width: 356px;
+    --font-size: 13px;
+    --toast-gap: 4px;
+}
+
+[data-sonner-toaster][data-expanded] [data-sonner-toast] {
+    margin-bottom: var(--toast-gap);
+}
+
+[data-sonner-toaster] [data-sonner-toast] {
+    transition: all 0.4s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-styled] {
+    padding: 16px;
+    gap: 6px;
+    width: var(--width);
+    border-radius: 8px;
+    font-size: var(--font-size);
+    display: flex;
+    align-items: center;
+    position: relative;
+}
+
+/* Ensure toasts don't overlap */
+[data-sonner-toaster][data-expanded] {
+    align-items: flex-end;
+}
+
+[data-sonner-toaster][data-expanded] [data-sonner-toast]:not([data-expanded]) {
+    transform: scale(1);
+    opacity: 1;
+}

@@ -9,4 +9,5 @@ export interface IAccountRepository {
     update(id: string, data: UpdateAccountRequest): Promise<Account | null>;
     delete(id: string): Promise<boolean>;
     findByProvider(provider: ElectricityProvider): Promise<Account[]>;
+    forceDelete(id: string): Promise<boolean>;
 }

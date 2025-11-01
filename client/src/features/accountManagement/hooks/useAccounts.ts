@@ -50,6 +50,17 @@ export const useAccounts = () => {
         },
     });
 
+    const forceDeleteAccountMutation = useMutation({
+        mutationFn: accountsApi.forceDeleteAccount,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["accounts"] });
+            toast.success("Corrupted account deleted successfully");
+        },
+        onError: (error: any) => {
+            toast.error(error?.response?.data?.message || "Failed to delete corrupted account");
+        },
+    });
+
     // Group accounts by provider
     const groupedAccounts = accounts.reduce((acc, account) => {
         if (!acc[account.provider]) {
@@ -67,8 +78,9 @@ export const useAccounts = () => {
         createAccount: createAccountMutation.mutate,
         updateAccount: updateAccountMutation.mutate,
         deleteAccount: deleteAccountMutation.mutate,
+        forceDeleteAccount: forceDeleteAccountMutation.mutate,
         isCreating: createAccountMutation.isPending,
         isUpdating: updateAccountMutation.isPending,
-        isDeleting: deleteAccountMutation.isPending,
+        isDeleting: deleteAccountMutation.isPending || forceDeleteAccountMutation.isPending,
     };
 };

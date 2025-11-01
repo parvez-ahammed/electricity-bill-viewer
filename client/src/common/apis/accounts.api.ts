@@ -14,7 +14,13 @@ export interface NESCOCredentials {
     username: string;
 }
 
-export type ProviderCredentials = DPDCCredentials | NESCOCredentials;
+export interface CorruptedCredentials {
+    username: string;
+    _isCorrupted: boolean;
+    _originalId: string;
+}
+
+export type ProviderCredentials = DPDCCredentials | NESCOCredentials | CorruptedCredentials;
 
 export interface Account {
     id: string;
@@ -78,6 +84,13 @@ export const accountsApi = {
         await apiRequest<void>(
             HTTP_METHOD.DELETE,
             `${API_ENDPOINTS.ACCOUNTS.BASE}/${id}`
+        );
+    },
+
+    forceDeleteAccount: async (id: string): Promise<void> => {
+        await apiRequest<void>(
+            HTTP_METHOD.DELETE,
+            `${API_ENDPOINTS.ACCOUNTS.BASE}/${id}/force`
         );
     },
 

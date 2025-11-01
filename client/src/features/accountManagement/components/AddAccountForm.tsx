@@ -98,9 +98,8 @@ export const AddAccountForm = ({ provider, onCancel, onSuccess }: AddAccountForm
                             <Label htmlFor={`password-${provider}`} className="text-xs">
                                 Password *
                             </Label>
-                            <Input
+                            <PasswordInput
                                 id={`password-${provider}`}
-                                type="password"
                                 {...register("password", { 
                                     required: provider === "DPDC" ? "Password is required for DPDC" : false 
                                 })}

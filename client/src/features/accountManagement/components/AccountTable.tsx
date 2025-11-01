@@ -2,6 +2,7 @@ import { Account, DPDCCredentials, ElectricityProvider, NESCOCredentials, Update
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Check, Edit2, Trash2, X } from "lucide-react";
 import { useState } from "react";
@@ -20,7 +21,7 @@ type FormData = {
 };
 
 export const AccountTable = ({ accounts, provider }: AccountTableProps) => {
-    const { updateAccount, deleteAccount, isUpdating, isDeleting } = useAccounts();
+    const { updateAccount, deleteAccount, forceDeleteAccount, isUpdating, isDeleting } = useAccounts();
     const [editingId, setEditingId] = useState<string | null>(null);
     const [deleteDialogId, setDeleteDialogId] = useState<string | null>(null);
 
@@ -79,7 +80,14 @@ export const AccountTable = ({ accounts, provider }: AccountTableProps) => {
     };
 
     const handleDelete = (accountId: string) => {
-        deleteAccount(accountId);
+        const account = accounts.find(acc => acc.id === accountId);
+        const isCorrupted = account && '_isCorrupted' in account.credentials && account.credentials._isCorrupted;
+        
+        if (isCorrupted) {
+            forceDeleteAccount(accountId);
+        } else {
+            deleteAccount(accountId);
+        }
         setDeleteDialogId(null);
     };
 
@@ -124,8 +132,7 @@ export const AccountTable = ({ accounts, provider }: AccountTableProps) => {
                                     </TableCell>
                                     {provider === "DPDC" && (
                                         <TableCell className="py-1">
-                                            <Input
-                                                type="password"
+                                            <PasswordInput
                                                 {...register("password", { 
                                                     required: "Password is required for DPDC" 
                                                 })}
@@ -182,7 +189,14 @@ export const AccountTable = ({ accounts, provider }: AccountTableProps) => {
                                 // View mode
                                 <>
                                     <TableCell className="font-mono text-sm py-2">
-                                        {account.credentials.username}
+                                        <div className="flex items-center gap-2">
+                                            {account.credentials.username}
+                                            {'_isCorrupted' in account.credentials && account.credentials._isCorrupted && (
+                                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                    Corrupted
+                                                </span>
+                                            )}
+                                        </div>
                                     </TableCell>
                                     {provider === "DPDC" && 'password' in account.credentials && (
                                         <TableCell className="font-mono text-sm py-2">
@@ -204,7 +218,8 @@ export const AccountTable = ({ accounts, provider }: AccountTableProps) => {
                                                 variant="ghost"
                                                 className="h-7 w-7 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                                                 onClick={() => startEdit(account)}
-                                                disabled={isUpdating || isDeleting}
+                                                disabled={isUpdating || isDeleting || ('_isCorrupted' in account.credentials && account.credentials._isCorrupted)}
+                                                title={('_isCorrupted' in account.credentials && account.credentials._isCorrupted) ? "Cannot edit corrupted account" : "Edit account"}
                                             >
                                                 <Edit2 className="h-3 w-3" />
                                             </Button>
@@ -232,7 +247,16 @@ export const AccountTable = ({ accounts, provider }: AccountTableProps) => {
                     <AlertDialogHeader>
                         <AlertDialogTitle>Delete Account</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Are you sure you want to delete this account? This action cannot be undone.
+                            {(() => {
+                                const account = accounts.find(acc => acc.id === deleteDialogId);
+                                const isCorrupted = account && '_isCorrupted' in account.credentials && account.credentials._isCorrupted;
+                                
+                                if (isCorrupted) {
+                                    return "This account appears to be corrupted (possibly due to encryption key changes). Deleting it will permanently remove the corrupted data. This action cannot be undone.";
+                                }
+                                
+                                return "Are you sure you want to delete this account? This action cannot be undone.";
+                            })()}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

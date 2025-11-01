@@ -42,6 +42,7 @@ services:
     volumes:
       - ./server:/app
       - /app/node_modules
+      - server-data:/app/data  # Add dedicated volume for database
     depends_on:
       redis:
         condition: service_healthy
@@ -88,4 +89,6 @@ networks:
 
 volumes:
   redis-data:
+    driver: local
+  server-data:
     driver: local

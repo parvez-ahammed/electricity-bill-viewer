@@ -20,6 +20,7 @@ export const getCredentialsFromDatabase = async (): Promise<ProviderCredential[]
         const credentials: ProviderCredential[] = accounts.map(account => ({
             username: account.credentials.username,
             password: 'password' in account.credentials ? account.credentials.password : undefined,
+            clientSecret: 'clientSecret' in account.credentials ? account.credentials.clientSecret : undefined,
             provider: account.provider,
         }));
 

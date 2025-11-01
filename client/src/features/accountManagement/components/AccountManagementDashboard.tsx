@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useAccounts } from "../hooks/useAccounts";
 import { AccountTable } from "./AccountTable";
 import { AddAccountForm } from "./AddAccountForm";
+import { CorruptionHelp } from "./CorruptionHelp";
 
 const PROVIDERS: { name: ElectricityProvider; displayName: string; color: string }[] = [
     { name: "DPDC", displayName: "DPDC", color: "bg-blue-500" },
@@ -14,8 +15,13 @@ const PROVIDERS: { name: ElectricityProvider; displayName: string; color: string
 ];
 
 export const AccountManagementDashboard = () => {
-    const { groupedAccounts, isLoading, error } = useAccounts();
+    const { accounts, groupedAccounts, isLoading, error } = useAccounts();
     const [showAddForm, setShowAddForm] = useState<ElectricityProvider | null>(null);
+    
+    // Check if there are any corrupted accounts
+    const hasCorruptedAccounts = accounts.some(account => 
+        '_isCorrupted' in account.credentials && account.credentials._isCorrupted
+    );
 
     if (isLoading) {
         return (
@@ -38,6 +44,11 @@ export const AccountManagementDashboard = () => {
 
     return (
         <div className="space-y-4">
+            {/* Show corruption help if needed */}
+            {hasCorruptedAccounts && (
+                <CorruptionHelp />
+            )}
+            
             {PROVIDERS.map((provider) => (
                 <Card key={provider.name} className="w-full p-0 gap-0">
                     <CardHeader className="pb-0 pt-4 mb-0">
