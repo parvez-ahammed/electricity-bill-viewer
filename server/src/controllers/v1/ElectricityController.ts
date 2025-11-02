@@ -4,16 +4,10 @@ import { ElectricityService } from '../../services/implementations/ElectricitySe
 import { getCredentialsFromDatabase } from '../../utility/accountCredentialParser';
 
 export class ElectricityController {
-    private static electricityService: ElectricityService;
+    private electricityService: ElectricityService;
 
     constructor() {
-        if (!ElectricityController.electricityService) {
-            ElectricityController.electricityService = new ElectricityService();
-        }
-    }
-
-    private get electricityService(): ElectricityService {
-        return ElectricityController.electricityService;
+        this.electricityService = new ElectricityService();
     }
 
     getUsageData = async (req: Request, res: Response): Promise<void> => {

@@ -4,26 +4,20 @@ import { Request, Response } from 'express';
 import { TelegramService } from '../../services/implementations/TelegramService';
 
 export class TelegramController {
-    private static telegramService: TelegramService | null;
+    private telegramService: TelegramService | null;
 
     constructor() {
-        if (TelegramController.telegramService === undefined) {
-            try {
-                TelegramController.telegramService = new TelegramService();
-            } catch (error) {
-                TelegramController.telegramService = null;
-                logger.warn(
-                    'Telegram service not configured:' +
-                        (error instanceof Error
-                            ? error.message
-                            : 'Unknown error')
-                );
-            }
+        try {
+            this.telegramService = new TelegramService();
+        } catch (error) {
+            this.telegramService = null;
+            logger.warn(
+                'Telegram service not configured:' +
+                    (error instanceof Error
+                        ? error.message
+                        : 'Unknown error')
+            );
         }
-    }
-
-    private get telegramService(): TelegramService | null {
-        return TelegramController.telegramService;
     }
 
     sendBalances = async (req: Request, res: Response): Promise<void> => {

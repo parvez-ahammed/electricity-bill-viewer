@@ -1,35 +1,18 @@
-import { RefreshCw, Settings } from "lucide-react";
-import { useState } from "react";
+import { RefreshCw, Send, Settings } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
 import { Text } from "@/components/partials/typography";
 import { Button } from "@/components/ui";
+import { useRefresh } from "./hooks/useRefresh";
+import { useTelegram } from "./hooks/useTelegram";
 
 export const Navbar = () => {
-    const [isRefreshing, setIsRefreshing] = useState(false);
     const location = useLocation();
+    const { isRefreshing, handleRefresh } = useRefresh();
+    const { isSendingTelegram, handleSendTelegram } = useTelegram();
     
     // Check if we're on the account management page
     const isAccountManagementPage = location.pathname === "/accounts";
-
-    const handleRefresh = async () => {
-        setIsRefreshing(true);
-        try {
-            // Call the global refresh function exposed by AccountBalance
-            if (
-                typeof window !== "undefined" &&
-                window.refreshElectricityData
-            ) {
-                await window.refreshElectricityData();
-            }
-        } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error("Error refreshing data:", error);
-        } finally {
-            // Keep spinning for a bit to show feedback
-            setTimeout(() => setIsRefreshing(false), 1000);
-        }
-    };
 
     return (
         <header className="sticky top-0 z-20 border-y border-black bg-white/80 px-2 backdrop-blur-md supports-backdrop-filter:bg-white/70">
@@ -52,12 +35,31 @@ export const Navbar = () => {
                                 size="sm"
                                 className="flex items-center gap-2"
                                 title="Refresh data from server (bypass cache)"
-                                disabled={isRefreshing}
+                                disabled={isRefreshing || isSendingTelegram}
                             >
                                 <RefreshCw
                                     className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
                                 />
                                 <span className="hidden sm:inline">Refresh</span>
+                            </Button>
+                        )}
+
+                        {/* Telegram Send Button - Only show on dashboard */}
+                        {!isAccountManagementPage && (
+                            <Button
+                                onClick={handleSendTelegram}
+                                variant="outline"
+                                size="sm"
+                                className="flex items-center gap-2"
+                                title="Send account balances to Telegram"
+                                disabled={isRefreshing || isSendingTelegram}
+                            >
+                                <Send
+                                    className={`h-4 w-4 ${isSendingTelegram ? "animate-pulse" : ""}`}
+                                />
+                                <span className="hidden sm:inline">
+                                    {isSendingTelegram ? "Sending..." : "Telegram"}
+                                </span>
                             </Button>
                         )}
 

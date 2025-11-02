@@ -4,16 +4,10 @@ import { Request, Response } from 'express';
 import { AccountService } from '../../services/implementations/AccountService';
 
 export class AccountController {
-    private static accountService: AccountService;
+    private accountService: AccountService;
 
     constructor() {
-        if (!AccountController.accountService) {
-            AccountController.accountService = new AccountService();
-        }
-    }
-
-    private get accountService(): AccountService {
-        return AccountController.accountService;
+        this.accountService = new AccountService();
     }
 
     private mapToResponse(account: any): AccountResponse {
