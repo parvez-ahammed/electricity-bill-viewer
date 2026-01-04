@@ -32,7 +32,7 @@ export class ElectricityService implements IElectricityService {
         return service;
     }
 
-    private transformToUsageData(
+    private async transformToUsageData(
         accounts: Array<{
             accountId: string;
             customerNumber: string;
@@ -48,7 +48,10 @@ export class ElectricityService implements IElectricityService {
             mobileNumber: string;
             minRecharge: string | null;
         }>
-    ): ElectricityUsageData[] {
+    ): Promise<ElectricityUsageData[]> {
+        const accountIds = accounts.map(account => account.accountId);
+        const nicknames = await cacheService.getMultipleAccountNicknames(accountIds);
+
         return accounts.map((account) => ({
             accountId: account.accountId,
             customerNumber: account.customerNumber,
@@ -63,6 +66,7 @@ export class ElectricityService implements IElectricityService {
             location: account.location,
             mobileNumber: account.mobileNumber,
             minRecharge: account.minRecharge,
+            displayName: nicknames[account.accountId] || account.location || '',
         }));
     }
 
@@ -180,7 +184,7 @@ export class ElectricityService implements IElectricityService {
             const service = this.getProviderService(provider);
             const result = await service.getAccountInfo(username, password, clientSecret);
 
-            const usageData = this.transformToUsageData(result.accounts);
+            const usageData = await this.transformToUsageData(result.accounts);
 
             logger.info(
                 `[ElectricityService] Account info fetch result for user: ${username}, provider: ${provider} - Success: ${result.success}, Accounts: ${usageData.length}`

@@ -2,6 +2,7 @@ import { ResponseBuilder } from '@helpers/ResponseBuilder';
 import { AccountResponse } from '@interfaces/Account';
 import { Request, Response } from 'express';
 import { AccountService } from '../../services/implementations/AccountService';
+import { cacheService } from '../../services/implementations/RedisCacheService';
 
 export class AccountController {
     private accountService: AccountService;
@@ -190,6 +191,96 @@ export class AccountController {
                 .setStatus(200)
                 .setMessage(`${provider} accounts retrieved successfully`)
                 .setData(response)
+                .send();
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            new ResponseBuilder(res)
+                .setStatus(500)
+                .setMessage('Internal server error')
+                .setData({ error: errorMessage })
+                .sendError();
+        }
+    };
+
+    // Nickname management endpoints
+    setAccountNickname = async (req: Request, res: Response): Promise<void> => {
+        try {
+            const { accountId } = req.params;
+            const { nickname } = req.body;
+
+            if (!nickname || typeof nickname !== 'string' || nickname.trim() === '') {
+                new ResponseBuilder(res)
+                    .setStatus(400)
+                    .setMessage('Nickname is required and must be a non-empty string')
+                    .setData({})
+                    .sendError();
+                return;
+            }
+
+            const success = await cacheService.setAccountNickname(accountId, nickname.trim());
+            
+            if (!success) {
+                new ResponseBuilder(res)
+                    .setStatus(500)
+                    .setMessage('Failed to set nickname')
+                    .setData({})
+                    .sendError();
+                return;
+            }
+
+            new ResponseBuilder(res)
+                .setStatus(200)
+                .setMessage('Nickname set successfully')
+                .setData({ accountId, nickname: nickname.trim() })
+                .send();
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            new ResponseBuilder(res)
+                .setStatus(500)
+                .setMessage('Internal server error')
+                .setData({ error: errorMessage })
+                .sendError();
+        }
+    };
+
+    getAccountNickname = async (req: Request, res: Response): Promise<void> => {
+        try {
+            const { accountId } = req.params;
+            const nickname = await cacheService.getAccountNickname(accountId);
+
+            new ResponseBuilder(res)
+                .setStatus(200)
+                .setMessage('Nickname retrieved successfully')
+                .setData({ accountId, nickname })
+                .send();
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            new ResponseBuilder(res)
+                .setStatus(500)
+                .setMessage('Internal server error')
+                .setData({ error: errorMessage })
+                .sendError();
+        }
+    };
+
+    deleteAccountNickname = async (req: Request, res: Response): Promise<void> => {
+        try {
+            const { accountId } = req.params;
+            const success = await cacheService.deleteAccountNickname(accountId);
+            
+            if (!success) {
+                new ResponseBuilder(res)
+                    .setStatus(500)
+                    .setMessage('Failed to delete nickname')
+                    .setData({})
+                    .sendError();
+                return;
+            }
+
+            new ResponseBuilder(res)
+                .setStatus(200)
+                .setMessage('Nickname deleted successfully')
+                .setData({ accountId })
                 .send();
         } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';

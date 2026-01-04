@@ -14,6 +14,7 @@ export interface ElectricityUsageData {
     location: string;
     mobileNumber: string;
     minRecharge: string | null;
+    displayName: string;
 }
 
 export interface ElectricityUsageResponse {

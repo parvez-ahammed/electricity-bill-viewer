@@ -43,6 +43,7 @@ const transformAccountData = (
         flatNameOrLocation: account.location,
         location: account.location,
         provider: account.provider,
+        displayName: account.displayName,
     };
 };
 

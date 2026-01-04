@@ -1,4 +1,3 @@
-import { BalanceViewer } from "./components/BalanceViewer";
 import {
     Card,
     CardContent,
@@ -6,6 +5,7 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui";
+import { BalanceViewer } from "./components/BalanceViewer";
 
 import { useBalanceData } from "./hooks/useBalanceData";
 

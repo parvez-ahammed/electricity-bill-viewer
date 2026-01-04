@@ -16,6 +16,7 @@ export interface ElectricityAccount {
     location: string;
     mobileNumber: string;
     minRecharge: string | null;
+    displayName: string;
 }
 
 export interface ElectricityUsageResponse {
@@ -40,6 +41,33 @@ export const electricityApi = {
             API_ENDPOINTS.ELECTRICITY.USAGE,
             undefined,
             skipCache
+        );
+        return data;
+    },
+};
+
+export const nicknameApi = {
+    setNickname: async (accountId: string, nickname: string) => {
+        const data = await apiRequest<{ accountId: string; nickname: string }>(
+            HTTP_METHOD.PUT,
+            `${API_ENDPOINTS.ACCOUNTS.BASE}/${accountId}/nickname`,
+            { nickname }
+        );
+        return data;
+    },
+
+    getNickname: async (accountId: string) => {
+        const data = await apiRequest<{ accountId: string; nickname: string | null }>(
+            HTTP_METHOD.GET,
+            `${API_ENDPOINTS.ACCOUNTS.BASE}/${accountId}/nickname`
+        );
+        return data;
+    },
+
+    deleteNickname: async (accountId: string) => {
+        const data = await apiRequest<{ accountId: string }>(
+            HTTP_METHOD.DELETE,
+            `${API_ENDPOINTS.ACCOUNTS.BASE}/${accountId}/nickname`
         );
         return data;
     },

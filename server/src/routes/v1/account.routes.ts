@@ -24,4 +24,9 @@ router.delete('/:id/force', validate(accountParamsValidation), accountController
 // Get accounts by provider
 router.get('/provider/:provider', validate(providerParamsValidation), accountController.getAccountsByProvider);
 
+// Nickname management
+router.put('/:accountId/nickname', accountController.setAccountNickname);
+router.get('/:accountId/nickname', accountController.getAccountNickname);
+router.delete('/:accountId/nickname', accountController.deleteAccountNickname);
+
 export default router;

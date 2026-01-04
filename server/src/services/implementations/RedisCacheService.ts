@@ -226,6 +226,69 @@ export class RedisCacheService {
             };
         }
     }
+
+    // Nickname management methods
+    async setAccountNickname(accountId: string, nickname: string): Promise<boolean> {
+        const key = `account:${accountId}:nickname`;
+        try {
+            const client = await redisClient.getClient();
+            logger.debug(`[RedisCache] Setting nickname for account: ${accountId}`);
+            await client.set(key, nickname);
+            logger.info(`[RedisCache] Nickname set for account: ${accountId}`);
+            return true;
+        } catch (error) {
+            logger.error('Redis Cache Set Nickname Error:' + error);
+            return false;
+        }
+    }
+
+    async getAccountNickname(accountId: string): Promise<string | null> {
+        const key = `account:${accountId}:nickname`;
+        try {
+            const client = await redisClient.getClient();
+            logger.debug(`[RedisCache] Getting nickname for account: ${accountId}`);
+            const nickname = await client.get(key);
+            return typeof nickname === 'string' ? nickname : null;
+        } catch (error) {
+            logger.error('Redis Cache Get Nickname Error:' + error);
+            return null;
+        }
+    }
+
+    async deleteAccountNickname(accountId: string): Promise<boolean> {
+        const key = `account:${accountId}:nickname`;
+        try {
+            const client = await redisClient.getClient();
+            logger.debug(`[RedisCache] Deleting nickname for account: ${accountId}`);
+            await client.del(key);
+            logger.info(`[RedisCache] Nickname deleted for account: ${accountId}`);
+            return true;
+        } catch (error) {
+            logger.error('Redis Cache Delete Nickname Error:' + error);
+            return false;
+        }
+    }
+
+    async getMultipleAccountNicknames(accountIds: string[]): Promise<Record<string, string | null>> {
+        try {
+            const client = await redisClient.getClient();
+            const keys = accountIds.map(id => `account:${id}:nickname`);
+            logger.debug(`[RedisCache] Getting nicknames for ${accountIds.length} accounts`);
+            
+            const nicknames = await client.mGet(keys);
+            const result: Record<string, string | null> = {};
+            
+            accountIds.forEach((accountId, index) => {
+                const nickname = nicknames[index];
+                result[accountId] = typeof nickname === 'string' ? nickname : null;
+            });
+            
+            return result;
+        } catch (error) {
+            logger.error('Redis Cache Get Multiple Nicknames Error:' + error);
+            return {};
+        }
+    }
 }
 
 export const cacheService = new RedisCacheService();

@@ -3,6 +3,7 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { PostBalanceDetails } from "../constants/balance.constant";
 import { formatDate } from "../utils/dateUtils";
 
+import { NicknameEditor } from "./NicknameEditor";
 import { ProviderChip } from "./ProviderChip";
 
 interface BalanceTableRowProps {
@@ -11,6 +12,7 @@ interface BalanceTableRowProps {
 }
 
 export const BalanceTableRow = ({ account, index }: BalanceTableRowProps) => {
+    const displayName = account.displayName || account.flatNameOrLocation || account.location || "-";
     const location = account.flatNameOrLocation || account.location || "-";
     const lastPaymentDate =
         account.lastPayDateOnSa || account.lastPaymentDate || "-";
@@ -22,12 +24,11 @@ export const BalanceTableRow = ({ account, index }: BalanceTableRowProps) => {
             key={`${account.accountId}-${index}`}
             className="hover:bg-muted/30 border-b transition-colors"
         >
-            <TableCell
-                className="w-[200px] min-w-[200px] px-4 py-4"
-                title={location}
-            >
-                <div className="truncate text-sm">{location}</div>
-            </TableCell>
+            <NicknameEditor
+                accountId={account.accountId}
+                currentDisplayName={displayName}
+                location={location}
+            />
             <TableCell className="w-[140px] min-w-[140px] px-4 py-4">
                 <div className="truncate font-mono text-sm font-medium">
                     {account.customerNumber || account.accountId || "-"}

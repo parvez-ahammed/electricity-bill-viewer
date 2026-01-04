@@ -18,6 +18,7 @@ export interface PostBalanceDetails {
     flatNameOrLocation?: string;
     location?: string;
     provider?: string;
+    displayName?: string;
 }
 
 export const TABLE_HEADERS = [
