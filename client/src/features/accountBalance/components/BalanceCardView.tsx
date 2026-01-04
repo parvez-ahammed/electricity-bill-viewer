@@ -77,14 +77,14 @@ export const BalanceCardView = ({ account, index }: BalanceCardViewProps) => {
                             {/* Divider */}
                             <div className="border-border border-t" />
 
-                            {/* Account ID & Type */}
+                            {/* Customer Number & Type */}
                             <div className="flex items-center justify-between">
                                 <div className="flex-1">
                                     <p className="text-muted-foreground text-xs font-medium">
-                                        Account ID
+                                        Customer Number
                                     </p>
                                     <p className="mt-0.5 text-sm font-medium">
-                                        {account.accountId}
+                                        {account.customerNumber || account.accountId || "-"}
                                     </p>
                                 </div>
                                 <div className="flex-1 text-right">

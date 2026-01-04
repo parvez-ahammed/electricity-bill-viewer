@@ -30,7 +30,7 @@ export const BalanceTableRow = ({ account, index }: BalanceTableRowProps) => {
             </TableCell>
             <TableCell className="w-[140px] min-w-[140px] px-4 py-4">
                 <div className="truncate font-mono text-sm font-medium">
-                    {account.accountId}
+                    {account.customerNumber || account.accountId || "-"}
                 </div>
             </TableCell>
             <TableCell

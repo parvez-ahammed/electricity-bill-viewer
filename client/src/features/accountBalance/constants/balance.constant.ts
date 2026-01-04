@@ -22,7 +22,7 @@ export interface PostBalanceDetails {
 
 export const TABLE_HEADERS = [
     "Flat Name / Location",
-    "Account ID",
+    "Customer Number",
     "Customer Name",
     "Provider",
     "Account Type",
