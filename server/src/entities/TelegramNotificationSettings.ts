@@ -1,18 +1,12 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
-import { Account } from './Account';
+import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity('telegram_notification_settings')
 export class TelegramNotificationSettings {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @Column()
-    accountId: string;
-
-    @OneToOne(() => Account, { onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'accountId' })
-    account: Account;
-
+    // Singleton identifier column, though we will just query for the first record usually.
+    // Or we can just ensure only one row exists via logic.
     @Column({ type: 'varchar', nullable: true })
     chatId: string | null;
 

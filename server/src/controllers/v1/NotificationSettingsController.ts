@@ -1,10 +1,9 @@
 import { ResponseBuilder } from '@helpers/ResponseBuilder';
-import { NotificationSettingsService } from '@services/NotificationSettingsService';
 import { Request, Response } from 'express';
 import { z } from 'zod';
+import { NotificationSettingsService } from '../../services/implementations/NotificationSettingsService';
 
 const updateSettingsSchema = z.object({
-    accountId: z.string().uuid(),
     chatId: z.string().min(1),
     isActive: z.boolean().default(true),
 });
@@ -18,14 +17,7 @@ export class NotificationSettingsController {
 
     getSettings = async (req: Request, res: Response): Promise<void> => {
         try {
-            const accountId = req.query.accountId as string;
-            
-            if (!accountId) {
-                 new ResponseBuilder(res).setStatus(400).setMessage('AccountId query parameter is required').sendError();
-                 return;
-            }
-
-            const settings = await this.service.getTelegramSettings(accountId);
+            const settings = await this.service.getTelegramSettings();
             
             new ResponseBuilder(res)
                 .setStatus(200)
@@ -53,8 +45,8 @@ export class NotificationSettingsController {
                 return;
             }
 
-            const { accountId, chatId, isActive } = validation.data;
-            const settings = await this.service.updateTelegramSettings(accountId, chatId, isActive);
+            const { chatId, isActive } = validation.data;
+            const settings = await this.service.updateTelegramSettings(chatId, isActive);
 
             new ResponseBuilder(res)
                 .setStatus(200)
@@ -71,13 +63,7 @@ export class NotificationSettingsController {
 
     deleteSettings = async (req: Request, res: Response): Promise<void> => {
         try {
-            const accountId = req.query.accountId as string;
-             if (!accountId) {
-                 new ResponseBuilder(res).setStatus(400).setMessage('AccountId parameter is required').sendError();
-                 return;
-            }
-
-            const success = await this.service.deleteTelegramSettings(accountId);
+            const success = await this.service.deleteTelegramSettings();
 
             if (success) {
                 new ResponseBuilder(res)

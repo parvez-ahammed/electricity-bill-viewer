@@ -1,7 +1,6 @@
 import { appConfig } from '@configs/config';
 import logger from '@helpers/Logger';
 import { ProviderAccountDetails } from '@interfaces/Shared';
-import { Account } from '../../entities/Account';
 import { ITelegramService } from '../interfaces/ITelegramService';
 import { AccountService } from './AccountService';
 import { ElectricityService } from './ElectricityService';
@@ -156,7 +155,37 @@ export class TelegramService implements ITelegramService {
         try {
             logger.info('Preparing to send account balances to Telegram');
 
-            // 1. Fetch all accounts from DB
+            // 1. Check Global Notification Settings first
+            const settings = await this.notificationSettingsService.getTelegramSettings();
+            
+            if (!settings) {
+                logger.warn('No Telegram notification settings found');
+                return {
+                    success: false,
+                    message: 'Telegram notifications not configured',
+                    error: 'NOT_CONFIGURED',
+                };
+            }
+
+            if (!settings.isActive) {
+                 logger.info('Telegram notifications are disabled globally.');
+                 return {
+                     success: true,
+                     message: 'Notifications are disabled',
+                     sentAccounts: 0
+                 };
+            }
+
+            if (!settings.chatId) {
+                logger.warn('Telegram notifications enabled but no Chat ID configured');
+                return {
+                    success: false,
+                    message: 'No Telegram Chat ID configured',
+                    error: 'NO_CHAT_ID',
+                };
+            }
+
+            // 2. Fetch all accounts from DB
             const allAccounts = await this.accountService.getAllAccounts();
             
             if (allAccounts.length === 0) {
@@ -168,23 +197,15 @@ export class TelegramService implements ITelegramService {
                 };
             }
 
-            // 2. Map for easy lookup [provider_username] -> Account
-            const accountMap = new Map<string, Account>();
-            const credentials = [];
-            
-            for (const account of allAccounts) {
-                const key = `${account.provider}_${account.credentials.username}`;
-                accountMap.set(key, account);
-                
-                credentials.push({
-                    username: account.credentials.username,
-                    password: 'password' in account.credentials ? account.credentials.password : undefined,
-                    clientSecret: 'clientSecret' in account.credentials ? account.credentials.clientSecret : undefined,
-                    provider: account.provider,
-                });
-            }
+            // 3. Map for easy lookup [provider_username] -> Credentials
+            const credentials = allAccounts.map(account => ({
+                username: account.credentials.username,
+                password: 'password' in account.credentials ? account.credentials.password : undefined,
+                clientSecret: 'clientSecret' in account.credentials ? account.credentials.clientSecret : undefined,
+                provider: account.provider,
+            }));
 
-            // 3. Fetch usage data
+            // 4. Fetch usage data
             logger.debug(`Invoking ElectricityService.getUsageData(skipCache=${skipCache})`);
             const usageResult = await this.electricityService.getUsageData(credentials, skipCache);
             logger.info(`Fetched account data: ${usageResult.accounts.length} accounts (successful)`);
@@ -198,61 +219,25 @@ export class TelegramService implements ITelegramService {
                 };
             }
 
-            // 4. Group data by Chat ID
-            // We need to fetch settings for matched accounts
-            const messagesByChatId = new Map<string, ProviderAccountDetails[]>();
+            // 5. Send message to the global Chat ID
+            const message = this.formatAccountMessage(usageResult.accounts);
+            const sent = await this.sendMessage(message, settings.chatId);
 
-            for (const data of usageResult.accounts) {
-                const key = `${data.provider}_${data.customerNumber}`; // ProviderAccountDetails uses customerNumber
-                
-                // Fallback matching if accountNo is missing or different format (usually it matches username)
-                // Assuming accountNo from provider matches username in credentials
-                
-                const account = accountMap.get(key);
-                if (account) {
-                    const settings = await this.notificationSettingsService.getTelegramSettings(account.id);
-                    if (settings && settings.isActive && settings.chatId) {
-                        if (!messagesByChatId.has(settings.chatId)) {
-                            messagesByChatId.set(settings.chatId, []);
-                        }
-                        messagesByChatId.get(settings.chatId)?.push(data);
-                    }
-                } else {
-                    logger.warn(`Could not find matching DB account for provider data: ${key}`);
-                }
+            if (!sent) {
+                return {
+                    success: false,
+                    message: 'Failed to send message to Telegram',
+                    error: 'Telegram API request failed',
+                };
             }
 
-            // 5. Send messages
-            let sentCount = 0;
-            const errors: string[] = [];
-
-            if (messagesByChatId.size === 0) {
-                 logger.info('No active Telegram notifications configured for the fetched accounts.');
-                 return {
-                     success: true,
-                     message: 'No active notifications configured',
-                     sentAccounts: 0
-                 };
-            }
-
-            for (const [chatId, accounts] of messagesByChatId.entries()) {
-                const message = this.formatAccountMessage(accounts);
-                const success = await this.sendMessage(message, chatId);
-                if (success) {
-                    sentCount += accounts.length;
-                } else {
-                    errors.push(`Failed to send to ${chatId}`);
-                }
-            }
-
-            if (errors.length > 0) {
-                 logger.warn(`Some Telegram messages failed: ${errors.join(', ')}`);
-            }
-
+            logger.info(
+                `Account balances sent to Telegram (chatId=${settings.chatId}) successfully. Accounts sent: ${usageResult.accounts.length}`
+            );
             return {
                 success: true,
-                message: `Sent notifications for ${sentCount} accounts to ${messagesByChatId.size} recipients`,
-                sentAccounts: sentCount,
+                message: `Sent notifications for ${usageResult.accounts.length} accounts to Telegram`,
+                sentAccounts: usageResult.accounts.length,
             };
         } catch (error) {
             logger.error(
