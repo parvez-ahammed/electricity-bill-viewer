@@ -26,7 +26,7 @@ export class TelegramController {
                 new ResponseBuilder(res)
                     .setStatus(500)
                     .setMessage(
-                        'Telegram service not configured. Please set TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID environment variables.'
+                        'Telegram service not configured. Please set TELEGRAM_BOT_TOKEN environment variable.'
                     )
                     .sendError();
                 return;

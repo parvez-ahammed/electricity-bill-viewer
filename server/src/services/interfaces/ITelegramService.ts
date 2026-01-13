@@ -10,5 +10,5 @@ export interface ITelegramService {
 
     formatAccountMessage(accounts: ProviderAccountDetails[]): string;
 
-    sendMessage(message: string): Promise<boolean>;
+    sendMessage(message: string, chatId: string): Promise<boolean>;
 }

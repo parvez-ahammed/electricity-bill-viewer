@@ -1,5 +1,6 @@
 import accountRouter from '@routes/v1/account.routes';
 import electricityRouter from '@routes/v1/electricity.routes';
+import notificationSettingsRouter from '@routes/v1/notificationSettings.route';
 import telegramRouter from '@routes/v1/telegram.routes';
 import Router from 'express';
 import httpStatus from 'http-status';
@@ -24,6 +25,10 @@ const defaultRoutes = [
     {
         prefix: '/accounts',
         router: accountRouter,
+    },
+    {
+        prefix: '/notification-settings',
+        router: notificationSettingsRouter,
     },
 ];
 

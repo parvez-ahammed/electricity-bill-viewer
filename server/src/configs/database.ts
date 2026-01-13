@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { DataSource } from 'typeorm';
 import { Account } from '../entities/Account';
+import { TelegramNotificationSettings } from '../entities/TelegramNotificationSettings';
 
 // Determine the best data directory path
 const getDataDirectory = (): string => {
@@ -43,7 +44,7 @@ export const AppDataSource = new DataSource({
     database: databasePath,
     synchronize: true, // Auto-create tables in development
     logging: false,
-    entities: [Account],
+    entities: [Account, TelegramNotificationSettings],
     migrations: [],
     subscribers: [],
 });

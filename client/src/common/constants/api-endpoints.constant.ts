@@ -12,4 +12,7 @@ export const API_ENDPOINTS = {
     TELEGRAM: {
         SEND_BALANCES: `${API_PATH}/telegram/send-balances`,
     },
+    NOTIFICATION_SETTINGS: {
+        TELEGRAM: `${API_PATH}/notification-settings/telegram`,
+    },
 } as const;

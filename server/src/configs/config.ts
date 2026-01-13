@@ -23,7 +23,6 @@ const envSchema = z
 
         // Telegram Bot Configuration
         TELEGRAM_BOT_TOKEN: z.string().optional(),
-        TELEGRAM_CHAT_ID: z.string().optional(),
 
         // Encryption key for sensitive data
         ENCRYPTION_KEY: z.string().optional(),
@@ -70,7 +69,6 @@ export const appConfig = {
     // Telegram Configuration
     telegram: {
         botToken: parsedEnv.data.TELEGRAM_BOT_TOKEN,
-        chatId: parsedEnv.data.TELEGRAM_CHAT_ID,
     },
 
 

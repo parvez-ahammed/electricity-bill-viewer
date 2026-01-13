@@ -1,32 +1,37 @@
 import { appConfig } from '@configs/config';
 import logger from '@helpers/Logger';
 import { ProviderAccountDetails } from '@interfaces/Shared';
-import { getCredentialsFromDatabase } from '@utility/accountCredentialParser';
+import { Account } from '../../entities/Account';
 import { ITelegramService } from '../interfaces/ITelegramService';
+import { AccountService } from './AccountService';
 import { ElectricityService } from './ElectricityService';
+import { NotificationSettingsService } from './NotificationSettingsService';
 
 export class TelegramService implements ITelegramService {
     private readonly botToken: string;
-    private readonly chatId: string;
     private readonly electricityService: ElectricityService;
+    private readonly accountService: AccountService;
+    private readonly notificationSettingsService: NotificationSettingsService;
     private readonly baseUrl = 'https://api.telegram.org';
 
     constructor() {
-        if (!appConfig.telegram.botToken || !appConfig.telegram.chatId) {
+        if (!appConfig.telegram.botToken) {
             throw new Error(
-                'Telegram bot token and chat ID are required. Set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID environment variables.'
+                'Telegram bot token is required. Set TELEGRAM_BOT_TOKEN environment variable.'
             );
         }
 
         this.botToken = appConfig.telegram.botToken;
-        this.chatId = appConfig.telegram.chatId;
         this.electricityService = new ElectricityService();
+        this.accountService = new AccountService();
+        this.notificationSettingsService = new NotificationSettingsService();
+        
         try {
             const masked = this.botToken
                 ? `****${this.botToken.slice(-4)}`
                 : 'none';
             logger.info(
-                `TelegramService initialized (chatId=${this.chatId}, botTokenSuffix=${masked})`
+                `TelegramService initialized (botTokenSuffix=${masked})`
             );
         } catch (err) {
             logger.debug(
@@ -36,11 +41,11 @@ export class TelegramService implements ITelegramService {
         }
     }
 
-    async sendMessage(message: string): Promise<boolean> {
+    async sendMessage(message: string, chatId: string): Promise<boolean> {
         try {
             const url = `${this.baseUrl}/bot${this.botToken}/sendMessage`;
             logger.debug(
-                `Sending Telegram message to chatId=${this.chatId} (messageLength=${message.length})`
+                `Sending Telegram message to chatId=${chatId} (messageLength=${message.length})`
             );
 
             const response = await fetch(url, {
@@ -49,7 +54,7 @@ export class TelegramService implements ITelegramService {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    chat_id: this.chatId,
+                    chat_id: chatId,
                     text: message,
                     parse_mode: 'HTML',
                 }),
@@ -69,12 +74,11 @@ export class TelegramService implements ITelegramService {
                 logger.error(
                     `Telegram API responded with status ${response.status}: ${JSON.stringify(errorBody)}`
                 );
-                throw new Error(
-                    `Telegram API error: ${JSON.stringify(errorBody)}`
-                );
+                // Don't throw here, just return false to allow other messages to proceed
+                return false;
             }
 
-            logger.info(`Telegram message sent to chatId=${this.chatId}`);
+            logger.info(`Telegram message sent to chatId=${chatId}`);
             return true;
         } catch (error) {
             logger.error(
@@ -152,43 +156,40 @@ export class TelegramService implements ITelegramService {
         try {
             logger.info('Preparing to send account balances to Telegram');
 
-            // Get credentials
-            const credentials = await getCredentialsFromDatabase();
-            logger.debug(
-                `Found ${credentials.length} credential(s) from environment`
-            );
-
-            if (credentials.length === 0) {
-                logger.warn(
-                    'No credentials configured for electricity accounts'
-                );
+            // 1. Fetch all accounts from DB
+            const allAccounts = await this.accountService.getAllAccounts();
+            
+            if (allAccounts.length === 0) {
+                logger.warn('No accounts configured in database');
                 return {
                     success: false,
-                    message: 'No credentials configured',
-                    error: 'ELECTRICITY_CREDENTIALS is empty',
+                    message: 'No accounts configured',
+                    error: 'NO_ACCOUNTS',
                 };
             }
 
-            // Fetch account data with skipCache parameter
-            logger.debug(
-                `Invoking ElectricityService.getUsageData(skipCache=${skipCache})`
-            );
-            const result = await this.electricityService.getUsageData(
-                credentials,
-                skipCache
-            );
-            logger.info(
-                `Fetched account data: ${result.accounts.length} accounts (successful)`
-            );
-            logger.debug(
-                'getUsageData result summary: ' +
-                    JSON.stringify({
-                        accounts: result.accounts.length,
-                        errors: result.errors?.length ?? 0,
-                    })
-            );
+            // 2. Map for easy lookup [provider_username] -> Account
+            const accountMap = new Map<string, Account>();
+            const credentials = [];
+            
+            for (const account of allAccounts) {
+                const key = `${account.provider}_${account.credentials.username}`;
+                accountMap.set(key, account);
+                
+                credentials.push({
+                    username: account.credentials.username,
+                    password: 'password' in account.credentials ? account.credentials.password : undefined,
+                    clientSecret: 'clientSecret' in account.credentials ? account.credentials.clientSecret : undefined,
+                    provider: account.provider,
+                });
+            }
 
-            if (result.accounts.length === 0) {
+            // 3. Fetch usage data
+            logger.debug(`Invoking ElectricityService.getUsageData(skipCache=${skipCache})`);
+            const usageResult = await this.electricityService.getUsageData(credentials, skipCache);
+            logger.info(`Fetched account data: ${usageResult.accounts.length} accounts (successful)`);
+
+            if (usageResult.accounts.length === 0) {
                 logger.warn('No account data retrieved from providers');
                 return {
                     success: false,
@@ -197,28 +198,61 @@ export class TelegramService implements ITelegramService {
                 };
             }
 
-            // Format message
-            const message = this.formatAccountMessage(result.accounts);
+            // 4. Group data by Chat ID
+            // We need to fetch settings for matched accounts
+            const messagesByChatId = new Map<string, ProviderAccountDetails[]>();
 
-            // Send to Telegram
-            const sent = await this.sendMessage(message);
-
-            if (!sent) {
-                logger.error('Telegram sendMessage returned false');
-                return {
-                    success: false,
-                    message: 'Failed to send message to Telegram',
-                    error: 'Telegram API request failed',
-                };
+            for (const data of usageResult.accounts) {
+                const key = `${data.provider}_${data.customerNumber}`; // ProviderAccountDetails uses customerNumber
+                
+                // Fallback matching if accountNo is missing or different format (usually it matches username)
+                // Assuming accountNo from provider matches username in credentials
+                
+                const account = accountMap.get(key);
+                if (account) {
+                    const settings = await this.notificationSettingsService.getTelegramSettings(account.id);
+                    if (settings && settings.isActive && settings.chatId) {
+                        if (!messagesByChatId.has(settings.chatId)) {
+                            messagesByChatId.set(settings.chatId, []);
+                        }
+                        messagesByChatId.get(settings.chatId)?.push(data);
+                    }
+                } else {
+                    logger.warn(`Could not find matching DB account for provider data: ${key}`);
+                }
             }
 
-            logger.info(
-                `Account balances sent to Telegram successfully. Accounts sent: ${result.accounts.length}`
-            );
+            // 5. Send messages
+            let sentCount = 0;
+            const errors: string[] = [];
+
+            if (messagesByChatId.size === 0) {
+                 logger.info('No active Telegram notifications configured for the fetched accounts.');
+                 return {
+                     success: true,
+                     message: 'No active notifications configured',
+                     sentAccounts: 0
+                 };
+            }
+
+            for (const [chatId, accounts] of messagesByChatId.entries()) {
+                const message = this.formatAccountMessage(accounts);
+                const success = await this.sendMessage(message, chatId);
+                if (success) {
+                    sentCount += accounts.length;
+                } else {
+                    errors.push(`Failed to send to ${chatId}`);
+                }
+            }
+
+            if (errors.length > 0) {
+                 logger.warn(`Some Telegram messages failed: ${errors.join(', ')}`);
+            }
+
             return {
                 success: true,
-                message: 'Account balances sent to Telegram successfully',
-                sentAccounts: result.accounts.length,
+                message: `Sent notifications for ${sentCount} accounts to ${messagesByChatId.size} recipients`,
+                sentAccounts: sentCount,
             };
         } catch (error) {
             logger.error(
