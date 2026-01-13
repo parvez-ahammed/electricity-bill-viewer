@@ -1,4 +1,5 @@
 import { PreferencesProvider } from "@/context/PreferenceContext";
+import { AuthGoogleProvider } from "@/providers/AuthGoogleProvider";
 import { Suspense } from "react";
 import { BrowserRouter } from "react-router-dom";
 import { Toaster } from "sonner";
@@ -28,20 +29,22 @@ export const AppProvider = (props: AppProviderProps) => {
                     <QueryProvider>
                         <PreferencesProvider>
                             <BrowserRouter>
-                                <TooltipProvider>
-                                    <Toaster 
-                                        position="top-right" 
-                                        richColors 
-                                        expand={true}
-                                        visibleToasts={5}
-                                        closeButton={true}
-                                        duration={4000}
-                                    />
-                                    <LoadingProvider>
-                                        {props.children}
-                                        <LoadingSpinner />
-                                    </LoadingProvider>
-                                </TooltipProvider>
+                                <AuthGoogleProvider>
+                                    <TooltipProvider>
+                                        <Toaster 
+                                            position="top-right" 
+                                            richColors 
+                                            expand={true}
+                                            visibleToasts={5}
+                                            closeButton={true}
+                                            duration={4000}
+                                        />
+                                        <LoadingProvider>
+                                            {props.children}
+                                            <LoadingSpinner />
+                                        </LoadingProvider>
+                                    </TooltipProvider>
+                                </AuthGoogleProvider>
                             </BrowserRouter>
                         </PreferencesProvider>
                     </QueryProvider>

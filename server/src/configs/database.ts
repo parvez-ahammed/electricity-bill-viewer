@@ -1,3 +1,4 @@
+import { User } from '@entities/User';
 import fs from 'fs';
 import path from 'path';
 import { DataSource } from 'typeorm';
@@ -38,6 +39,7 @@ const getDataDirectory = (): string => {
 // Get the data directory and database path
 const dataDir = getDataDirectory();
 const databasePath = path.join(dataDir, 'accounts.db');
+const authDatabasePath = path.join(dataDir, 'auth.db');
 
 export const AppDataSource = new DataSource({
     type: 'sqlite',
@@ -49,10 +51,23 @@ export const AppDataSource = new DataSource({
     subscribers: [],
 });
 
+export const AuthDataSource = new DataSource({
+    type: 'sqlite',
+    database: authDatabasePath,
+    synchronize: true, // Auto-create tables in development
+    logging: false,
+    entities: [User],
+    migrations: [],
+    subscribers: [],
+});
+
 export const initializeDatabase = async (): Promise<void> => {
     try {
         await AppDataSource.initialize();
-        console.log('Database connection initialized successfully');
+        console.log('Account database connection initialized successfully');
+        
+        await AuthDataSource.initialize();
+        console.log('Auth database connection initialized successfully');
     } catch (error) {
         console.error('Error during database initialization:', error);
         throw error;
