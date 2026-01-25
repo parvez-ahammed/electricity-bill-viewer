@@ -1,3 +1,4 @@
+import { authMiddleware } from '@middlewares/AuthMiddleware';
 import accountRouter from '@routes/v1/account.routes';
 import authRouter from '@routes/v1/auth.routes';
 import electricityRouter from '@routes/v1/electricity.routes';
@@ -14,11 +15,16 @@ v1Router.get('/', async (req, res) => {
     );
 });
 
-const defaultRoutes = [
+// Public routes (no authentication required)
+const publicRoutes = [
     {
         prefix: '/auth',
         router: authRouter,
     },
+];
+
+// Protected routes (authentication required)
+const protectedRoutes = [
     {
         prefix: '/electricity',
         router: electricityRouter,
@@ -37,8 +43,14 @@ const defaultRoutes = [
     },
 ];
 
-defaultRoutes.forEach((route) => {
+// Register public routes (no middleware)
+publicRoutes.forEach((route) => {
     v1Router.use(route.prefix, route.router);
+});
+
+// Register protected routes (with auth middleware)
+protectedRoutes.forEach((route) => {
+    v1Router.use(route.prefix, authMiddleware, route.router);
 });
 
 export default v1Router;

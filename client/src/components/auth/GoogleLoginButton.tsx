@@ -20,12 +20,22 @@ export const GoogleLoginButton = () => {
                     {
                         method: 'GET',
                         credentials: 'include',
+                        headers: {
+                            'Accept': 'application/json',
+                        },
                     }
                 );
 
                 if (response.ok) {
-                    // Backend redirects to frontend with token in URL
-                    // This is handled by the callback page
+                    const data = await response.json();
+                    if (data.success && data.data?.token) {
+                        // Login and navigate to home
+                        await login(data.data.token);
+                        toast.success('Successfully logged in!');
+                        navigate('/');
+                    } else {
+                        toast.error('Failed to authenticate with Google');
+                    }
                 } else {
                     toast.error('Failed to authenticate with Google');
                 }

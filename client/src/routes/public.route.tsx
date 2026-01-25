@@ -4,18 +4,26 @@ import { AccountManagementPage } from "@/pages/accountManagement.page";
 import { ErrorPage } from "@/pages/error.page";
 import { HomePage } from "@/pages/home.page";
 
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { MainLayout } from "@/components/layout/mainLayout";
 
 export const publicRoutes: RouteObject[] = [
     {
-        path: "/",
-        element: <MainLayout />,
+        // Protected routes (require authentication)
+        element: <ProtectedRoute />,
         children: [
-            { path: "", element: <HomePage /> },
-            { path: "accounts", element: <AccountManagementPage /> },
+            {
+                path: "/",
+                element: <MainLayout />,
+                children: [
+                    { path: "", element: <HomePage /> },
+                    { path: "accounts", element: <AccountManagementPage /> },
+                ],
+            },
         ],
     },
     {
+        // Error pages remain public
         path: "/unauthorized",
         element: (
             <ErrorPage
@@ -38,3 +46,4 @@ export const publicRoutes: RouteObject[] = [
         ),
     },
 ];
+

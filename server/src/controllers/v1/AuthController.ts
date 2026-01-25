@@ -37,13 +37,43 @@ export class AuthController {
 
             const { user, token } = await this.authService.handleGoogleCallback(code);
 
-            // Redirect to frontend with token
-            const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-            res.redirect(`${frontendUrl}/auth/callback?token=${token}`);
+            // Check if this is a fetch/AJAX request (from frontend using fetch API)
+            const isFetchRequest = req.headers.accept?.includes('application/json') ||
+                                   req.headers['x-requested-with'] === 'XMLHttpRequest';
+
+            if (isFetchRequest) {
+                // Return JSON for fetch requests (frontend will handle navigation)
+                res.status(httpStatus.OK).json({
+                    success: true,
+                    data: {
+                        token,
+                        user: {
+                            userId: user.id,
+                            email: user.email,
+                        },
+                    },
+                });
+            } else {
+                // Redirect for direct browser navigation
+                const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+                res.redirect(`${frontendUrl}/auth/callback?token=${token}`);
+            }
         } catch (error) {
             console.error('Google callback error:', error);
-            const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-            res.redirect(`${frontendUrl}/login?error=authentication_failed`);
+            
+            // Check if this is a fetch request
+            const isFetchRequest = req.headers.accept?.includes('application/json') ||
+                                   req.headers['x-requested-with'] === 'XMLHttpRequest';
+
+            if (isFetchRequest) {
+                res.status(httpStatus.UNAUTHORIZED).json({
+                    success: false,
+                    message: 'Failed to authenticate with Google',
+                });
+            } else {
+                const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+                res.redirect(`${frontendUrl}/login?error=authentication_failed`);
+            }
         }
     };
 
