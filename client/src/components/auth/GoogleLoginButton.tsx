@@ -22,7 +22,7 @@ export const GoogleLoginButton = ({ mode = 'login' }: GoogleLoginButtonProps) =>
             try {
                 // Exchange the authorization code for JWT token from our backend
                 const response = await fetch(
-                    `${config.backendApiUrl}/api/v1/auth/google/callback?code=${codeResponse.code}`,
+                    `${config.backendApiUrl}/auth/google/callback?code=${codeResponse.code}`,
                     {
                         method: 'GET',
                         credentials: 'include',
