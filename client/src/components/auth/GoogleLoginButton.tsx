@@ -1,3 +1,4 @@
+import { config } from '@/common/constants/config.constant';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import { CodeResponse, useGoogleLogin } from '@react-oauth/google';
@@ -21,7 +22,7 @@ export const GoogleLoginButton = ({ mode = 'login' }: GoogleLoginButtonProps) =>
             try {
                 // Exchange the authorization code for JWT token from our backend
                 const response = await fetch(
-                    `${import.meta.env.VITE_API_URL}/api/v1/auth/google/callback?code=${codeResponse.code}`,
+                    `${config.backendApiUrl}/api/v1/auth/google/callback?code=${codeResponse.code}`,
                     {
                         method: 'GET',
                         credentials: 'include',
