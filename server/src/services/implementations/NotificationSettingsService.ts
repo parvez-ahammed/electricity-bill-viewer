@@ -9,15 +9,19 @@ export class NotificationSettingsService implements INotificationSettingsService
         this.repository = new TelegramNotificationSettingsRepository();
     }
 
-    async getTelegramSettings(): Promise<TelegramNotificationSettings | null> {
-        return this.repository.getSystemSettings();
+    async getTelegramSettings(userId: string): Promise<TelegramNotificationSettings | null> {
+        return this.repository.getUserSettings(userId);
     }
 
-    async updateTelegramSettings(chatId: string, isActive: boolean): Promise<TelegramNotificationSettings> {
-        return this.repository.upsertSystemSettings(chatId, isActive);
+    async updateTelegramSettings(userId: string, chatId: string, isActive: boolean): Promise<TelegramNotificationSettings> {
+        return this.repository.upsertUserSettings(userId, chatId, isActive);
     }
 
-    async deleteTelegramSettings(): Promise<boolean> {
-        return this.repository.deleteSystemSettings();
+    async deleteTelegramSettings(userId: string): Promise<boolean> {
+        return this.repository.deleteUserSettings(userId);
+    }
+
+    async getAllActiveSettings(): Promise<TelegramNotificationSettings[]> {
+        return this.repository.getAllActiveSettings();
     }
 }

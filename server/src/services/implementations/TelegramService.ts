@@ -153,43 +153,129 @@ export class TelegramService implements ITelegramService {
         error?: string;
     }> {
         try {
-            logger.info('Preparing to send account balances to Telegram');
+            logger.info('Preparing to send user-scoped account balances to Telegram');
 
-            // 1. Check Global Notification Settings first
-            const settings = await this.notificationSettingsService.getTelegramSettings();
+            // 1. Fetch all active notification settings
+            const activeSettings = await this.notificationSettingsService.getAllActiveSettings();
+            
+            if (activeSettings.length === 0) {
+                logger.info('No active Telegram notification settings found');
+                return {
+                    success: true,
+                    message: 'No active notifications configured',
+                    sentAccounts: 0,
+                };
+            }
+
+            logger.info(`Found ${activeSettings.length} active notification settings. Processing...`);
+
+            let totalSentAccounts = 0;
+            let successCount = 0;
+            let failureCount = 0;
+
+            // 2. Iterate through each user setting
+            for (const settings of activeSettings) {
+                if (!settings.chatId || !settings.userId) {
+                    logger.warn(`Skipping invalid settings (missing chatId or userId): ID=${settings.id}`);
+                    continue;
+                }
+
+                try {
+                    // 3. Fetch accounts for this specific user
+                    const userAccounts = await this.accountService.getAllAccounts(settings.userId);
+
+                    if (userAccounts.length === 0) {
+                        logger.debug(`User ${settings.userId} has no accounts. Skipping.`);
+                        continue;
+                    }
+
+                    // 4. Map credentials
+                    const credentials = userAccounts.map(account => ({
+                        username: account.credentials.username,
+                        password: 'password' in account.credentials ? account.credentials.password : undefined,
+                        clientSecret: 'clientSecret' in account.credentials ? account.credentials.clientSecret : undefined,
+                        provider: account.provider,
+                    }));
+
+                    // 5. Fetch usage data
+                    const usageResult = await this.electricityService.getUsageData(credentials, skipCache);
+
+                    if (usageResult.accounts.length === 0) {
+                        logger.warn(`User ${settings.userId}: No account data retrieved.`);
+                        continue;
+                    }
+
+                    // 6. Send user-specific message
+                    const message = this.formatAccountMessage(usageResult.accounts);
+                    const sent = await this.sendMessage(message, settings.chatId);
+
+                    if (sent) {
+                        totalSentAccounts += usageResult.accounts.length;
+                        successCount++;
+                        logger.info(`Sent ${usageResult.accounts.length} accounts to user ${settings.userId} on chat ${settings.chatId}`);
+                    } else {
+                        failureCount++;
+                        logger.error(`Failed to send message to user ${settings.userId}`);
+                    }
+                } catch (err) {
+                    failureCount++;
+                    logger.error(`Error processing user ${settings.userId}: ${err}`);
+                }
+            }
+
+            return {
+                success: true,
+                message: `Processed ${activeSettings.length} users. Sent ${totalSentAccounts} accounts. Success: ${successCount}, Fail: ${failureCount}.`,
+                sentAccounts: totalSentAccounts,
+            };
+
+        } catch (error) {
+            logger.error(
+                'Failed to send account balances: ' +
+                    (error instanceof Error ? error.message : String(error))
+            );
+            return {
+                success: false,
+                message: 'Failed to send account balances',
+                error: error instanceof Error ? error.message : 'Unknown error',
+            };
+        }
+    }
+
+    async sendUserAccountBalance(userId: string, skipCache = false): Promise<{
+        success: boolean;
+        message: string;
+        sentAccounts?: number;
+        error?: string;
+    }> {
+        try {
+            logger.info(`Preparing to send account balances specifically for user ${userId}`);
+
+            const settings = await this.notificationSettingsService.getTelegramSettings(userId);
             
             if (!settings) {
-                logger.warn('No Telegram notification settings found');
                 return {
                     success: false,
-                    message: 'Telegram notifications not configured',
+                    message: 'Telegram notifications not configured for this user',
                     error: 'NOT_CONFIGURED',
                 };
             }
 
-            if (!settings.isActive) {
-                 logger.info('Telegram notifications are disabled globally.');
-                 return {
-                     success: true,
-                     message: 'Notifications are disabled',
-                     sentAccounts: 0
-                 };
-            }
-
             if (!settings.chatId) {
-                logger.warn('Telegram notifications enabled but no Chat ID configured');
                 return {
                     success: false,
-                    message: 'No Telegram Chat ID configured',
+                    message: 'Telegram Chat ID not configured',
                     error: 'NO_CHAT_ID',
                 };
             }
 
-            // 2. Fetch all accounts from DB
-            const allAccounts = await this.accountService.getAllAccounts();
+            // User might have disabled notifications, but manual trigger implies intent?
+            // Let's allow manual trigger even if isActive is false, or enforce it?
+            // Usually manual trigger overrides "schedule" active flag.
             
-            if (allAccounts.length === 0) {
-                logger.warn('No accounts configured in database');
+            const userAccounts = await this.accountService.getAllAccounts(userId);
+
+            if (userAccounts.length === 0) {
                 return {
                     success: false,
                     message: 'No accounts configured',
@@ -197,21 +283,16 @@ export class TelegramService implements ITelegramService {
                 };
             }
 
-            // 3. Map for easy lookup [provider_username] -> Credentials
-            const credentials = allAccounts.map(account => ({
+            const credentials = userAccounts.map(account => ({
                 username: account.credentials.username,
                 password: 'password' in account.credentials ? account.credentials.password : undefined,
                 clientSecret: 'clientSecret' in account.credentials ? account.credentials.clientSecret : undefined,
                 provider: account.provider,
             }));
 
-            // 4. Fetch usage data
-            logger.debug(`Invoking ElectricityService.getUsageData(skipCache=${skipCache})`);
             const usageResult = await this.electricityService.getUsageData(credentials, skipCache);
-            logger.info(`Fetched account data: ${usageResult.accounts.length} accounts (successful)`);
 
             if (usageResult.accounts.length === 0) {
-                logger.warn('No account data retrieved from providers');
                 return {
                     success: false,
                     message: 'No account data retrieved',
@@ -219,7 +300,6 @@ export class TelegramService implements ITelegramService {
                 };
             }
 
-            // 5. Send message to the global Chat ID
             const message = this.formatAccountMessage(usageResult.accounts);
             const sent = await this.sendMessage(message, settings.chatId);
 
@@ -231,20 +311,14 @@ export class TelegramService implements ITelegramService {
                 };
             }
 
-            logger.info(
-                `Account balances sent to Telegram (chatId=${settings.chatId}) successfully. Accounts sent: ${usageResult.accounts.length}`
-            );
             return {
                 success: true,
-                message: `Sent notifications for ${usageResult.accounts.length} accounts to Telegram`,
+                message: `Sent notifications for ${usageResult.accounts.length} accounts`,
                 sentAccounts: usageResult.accounts.length,
             };
+
         } catch (error) {
-            logger.error(
-                'Failed to send account balances: ' +
-                    (error instanceof Error ? error.message : String(error))
-            );
-            return {
+             return {
                 success: false,
                 message: 'Failed to send account balances',
                 error: error instanceof Error ? error.message : 'Unknown error',

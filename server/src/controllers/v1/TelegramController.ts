@@ -1,12 +1,14 @@
 import logger from '@helpers/Logger';
-import { ResponseBuilder } from '@helpers/ResponseBuilder';
+import { AuthenticatedRequest } from '@interfaces/Auth';
 import { Request, Response } from 'express';
 import { TelegramService } from '../../services/implementations/TelegramService';
+import { BaseController } from '../BaseController';
 
-export class TelegramController {
+export class TelegramController extends BaseController {
     private telegramService: TelegramService | null;
 
     constructor() {
+        super();
         try {
             this.telegramService = new TelegramService();
         } catch (error) {
@@ -21,44 +23,28 @@ export class TelegramController {
     }
 
     sendBalances = async (req: Request, res: Response): Promise<void> => {
-        try {
+        await this.handleRequest(res, async () => {
+             // Cast to AuthenticatedRequest to access user
+            const authReq = req as AuthenticatedRequest;
+            
+            const userId = this.validateUser(authReq, res);
+            if (!userId) return;
+
             if (!this.telegramService) {
-                new ResponseBuilder(res)
-                    .setStatus(500)
-                    .setMessage(
-                        'Telegram service not configured. Please set TELEGRAM_BOT_TOKEN environment variable.'
-                    )
-                    .sendError();
+                this.fail(res, new Error('Telegram service not configured. Please set TELEGRAM_BOT_TOKEN environment variable.'));
                 return;
             }
 
             const skipCache = req.headers['x-skip-cache'] === 'true';
 
             const result =
-                await this.telegramService.sendAccountBalances(skipCache);
+                await this.telegramService.sendUserAccountBalance(userId, skipCache);
 
             if (result.success) {
-                new ResponseBuilder(res)
-                    .setStatus(200)
-                    .setMessage(result.message)
-                    .setData(result)
-                    .send();
+                this.ok(res, result, result.message);
             } else {
-                new ResponseBuilder(res)
-                    .setStatus(500)
-                    .setMessage(result.error || result.message)
-                    .setData(result)
-                    .sendError();
+                this.fail(res, new Error(result.error || result.message));
             }
-        } catch (error: unknown) {
-            const errorMessage =
-                error instanceof Error ? error.message : 'Unknown error';
-            new ResponseBuilder(res)
-                .setStatus(500)
-                .setMessage(
-                    `Failed to send balances to Telegram: ${errorMessage}`
-                )
-                .sendError();
-        }
+        });
     };
 }

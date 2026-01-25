@@ -7,6 +7,12 @@ export interface ITelegramService {
         sentAccounts?: number;
         error?: string;
     }>;
+    sendUserAccountBalance(userId: string, skipCache?: boolean): Promise<{
+        success: boolean;
+        message: string;
+        sentAccounts?: number;
+        error?: string;
+    }>;
 
     formatAccountMessage(accounts: ProviderAccountDetails[]): string;
 

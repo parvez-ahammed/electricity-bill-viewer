@@ -10,6 +10,9 @@ export class TelegramNotificationSettings {
     @Column({ type: 'varchar', nullable: true })
     chatId: string | null;
 
+    @Column()
+    userId: string; // References User.id (Google ID) - stored as plain string since User is in separate database
+
     @Column({ default: true })
     isActive: boolean;
 

@@ -1,31 +1,39 @@
-import { ResponseBuilder } from '@helpers/ResponseBuilder';
-import { Request, Response } from 'express';
+import { AuthenticatedRequest } from '@interfaces/Auth';
+import { Response } from 'express';
 import { ElectricityService } from '../../services/implementations/ElectricityService';
 import { getCredentialsFromDatabase } from '../../utility/accountCredentialParser';
+import { BaseController } from '../BaseController';
 
-export class ElectricityController {
+export class ElectricityController extends BaseController {
     private electricityService: ElectricityService;
 
     constructor() {
+        super();
         this.electricityService = new ElectricityService();
     }
 
-    getUsageData = async (req: Request, res: Response): Promise<void> => {
-        try {
+    getUsageData = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+        await this.handleRequest(res, async () => {
+            // Verify user is authenticated
+            const userId = this.validateUser(req, res);
+            if (!userId) return;
+
             // Check for x-skip-cache header
             const skipCache = req.headers['x-skip-cache'] === 'true';
 
-            // Get credentials from database
-            const credentials = await getCredentialsFromDatabase();
+            // Get credentials from database for this user
+            const credentials = await getCredentialsFromDatabase(userId);
 
             if (credentials.length === 0) {
-                new ResponseBuilder(res)
-                    .setStatus(500)
-                    .setMessage('No credentials configured on server')
-                    .setData({
-                        error: 'No accounts found in database. Please add accounts using the /accounts endpoint.',
-                    })
-                    .sendError();
+                // Return 200 OK with empty result set
+                this.ok(res, {
+                    success: true,
+                    totalAccounts: 0,
+                    successfulLogins: 0,
+                    failedLogins: 0,
+                    accounts: [],
+                    timestamp: new Date().toISOString()
+                }, 'No accounts configured');
                 return;
             }
 
@@ -34,19 +42,7 @@ export class ElectricityController {
                 skipCache
             );
 
-            new ResponseBuilder(res)
-                .setStatus(200)
-                .setMessage('Usage data retrieved successfully')
-                .setData(result)
-                .send();
-        } catch (error: unknown) {
-            const errorMessage =
-                error instanceof Error ? error.message : 'Unknown error';
-            new ResponseBuilder(res)
-                .setStatus(500)
-                .setMessage('Internal server error')
-                .setData({ error: errorMessage })
-                .sendError();
-        }
+            this.ok(res, result, 'Usage data retrieved successfully');
+        });
     };
 }

@@ -1,86 +1,68 @@
-import { ResponseBuilder } from '@helpers/ResponseBuilder';
+import { AuthenticatedRequest } from '@interfaces/Auth';
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import { NotificationSettingsService } from '../../services/implementations/NotificationSettingsService';
+import { BaseController } from '../BaseController';
 
 const updateSettingsSchema = z.object({
     chatId: z.string().min(1),
     isActive: z.boolean().default(true),
 });
 
-export class NotificationSettingsController {
+export class NotificationSettingsController extends BaseController {
     private service: NotificationSettingsService;
 
     constructor() {
+        super();
         this.service = new NotificationSettingsService();
     }
 
     getSettings = async (req: Request, res: Response): Promise<void> => {
-        try {
-            const settings = await this.service.getTelegramSettings();
-            
-            new ResponseBuilder(res)
-                .setStatus(200)
-                .setData(settings)
-                .setMessage('Settings retrieved successfully')
-                .send();
-        } catch (error) {
-            new ResponseBuilder(res)
-                .setStatus(500)
-                .setMessage('Failed to retrieve settings')
-                .sendError();
-        }
+        await this.handleRequest(res, async () => {
+            const authReq = req as AuthenticatedRequest;
+            const userId = this.validateUser(authReq, res);
+            if (!userId) return;
+
+            const settings = await this.service.getTelegramSettings(userId);
+            this.ok(res, settings, 'Settings retrieved successfully');
+        });
     };
 
     updateSettings = async (req: Request, res: Response): Promise<void> => {
-        try {
+        await this.handleRequest(res, async () => {
+            const authReq = req as AuthenticatedRequest;
+            const userId = this.validateUser(authReq, res);
+            if (!userId) return;
+
             const validation = updateSettingsSchema.safeParse(req.body);
-            
+
             if (!validation.success) {
-                new ResponseBuilder(res)
-                    .setStatus(400)
-                    .setMessage('Validation failed')
-                    .setData(validation.error.errors)
-                    .sendError();
+                this.clientError(res, 'Validation failed');
+                const errorMessage = validation.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
+                this.clientError(res, `Validation failed: ${errorMessage}`);
                 return;
             }
 
             const { chatId, isActive } = validation.data;
-            const settings = await this.service.updateTelegramSettings(chatId, isActive);
+            const settings = await this.service.updateTelegramSettings(userId, chatId, isActive);
 
-            new ResponseBuilder(res)
-                .setStatus(200)
-                .setData(settings)
-                .setMessage('Settings updated successfully')
-                .send();
-        } catch (error) {
-            new ResponseBuilder(res)
-                .setStatus(500)
-                .setMessage('Failed to update settings')
-                .sendError();
-        }
+            this.ok(res, settings, 'Settings updated successfully');
+        });
     };
 
     deleteSettings = async (req: Request, res: Response): Promise<void> => {
-        try {
-            const success = await this.service.deleteTelegramSettings();
+        await this.handleRequest(res, async () => {
+            const authReq = req as AuthenticatedRequest;
+            const userId = this.validateUser(authReq, res);
+            if (!userId) return;
+
+            const success = await this.service.deleteTelegramSettings(userId);
 
             if (success) {
-                new ResponseBuilder(res)
-                    .setStatus(200)
-                    .setMessage('Settings deleted successfully')
-                    .send();
+                this.ok(res, {}, 'Settings deleted successfully');
             } else {
-                 new ResponseBuilder(res)
-                    .setStatus(404)
-                    .setMessage('Settings not found or could not be deleted')
-                    .sendError();
+                this.notFound(res, 'Settings not found or could not be deleted');
             }
-        } catch (error) {
-           new ResponseBuilder(res)
-                .setStatus(500)
-                .setMessage('Failed to delete settings')
-                .sendError();
-        }
+        });
     };
 }

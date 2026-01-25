@@ -86,15 +86,20 @@ export const useBalanceData = () => {
             lastDataSource.current = 'api';
 
             // Fetch from API
-            const response = await electricityApi.getUsageData(shouldSkipCache);
+            try {
+                const response = await electricityApi.getUsageData(shouldSkipCache);
 
-            // Save to localStorage on successful fetch
-            if (response.success) {
-                setCachedData(response);
+                // Save to localStorage on successful fetch
+                if (response.success) {
+                    setCachedData(response);
+                }
+
+                // Mark as fresh data
+                return { ...response, fromCache: false };
+            } catch (error: any) {
+                // Generic error handling is sufficient now that backend returns 200 for empty state
+                throw error;
             }
-
-            // Mark as fresh data
-            return { ...response, fromCache: false };
         },
         staleTime: skipCache ? 0 : CACHE_STALE_TIME,
         gcTime: CACHE_GC_TIME,

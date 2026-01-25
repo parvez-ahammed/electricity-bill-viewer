@@ -3,11 +3,12 @@ import { ElectricityProvider } from '@interfaces/Shared';
 import { Account } from '../../entities/Account';
 
 export interface IAccountRepository {
-    create(data: CreateAccountRequest): Promise<Account>;
-    findById(id: string): Promise<Account | null>;
-    findAll(): Promise<Account[]>;
-    update(id: string, data: UpdateAccountRequest): Promise<Account | null>;
-    delete(id: string): Promise<boolean>;
-    findByProvider(provider: ElectricityProvider): Promise<Account[]>;
-    forceDelete(id: string): Promise<boolean>;
+    create(data: CreateAccountRequest, userId: string): Promise<Account>;
+    findByIdAndUserId(id: string, userId: string): Promise<Account | null>;
+    findAllByUserId(userId: string): Promise<Account[]>;
+    update(id: string, userId: string, data: UpdateAccountRequest): Promise<Account | null>;
+    delete(id: string, userId: string): Promise<boolean>;
+    findByProviderAndUserId(provider: ElectricityProvider, userId: string): Promise<Account[]>;
+    forceDelete(id: string, userId: string): Promise<boolean>;
+    findAllSystem(): Promise<Account[]>;
 }

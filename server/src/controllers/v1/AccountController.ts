@@ -1,19 +1,22 @@
-import { ResponseBuilder } from '@helpers/ResponseBuilder';
 import { AccountResponse } from '@interfaces/Account';
-import { Request, Response } from 'express';
+import { AuthenticatedRequest } from '@interfaces/Auth';
+import { Response } from 'express';
 import { AccountService } from '../../services/implementations/AccountService';
 import { cacheService } from '../../services/implementations/RedisCacheService';
+import { BaseController } from '../BaseController';
 
-export class AccountController {
+export class AccountController extends BaseController {
     private accountService: AccountService;
 
     constructor() {
+        super();
         this.accountService = new AccountService();
     }
 
     private mapToResponse(account: any): AccountResponse {
         return {
             id: account.id,
+            userId: account.userId,
             provider: account.provider,
             credentials: account.credentials,
             createdAt: account.createdAt.toISOString(),
@@ -21,274 +24,185 @@ export class AccountController {
         };
     }
 
-    createAccount = async (req: Request, res: Response): Promise<void> => {
-        try {
-            const account = await this.accountService.createAccount(req.body);
+    createAccount = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+        await this.handleRequest(res, async () => {
+            const userId = this.validateUser(req, res);
+            if (!userId) return;
+
+            const account = await this.accountService.createAccount(req.body, userId);
             const response = this.mapToResponse(account);
 
-            new ResponseBuilder(res)
-                .setStatus(201)
-                .setMessage('Account created successfully')
-                .setData(response)
-                .send();
-        } catch (error: unknown) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            new ResponseBuilder(res)
-                .setStatus(500)
-                .setMessage('Internal server error')
-                .setData({ error: errorMessage })
-                .sendError();
-        }
+            this.created(res, response, 'Account created successfully');
+        });
     };
 
-    getAccountById = async (req: Request, res: Response): Promise<void> => {
-        try {
+    getAccountById = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+        await this.handleRequest(res, async () => {
+            const userId = this.validateUser(req, res);
+            if (!userId) return;
+
             const { id } = req.params;
-            const account = await this.accountService.getAccountById(id);
-            
+            const account = await this.accountService.getAccountById(id, userId);
+
             if (!account) {
-                new ResponseBuilder(res)
-                    .setStatus(404)
-                    .setMessage('Account not found')
-                    .setData({})
-                    .sendError();
+                this.notFound(res, 'Account not found');
                 return;
             }
 
             const response = this.mapToResponse(account);
-
-            new ResponseBuilder(res)
-                .setStatus(200)
-                .setMessage('Account retrieved successfully')
-                .setData(response)
-                .send();
-        } catch (error: unknown) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            new ResponseBuilder(res)
-                .setStatus(500)
-                .setMessage('Internal server error')
-                .setData({ error: errorMessage })
-                .sendError();
-        }
+            this.ok(res, response, 'Account retrieved successfully');
+        });
     };
 
-    getAllAccounts = async (req: Request, res: Response): Promise<void> => {
-        try {
-            const accounts = await this.accountService.getAllAccounts();
+    getAllAccounts = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+        await this.handleRequest(res, async () => {
+            const userId = this.validateUser(req, res);
+            if (!userId) return;
+
+            const accounts = await this.accountService.getAllAccounts(userId);
             const response = accounts.map(account => this.mapToResponse(account));
 
-            new ResponseBuilder(res)
-                .setStatus(200)
-                .setMessage('Accounts retrieved successfully')
-                .setData(response)
-                .send();
-        } catch (error: unknown) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            new ResponseBuilder(res)
-                .setStatus(500)
-                .setMessage('Internal server error')
-                .setData({ error: errorMessage })
-                .sendError();
-        }
+            this.ok(res, response, 'Accounts retrieved successfully');
+        });
     };
 
-    updateAccount = async (req: Request, res: Response): Promise<void> => {
-        try {
+    updateAccount = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+        await this.handleRequest(res, async () => {
+            const userId = this.validateUser(req, res);
+            if (!userId) return;
+
             const { id } = req.params;
-            const account = await this.accountService.updateAccount(id, req.body);
-            
+            const account = await this.accountService.updateAccount(id, userId, req.body);
+
             if (!account) {
-                new ResponseBuilder(res)
-                    .setStatus(404)
-                    .setMessage('Account not found')
-                    .setData({})
-                    .sendError();
+                this.notFound(res, 'Account not found');
                 return;
             }
 
             const response = this.mapToResponse(account);
-
-            new ResponseBuilder(res)
-                .setStatus(200)
-                .setMessage('Account updated successfully')
-                .setData(response)
-                .send();
-        } catch (error: unknown) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            new ResponseBuilder(res)
-                .setStatus(500)
-                .setMessage('Internal server error')
-                .setData({ error: errorMessage })
-                .sendError();
-        }
+            this.ok(res, response, 'Account updated successfully');
+        });
     };
 
-    deleteAccount = async (req: Request, res: Response): Promise<void> => {
-        try {
+    deleteAccount = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+        await this.handleRequest(res, async () => {
+            const userId = this.validateUser(req, res);
+            if (!userId) return;
+
             const { id } = req.params;
-            const deleted = await this.accountService.deleteAccount(id);
-            
+            const deleted = await this.accountService.deleteAccount(id, userId);
+
             if (!deleted) {
-                new ResponseBuilder(res)
-                    .setStatus(404)
-                    .setMessage('Account not found')
-                    .setData({})
-                    .sendError();
+                this.notFound(res, 'Account not found');
                 return;
             }
 
-            new ResponseBuilder(res)
-                .setStatus(200)
-                .setMessage('Account deleted successfully')
-                .setData({})
-                .send();
-        } catch (error: unknown) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            new ResponseBuilder(res)
-                .setStatus(500)
-                .setMessage('Internal server error')
-                .setData({ error: errorMessage })
-                .sendError();
-        }
+            this.ok(res, {}, 'Account deleted successfully');
+        });
     };
 
-    forceDeleteAccount = async (req: Request, res: Response): Promise<void> => {
-        try {
+    forceDeleteAccount = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+        await this.handleRequest(res, async () => {
+            const userId = this.validateUser(req, res);
+            if (!userId) return;
+
             const { id } = req.params;
-            const deleted = await this.accountService.forceDeleteAccount(id);
-            
+            const deleted = await this.accountService.forceDeleteAccount(id, userId);
+
             if (!deleted) {
-                new ResponseBuilder(res)
-                    .setStatus(404)
-                    .setMessage('Account not found')
-                    .setData({})
-                    .sendError();
+                this.notFound(res, 'Account not found');
                 return;
             }
 
-            new ResponseBuilder(res)
-                .setStatus(200)
-                .setMessage('Corrupted account deleted successfully')
-                .setData({})
-                .send();
-        } catch (error: unknown) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            new ResponseBuilder(res)
-                .setStatus(500)
-                .setMessage('Internal server error')
-                .setData({ error: errorMessage })
-                .sendError();
-        }
+            this.ok(res, {}, 'Corrupted account deleted successfully');
+        });
     };
 
-    getAccountsByProvider = async (req: Request, res: Response): Promise<void> => {
-        try {
+    getAccountsByProvider = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+        await this.handleRequest(res, async () => {
+            const userId = this.validateUser(req, res);
+            if (!userId) return;
+
             const { provider } = req.params;
-            const accounts = await this.accountService.getAccountsByProvider(provider);
+            const accounts = await this.accountService.getAccountsByProvider(provider, userId);
             const response = accounts.map(account => this.mapToResponse(account));
 
-            new ResponseBuilder(res)
-                .setStatus(200)
-                .setMessage(`${provider} accounts retrieved successfully`)
-                .setData(response)
-                .send();
-        } catch (error: unknown) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            new ResponseBuilder(res)
-                .setStatus(500)
-                .setMessage('Internal server error')
-                .setData({ error: errorMessage })
-                .sendError();
-        }
+            this.ok(res, response, `${provider} accounts retrieved successfully`);
+        });
     };
 
     // Nickname management endpoints
-    setAccountNickname = async (req: Request, res: Response): Promise<void> => {
-        try {
+    setAccountNickname = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+        await this.handleRequest(res, async () => {
+            const userId = this.validateUser(req, res);
+            if (!userId) return;
+
             const { accountId } = req.params;
             const { nickname } = req.body;
 
+            // Verify account belongs to user before setting nickname
+            const account = await this.accountService.getAccountById(accountId, userId);
+            if (!account) {
+                this.notFound(res, 'Account not found');
+                return;
+            }
+
             if (!nickname || typeof nickname !== 'string' || nickname.trim() === '') {
-                new ResponseBuilder(res)
-                    .setStatus(400)
-                    .setMessage('Nickname is required and must be a non-empty string')
-                    .setData({})
-                    .sendError();
+                this.clientError(res, 'Nickname is required and must be a non-empty string');
                 return;
             }
 
             const success = await cacheService.setAccountNickname(accountId, nickname.trim());
-            
+
             if (!success) {
-                new ResponseBuilder(res)
-                    .setStatus(500)
-                    .setMessage('Failed to set nickname')
-                    .setData({})
-                    .sendError();
+                throw new Error('Failed to set nickname');
+            }
+
+            this.ok(res, { accountId, nickname: nickname.trim() }, 'Nickname set successfully');
+        });
+    };
+
+    getAccountNickname = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+        await this.handleRequest(res, async () => {
+            const userId = this.validateUser(req, res);
+            if (!userId) return;
+
+            const { accountId } = req.params;
+
+            // Verify account belongs to user before getting nickname
+            const account = await this.accountService.getAccountById(accountId, userId);
+            if (!account) {
+                this.notFound(res, 'Account not found');
                 return;
             }
 
-            new ResponseBuilder(res)
-                .setStatus(200)
-                .setMessage('Nickname set successfully')
-                .setData({ accountId, nickname: nickname.trim() })
-                .send();
-        } catch (error: unknown) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            new ResponseBuilder(res)
-                .setStatus(500)
-                .setMessage('Internal server error')
-                .setData({ error: errorMessage })
-                .sendError();
-        }
-    };
-
-    getAccountNickname = async (req: Request, res: Response): Promise<void> => {
-        try {
-            const { accountId } = req.params;
             const nickname = await cacheService.getAccountNickname(accountId);
 
-            new ResponseBuilder(res)
-                .setStatus(200)
-                .setMessage('Nickname retrieved successfully')
-                .setData({ accountId, nickname })
-                .send();
-        } catch (error: unknown) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            new ResponseBuilder(res)
-                .setStatus(500)
-                .setMessage('Internal server error')
-                .setData({ error: errorMessage })
-                .sendError();
-        }
+            this.ok(res, { accountId, nickname }, 'Nickname retrieved successfully');
+        });
     };
 
-    deleteAccountNickname = async (req: Request, res: Response): Promise<void> => {
-        try {
+    deleteAccountNickname = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+        await this.handleRequest(res, async () => {
+            const userId = this.validateUser(req, res);
+            if (!userId) return;
+
             const { accountId } = req.params;
-            const success = await cacheService.deleteAccountNickname(accountId);
-            
-            if (!success) {
-                new ResponseBuilder(res)
-                    .setStatus(500)
-                    .setMessage('Failed to delete nickname')
-                    .setData({})
-                    .sendError();
+
+            // Verify account belongs to user before deleting nickname
+            const account = await this.accountService.getAccountById(accountId, userId);
+            if (!account) {
+                this.notFound(res, 'Account not found');
                 return;
             }
 
-            new ResponseBuilder(res)
-                .setStatus(200)
-                .setMessage('Nickname deleted successfully')
-                .setData({ accountId })
-                .send();
-        } catch (error: unknown) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            new ResponseBuilder(res)
-                .setStatus(500)
-                .setMessage('Internal server error')
-                .setData({ error: errorMessage })
-                .sendError();
-        }
+            const success = await cacheService.deleteAccountNickname(accountId);
+
+            if (!success) {
+                throw new Error('Failed to delete nickname');
+            }
+
+            this.ok(res, { accountId }, 'Nickname deleted successfully');
+        });
     };
 }

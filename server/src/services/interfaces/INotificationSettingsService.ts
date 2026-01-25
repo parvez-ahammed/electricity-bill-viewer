@@ -1,7 +1,8 @@
 import { TelegramNotificationSettings } from '../../entities/TelegramNotificationSettings';
 
 export interface INotificationSettingsService {
-    getTelegramSettings(): Promise<TelegramNotificationSettings | null>;
-    updateTelegramSettings(chatId: string, isActive: boolean): Promise<TelegramNotificationSettings>;
-    deleteTelegramSettings(): Promise<boolean>;
+    getTelegramSettings(userId: string): Promise<TelegramNotificationSettings | null>;
+    updateTelegramSettings(userId: string, chatId: string, isActive: boolean): Promise<TelegramNotificationSettings>;
+    deleteTelegramSettings(userId: string): Promise<boolean>;
+    getAllActiveSettings(): Promise<TelegramNotificationSettings[]>;
 }

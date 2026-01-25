@@ -13,11 +13,12 @@ export class AccountRepository implements IAccountRepository {
         this.repository = AppDataSource.getRepository(Account);
     }
 
-    async create(data: CreateAccountRequest): Promise<Account> {
+    async create(data: CreateAccountRequest, userId: string): Promise<Account> {
         // Encrypt sensitive credentials before saving
         const encryptedCredentials = EncryptionService.encryptCredentials(data.credentials);
         
         const account = this.repository.create({
+            userId,
             provider: data.provider,
             credentials: encryptedCredentials,
         });
@@ -31,9 +32,9 @@ export class AccountRepository implements IAccountRepository {
         };
     }
 
-    async findById(id: string): Promise<Account | null> {
+    async findByIdAndUserId(id: string, userId: string): Promise<Account | null> {
         const account = await this.repository.findOne({
-            where: { id },
+            where: { id, userId },
         });
         
         if (!account) {
@@ -60,8 +61,9 @@ export class AccountRepository implements IAccountRepository {
         }
     }
 
-    async findAll(): Promise<Account[]> {
+    async findAllByUserId(userId: string): Promise<Account[]> {
         const accounts = await this.repository.find({
+            where: { userId },
             order: { createdAt: 'DESC' },
         });
         
@@ -100,8 +102,8 @@ export class AccountRepository implements IAccountRepository {
         return validAccounts;
     }
 
-    async update(id: string, data: UpdateAccountRequest): Promise<Account | null> {
-        const account = await this.repository.findOne({ where: { id } });
+    async update(id: string, userId: string, data: UpdateAccountRequest): Promise<Account | null> {
+        const account = await this.repository.findOne({ where: { id, userId } });
         if (!account) {
             return null;
         }
@@ -119,8 +121,8 @@ export class AccountRepository implements IAccountRepository {
         };
     }
 
-    async delete(id: string): Promise<boolean> {
-        const result = await this.repository.delete(id);
+    async delete(id: string, userId: string): Promise<boolean> {
+        const result = await this.repository.delete({ id, userId });
         return result.affected !== undefined && result.affected > 0;
     }
 
@@ -128,9 +130,9 @@ export class AccountRepository implements IAccountRepository {
      * Force delete an account without attempting to decrypt credentials
      * Useful for removing corrupted accounts
      */
-    async forceDelete(id: string): Promise<boolean> {
+    async forceDelete(id: string, userId: string): Promise<boolean> {
         try {
-            const result = await this.repository.delete(id);
+            const result = await this.repository.delete({ id, userId });
             return result.affected !== undefined && result.affected > 0;
         } catch (error) {
             console.error(`Failed to force delete account ${id}:`, error);
@@ -138,9 +140,9 @@ export class AccountRepository implements IAccountRepository {
         }
     }
 
-    async findByProvider(provider: ElectricityProvider): Promise<Account[]> {
+    async findByProviderAndUserId(provider: ElectricityProvider, userId: string): Promise<Account[]> {
         const accounts = await this.repository.find({
-            where: { provider },
+            where: { provider, userId },
             order: { createdAt: 'DESC' },
         });
         
@@ -159,6 +161,38 @@ export class AccountRepository implements IAccountRepository {
                 console.error(`Failed to decrypt account ${account.id}:`, error);
                 
                 // Add a corrupted account marker for UI handling
+                validAccounts.push({
+                    ...account,
+                    credentials: { 
+                        username: '[CORRUPTED DATA]',
+                        _isCorrupted: true,
+                        _originalId: account.id 
+                    } as any,
+                });
+            }
+        }
+        
+        return validAccounts;
+    }
+
+    async findAllSystem(): Promise<Account[]> {
+        const accounts = await this.repository.find({
+            order: { createdAt: 'DESC' },
+        });
+        
+        // Decrypt credentials for all accounts before returning
+        const validAccounts: Account[] = [];
+        
+        for (const account of accounts) {
+            try {
+                const decryptedAccount = {
+                    ...account,
+                    credentials: EncryptionService.decryptCredentials(account.credentials),
+                };
+                validAccounts.push(decryptedAccount);
+            } catch (error) {
+                console.error(`Failed to decrypt account ${account.id}:`, error);
+                // Return corrupted account marker
                 validAccounts.push({
                     ...account,
                     credentials: { 

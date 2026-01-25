@@ -1,12 +1,13 @@
 import { AuthenticatedRequest } from '@interfaces/Auth';
 import { AuthService } from '@services/AuthService';
 import { Request, Response } from 'express';
-import httpStatus from 'http-status';
+import { BaseController } from '../BaseController';
 
-export class AuthController {
+export class AuthController extends BaseController {
     private authService: AuthService;
 
     constructor() {
+        super();
         this.authService = new AuthService();
     }
 
@@ -16,10 +17,7 @@ export class AuthController {
             res.redirect(authUrl);
         } catch (error) {
             console.error('Error generating Google auth URL:', error);
-            res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-                success: false,
-                message: 'Failed to initiate Google authentication',
-            });
+            this.fail(res, 'Failed to initiate Google authentication');
         }
     };
 
@@ -28,10 +26,7 @@ export class AuthController {
             const { code } = req.query;
 
             if (!code || typeof code !== 'string') {
-                res.status(httpStatus.BAD_REQUEST).json({
-                    success: false,
-                    message: 'Authorization code is required',
-                });
+                this.clientError(res, 'Authorization code is required');
                 return;
             }
 
@@ -43,16 +38,13 @@ export class AuthController {
 
             if (isFetchRequest) {
                 // Return JSON for fetch requests (frontend will handle navigation)
-                res.status(httpStatus.OK).json({
-                    success: true,
-                    data: {
-                        token,
-                        user: {
-                            userId: user.id,
-                            email: user.email,
-                        },
+                this.ok(res, {
+                    token,
+                    user: {
+                        userId: user.id,
+                        email: user.email,
                     },
-                });
+                }, 'Authenticated successfully');
             } else {
                 // Redirect for direct browser navigation
                 const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
@@ -66,10 +58,7 @@ export class AuthController {
                                    req.headers['x-requested-with'] === 'XMLHttpRequest';
 
             if (isFetchRequest) {
-                res.status(httpStatus.UNAUTHORIZED).json({
-                    success: false,
-                    message: 'Failed to authenticate with Google',
-                });
+                this.unauthorized(res, 'Failed to authenticate with Google');
             } else {
                 const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
                 res.redirect(`${frontendUrl}/login?error=authentication_failed`);
@@ -78,37 +67,22 @@ export class AuthController {
     };
 
     getCurrentUser = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-        try {
-            if (!req.user) {
-                res.status(httpStatus.UNAUTHORIZED).json({
-                    success: false,
-                    message: 'User not authenticated',
-                });
+        await this.handleRequest(res, async () => {
+             if (!req.user) {
+                this.unauthorized(res, 'User not authenticated');
                 return;
             }
 
             // User info is already in the JWT payload
-            res.status(httpStatus.OK).json({
-                success: true,
-                data: {
-                    userId: req.user.userId,
-                    email: req.user.email,
-                },
-            });
-        } catch (error) {
-            console.error('Error getting current user:', error);
-            res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-                success: false,
-                message: 'Failed to get user information',
-            });
-        }
+            this.ok(res, {
+                userId: req.user.userId,
+                email: req.user.email,
+            }, 'User information retrieved successfully');
+        });
     };
 
     logout = (req: Request, res: Response): void => {
         // JWT is stateless, so logout is handled client-side by removing the token
-        res.status(httpStatus.OK).json({
-            success: true,
-            message: 'Logged out successfully',
-        });
+        this.ok(res, {}, 'Logged out successfully');
     };
 }

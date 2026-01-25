@@ -14,6 +14,7 @@ export type ProviderCredentials = DPDCCredentials | NESCOCredentials;
 
 export interface AccountRecord {
     id: string;
+    userId: string;
     provider: ElectricityProvider;
     credentials: ProviderCredentials;
     createdAt: Date;
@@ -31,6 +32,7 @@ export interface UpdateAccountRequest {
 
 export interface AccountResponse {
     id: string;
+    userId: string;
     provider: ElectricityProvider;
     credentials: ProviderCredentials;
     createdAt: string;

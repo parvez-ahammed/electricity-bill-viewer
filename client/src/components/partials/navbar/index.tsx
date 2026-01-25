@@ -1,6 +1,7 @@
 import { RefreshCw, Send, Settings } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
+import { UserMenu } from "@/components/layout/UserMenu";
 import { Text } from "@/components/partials/typography";
 import { Button } from "@/components/ui";
 import { useRefresh } from "./hooks/useRefresh";
@@ -75,6 +76,9 @@ export const Navbar = () => {
                                 <span className="hidden sm:inline">Accounts</span>
                             </Button>
                         </Link>
+
+                        {/* User Profile & Logout */}
+                        <UserMenu />
                     </div>
                 </div>
             </div>

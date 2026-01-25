@@ -7,6 +7,9 @@ export class Account {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
+    @Column()
+    userId: string;
+
     @Column({
         type: 'varchar',
         enum: ElectricityProvider,

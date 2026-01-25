@@ -25,8 +25,14 @@ export const UserMenu = () => {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative h-9 w-9 rounded-full">
-                    <User className="h-5 w-5" />
+                <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex items-center gap-2"
+                    title="User Profile"
+                >
+                    <User className="h-4 w-4" />
+                    <span className="hidden sm:inline">Profile</span>
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">

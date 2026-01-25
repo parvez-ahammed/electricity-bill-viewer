@@ -1,5 +1,6 @@
 import { GoogleLoginButton } from '@/components/auth/GoogleLoginButton';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from '@/context/AuthContext';
 import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -24,7 +25,7 @@ export const LoginPage = () => {
     }, [error]);
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-white">
+        <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
             <Card className="w-full max-w-md shadow-lg">
                 <CardHeader className="space-y-1 text-center">
                     <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
@@ -44,13 +45,33 @@ export const LoginPage = () => {
                     </div>
                     <CardTitle className="text-2xl font-bold">Welcome to Bill Barta</CardTitle>
                     <CardDescription>
-                        Sign in with your Google account to manage your electricity bills
+                        Manage your electricity bills with ease
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <GoogleLoginButton />
-                    <p className="mt-4 text-center text-sm text-muted-foreground">
-                        By signing in, you agree to our Terms of Service and Privacy Policy
+                     <Tabs defaultValue="login" className="w-full">
+                        <TabsList className="grid w-full grid-cols-2 mb-4">
+                            <TabsTrigger value="login">Sign In</TabsTrigger>
+                            <TabsTrigger value="signup">Create Account</TabsTrigger>
+                        </TabsList>
+                        
+                        <TabsContent value="login" className="space-y-4">
+                            <div className="bg-slate-50 p-4 rounded-md text-sm text-muted-foreground mb-4 text-center">
+                                Welcome back! Sign in to access your dashboard.
+                            </div>
+                            <GoogleLoginButton mode="login" />
+                        </TabsContent>
+                        
+                        <TabsContent value="signup" className="space-y-4">
+                             <div className="bg-slate-50 p-4 rounded-md text-sm text-muted-foreground mb-4 text-center">
+                                New here? Create an account to start tracking your bills.
+                            </div>
+                            <GoogleLoginButton mode="signup" />
+                        </TabsContent>
+                    </Tabs>
+
+                    <p className="mt-6 text-center text-xs text-muted-foreground">
+                        By continuing, you agree to our Terms of Service and Privacy Policy
                     </p>
                 </CardContent>
             </Card>
