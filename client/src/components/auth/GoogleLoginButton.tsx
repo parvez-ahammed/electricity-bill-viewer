@@ -1,8 +1,5 @@
 import { config } from '@/common/constants/config.constant';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/context/AuthContext';
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 
 interface GoogleLoginButtonProps {
@@ -10,9 +7,6 @@ interface GoogleLoginButtonProps {
 }
 
 export const GoogleLoginButton = ({ mode = 'login' }: GoogleLoginButtonProps) => {
-    const { login } = useAuth();
-    const navigate = useNavigate();
-    const [isLoading, setIsLoading] = useState(false);
 
     const handleGoogleLogin = () => {
         window.location.href =
@@ -24,7 +18,6 @@ export const GoogleLoginButton = ({ mode = 'login' }: GoogleLoginButtonProps) =>
     return (
         <Button
             onClick={() => handleGoogleLogin()}
-            disabled={isLoading}
             className="w-full"
             variant="outline"
         >
@@ -46,7 +39,7 @@ export const GoogleLoginButton = ({ mode = 'login' }: GoogleLoginButtonProps) =>
                     d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                 />
             </svg>
-            {isLoading ? 'Connecting...' : label}
+            {label}
         </Button>
     );
 };

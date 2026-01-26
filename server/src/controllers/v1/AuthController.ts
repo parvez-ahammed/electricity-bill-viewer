@@ -41,8 +41,7 @@ export class AuthController extends BaseController {
       return res.status(400).json({ message: 'Code missing' });
     }
 
-    const redirectUri =
-      'https://billbarta.parvez.cloud/api/v1/auth/google/callback';
+    const redirectUri = process.env.GOOGLE_REDIRECT_URI;
 
     const { tokens } = await this.oauth2Client.getToken({
       code,
