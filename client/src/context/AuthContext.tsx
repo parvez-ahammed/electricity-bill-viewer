@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { config } from '@/common/constants/config.constant';
 
 interface User {
     userId: string;
@@ -34,7 +35,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const fetchCurrentUser = async (authToken: string) => {
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/auth/me`, {
+            const response = await fetch(`${config.backendApiUrl}/auth/me`, {
                 headers: {
                     Authorization: `Bearer ${authToken}`,
                 },

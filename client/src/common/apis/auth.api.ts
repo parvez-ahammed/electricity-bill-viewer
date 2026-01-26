@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+import { config } from '@/common/constants/config.constant';
 
 export interface GoogleLoginResponse {
     success: boolean;
@@ -11,7 +11,7 @@ export interface GoogleLoginResponse {
 export const authApi = {
     async getCurrentUser(): Promise<GoogleLoginResponse> {
         const token = localStorage.getItem('auth_token');
-        const response = await fetch(`${API_BASE_URL}/api/v1/auth/me`, {
+        const response = await fetch(`${config.backendApiUrl}/auth/me`, {
             headers: {
                 Authorization: `Bearer ${token}`,
             },
@@ -26,7 +26,7 @@ export const authApi = {
 
     async logout(): Promise<void> {
         const token = localStorage.getItem('auth_token');
-        await fetch(`${API_BASE_URL}/api/v1/auth/logout`, {
+        await fetch(`${config.backendApiUrl}/auth/logout`, {
             method: 'POST',
             headers: {
                 Authorization: `Bearer ${token}`,
