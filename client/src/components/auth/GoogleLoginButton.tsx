@@ -10,7 +10,7 @@ export const GoogleLoginButton = ({ mode = 'login' }: GoogleLoginButtonProps) =>
 
     const handleGoogleLogin = () => {
         window.location.href =
-            `${config.backendApiUrl}/auth/google`;
+            `${config.backendUrl}/api/v1/auth/google`;
     };
 
     const label = mode === 'signup' ? 'Create Account with Google' : 'Sign in with Google';

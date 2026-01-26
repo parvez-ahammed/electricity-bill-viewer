@@ -1,31 +1,19 @@
 import { AuthenticatedRequest } from '@interfaces/Auth';
 import { AuthService } from '@services/AuthService';
 import { Request, Response } from 'express';
-import { google } from 'googleapis';
 import { BaseController } from '../BaseController';
 
 export class AuthController extends BaseController {
     private authService: AuthService;
-    private oauth2Client;
 
     constructor() {
         super();
         this.authService = new AuthService();
-        this.oauth2Client = new google.auth.OAuth2(
-            process.env.GOOGLE_CLIENT_ID,
-            process.env.GOOGLE_CLIENT_SECRET,
-            process.env.GOOGLE_REDIRECT_URI
-        );
     }
 
     googleLogin = (req: Request, res: Response): void => {
         try {
-            const authUrl = this.oauth2Client.generateAuthUrl({
-                access_type: 'offline',
-                scope: ['openid', 'email', 'profile'],
-                redirect_uri: process.env.GOOGLE_REDIRECT_URI,
-                prompt: 'consent',
-            });
+            const authUrl = this.authService.getAuthUrl();
             res.redirect(authUrl);
         } catch (error) {
             console.error('Error generating Google auth URL:', error);
@@ -33,36 +21,27 @@ export class AuthController extends BaseController {
         }
     };
 
-    googleCallback = async (req: Request, res: Response) => {
-  try {
-    const { code } = req.query;
+    googleCallback = async (req: Request, res: Response): Promise<void> => {
+        try {
+            const { code } = req.query;
 
-    if (!code || typeof code !== 'string') {
-      return res.status(400).json({ message: 'Code missing' });
-    }
+            if (!code || typeof code !== 'string') {
+                res.status(400).json({ message: 'Authorization code is required' });
+                return;
+            }
 
-    const redirectUri = process.env.GOOGLE_REDIRECT_URI;
+            // Use AuthService to handle the complete OAuth flow
+            const { user, token } = await this.authService.handleGoogleCallback(code);
 
-    const { tokens } = await this.oauth2Client.getToken({
-      code,
-      redirect_uri: redirectUri, // MUST MATCH STEP 1
-    });
-
-    this.oauth2Client.setCredentials(tokens);
-
-    const userInfo = await this.oauth2Client
-      .request({ url: 'https://www.googleapis.com/oauth2/v3/userinfo' });
-
-    const user = await this.authService.findOrCreateUser(userInfo.data);
-    const jwt = this.authService.generateJWT(user);
-
-    const frontendUrl = process.env.FRONTEND_URL!;
-    res.redirect(`${frontendUrl}/auth/callback?token=${jwt}`);
-  } catch (err) {
-    console.error(err);
-    res.redirect(`${process.env.FRONTEND_URL}/login?error=google`);
-  }
-};
+            // Redirect to frontend with the JWT token
+            const frontendUrl = process.env.FRONTEND_URL!;
+            res.redirect(`${frontendUrl}/auth/callback?token=${token}`);
+        } catch (error) {
+            console.error('Google OAuth callback error:', error);
+            const frontendUrl = process.env.FRONTEND_URL!;
+            res.redirect(`${frontendUrl}/login?error=google`);
+        }
+    };
 
 
     getCurrentUser = async (req: AuthenticatedRequest, res: Response): Promise<void> => {

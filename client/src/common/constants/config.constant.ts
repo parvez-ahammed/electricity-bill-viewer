@@ -5,12 +5,18 @@ const envSchema = z.object({
         .string()
         .min(1, "VITE_BACKEND_API_PATH must be at least 1 character long")
         .default("/api/v1"),
+    VITE_BACKEND_URL: z
+        .string()
+        .url("VITE_BACKEND_URL must be a valid URL")
+        .default("http://localhost:3000"),
 });
 
 function validateEnv() {
     const env = {
         VITE_BACKEND_API_PATH:
             import.meta.env.VITE_BACKEND_API_PATH || "/api/v1",
+        VITE_BACKEND_URL:
+            import.meta.env.VITE_BACKEND_URL || "http://localhost:3000",
     };
 
     try {
@@ -37,7 +43,8 @@ function validateEnv() {
 const validatedEnv = validateEnv();
 
 export const config = {
-    backendApiUrl: validatedEnv.VITE_BACKEND_API_PATH,
+    backendUrl: validatedEnv.VITE_BACKEND_URL,
+    backendApiUrl: validatedEnv.VITE_BACKEND_URL + validatedEnv.VITE_BACKEND_API_PATH,
     isProduction: import.meta.env.PROD,
     isDevelopment: import.meta.env.DEV,
 } as const;
