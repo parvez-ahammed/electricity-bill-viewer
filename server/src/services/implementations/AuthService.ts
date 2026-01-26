@@ -34,7 +34,7 @@ export class AuthService {
             // The redirect_uri must match exactly what was used in the frontend
             const { tokens } = await this.oauth2Client.getToken({
                 code,
-                redirect_uri: process.env.GOOGLE_REDIRECT_URI || 'postmessage'
+                redirect_uri: process.env.GOOGLE_REDIRECT_URI
             });
             this.oauth2Client.setCredentials(tokens);
 

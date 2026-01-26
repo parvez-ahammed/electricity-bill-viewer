@@ -1,19 +1,31 @@
 import { AuthenticatedRequest } from '@interfaces/Auth';
 import { AuthService } from '@services/AuthService';
 import { Request, Response } from 'express';
+import { google } from 'googleapis';
 import { BaseController } from '../BaseController';
 
 export class AuthController extends BaseController {
     private authService: AuthService;
+    private oauth2Client;
 
     constructor() {
         super();
         this.authService = new AuthService();
+        this.oauth2Client = new google.auth.OAuth2(
+            process.env.GOOGLE_CLIENT_ID,
+            process.env.GOOGLE_CLIENT_SECRET,
+            process.env.GOOGLE_REDIRECT_URI
+        );
     }
 
     googleLogin = (req: Request, res: Response): void => {
         try {
-            const authUrl = this.authService.getAuthUrl();
+            const authUrl = this.oauth2Client.generateAuthUrl({
+                access_type: 'offline',
+                scope: ['openid', 'email', 'profile'],
+                redirect_uri: process.env.GOOGLE_REDIRECT_URI,
+                prompt: 'consent',
+            });
             res.redirect(authUrl);
         } catch (error) {
             console.error('Error generating Google auth URL:', error);
@@ -21,50 +33,38 @@ export class AuthController extends BaseController {
         }
     };
 
-    googleCallback = async (req: Request, res: Response): Promise<void> => {
-        try {
-            const { code } = req.query;
+    googleCallback = async (req: Request, res: Response) => {
+  try {
+    const { code } = req.query;
 
-            if (!code || typeof code !== 'string') {
-                this.clientError(res, 'Authorization code is required');
-                return;
-            }
+    if (!code || typeof code !== 'string') {
+      return res.status(400).json({ message: 'Code missing' });
+    }
 
-            const { user, token } = await this.authService.handleGoogleCallback(code);
+    const redirectUri =
+      'https://billbarta.parvez.cloud/api/v1/auth/google/callback';
 
-            // Check if this is a fetch/AJAX request (from frontend using fetch API)
-            const isFetchRequest = req.headers.accept?.includes('application/json') ||
-                                   req.headers['x-requested-with'] === 'XMLHttpRequest';
+    const { tokens } = await this.oauth2Client.getToken({
+      code,
+      redirect_uri: redirectUri, // MUST MATCH STEP 1
+    });
 
-            if (isFetchRequest) {
-                // Return JSON for fetch requests (frontend will handle navigation)
-                this.ok(res, {
-                    token,
-                    user: {
-                        userId: user.id,
-                        email: user.email,
-                    },
-                }, 'Authenticated successfully');
-            } else {
-                // Redirect for direct browser navigation
-                const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-                res.redirect(`${frontendUrl}/auth/callback?token=${token}`);
-            }
-        } catch (error) {
-            console.error('Google callback error:', error);
-            
-            // Check if this is a fetch request
-            const isFetchRequest = req.headers.accept?.includes('application/json') ||
-                                   req.headers['x-requested-with'] === 'XMLHttpRequest';
+    this.oauth2Client.setCredentials(tokens);
 
-            if (isFetchRequest) {
-                this.unauthorized(res, 'Failed to authenticate with Google');
-            } else {
-                const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-                res.redirect(`${frontendUrl}/login?error=authentication_failed`);
-            }
-        }
-    };
+    const userInfo = await this.oauth2Client
+      .request({ url: 'https://www.googleapis.com/oauth2/v3/userinfo' });
+
+    const user = await this.authService.findOrCreateUser(userInfo.data);
+    const jwt = this.authService.generateJWT(user);
+
+    const frontendUrl = process.env.FRONTEND_URL!;
+    res.redirect(`${frontendUrl}/auth/callback?token=${jwt}`);
+  } catch (err) {
+    console.error(err);
+    res.redirect(`${process.env.FRONTEND_URL}/login?error=google`);
+  }
+};
+
 
     getCurrentUser = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
         await this.handleRequest(res, async () => {

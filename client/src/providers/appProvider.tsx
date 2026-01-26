@@ -1,5 +1,4 @@
 import { PreferencesProvider } from "@/context/PreferenceContext";
-import { AuthGoogleProvider } from "@/providers/AuthGoogleProvider";
 import { Suspense } from "react";
 import { BrowserRouter } from "react-router-dom";
 import { Toaster } from "sonner";
@@ -8,6 +7,7 @@ import { LoadingSpinner } from "@/components/partials/appLoader/LoadingSpinner";
 import { ErrorBoundary } from "@/components/partials/errorBoundary";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
+import { AuthProvider } from "@/context/AuthContext";
 import { LoadingProvider } from "./LoadingProvider";
 import { QueryProvider } from "./reactQueryProvider";
 import { ThemeProvider } from "./themeProvider";
@@ -29,7 +29,7 @@ export const AppProvider = (props: AppProviderProps) => {
                     <QueryProvider>
                         <PreferencesProvider>
                             <BrowserRouter>
-                                <AuthGoogleProvider>
+                                <AuthProvider>
                                     <TooltipProvider>
                                         <Toaster 
                                             position="top-right" 
@@ -44,7 +44,7 @@ export const AppProvider = (props: AppProviderProps) => {
                                             <LoadingSpinner />
                                         </LoadingProvider>
                                     </TooltipProvider>
-                                </AuthGoogleProvider>
+                                </AuthProvider>
                             </BrowserRouter>
                         </PreferencesProvider>
                     </QueryProvider>

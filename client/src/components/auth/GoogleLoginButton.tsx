@@ -1,10 +1,8 @@
 import { config } from '@/common/constants/config.constant';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
-import { CodeResponse, useGoogleLogin } from '@react-oauth/google';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
 
 
 interface GoogleLoginButtonProps {
@@ -16,50 +14,10 @@ export const GoogleLoginButton = ({ mode = 'login' }: GoogleLoginButtonProps) =>
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleGoogleLogin = useGoogleLogin({
-        onSuccess: async (codeResponse: CodeResponse) => {
-            setIsLoading(true);
-            try {
-                // Exchange the authorization code for JWT token from our backend
-                const response = await fetch(
-                    `${config.backendApiUrl}/auth/google/callback?code=${codeResponse.code}`,
-                    {
-                        method: 'GET',
-                        credentials: 'include',
-                        headers: {
-                            'Accept': 'application/json',
-                        },
-                    }
-                );
-
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.success && data.data?.token) {
-                        // Login and navigate to home
-                        await login(data.data.token);
-                        toast.success('Successfully logged in!');
-                        navigate('/');
-                    } else {
-                        toast.error('Failed to authenticate with Google');
-                    }
-                } else {
-                    toast.error('Failed to authenticate with Google');
-                }
-            } catch (error) {
-                console.error('Google login error:', error);
-                toast.error('An error occurred during login');
-            } finally {
-                setIsLoading(false);
-            }
-        },
-        onError: () => {
-            toast.error('Google login failed');
-        },
-        flow: 'auth-code',
-        // For login, omit prompt to let Google decide (usually standard account selection).
-        // For signup, force 'consent' to ensure we get a refresh token/permissions.
-        prompt: mode === 'signup' ? 'consent' : undefined,
-    } as any); // Cast to any because 'prompt' property might differ in type definitions
+    const handleGoogleLogin = () => {
+        window.location.href =
+            `${config.backendApiUrl}/auth/google`;
+    };
 
     const label = mode === 'signup' ? 'Create Account with Google' : 'Sign in with Google';
 
