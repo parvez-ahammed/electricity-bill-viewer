@@ -1,5 +1,5 @@
 import { useAuth } from '@/context/AuthContext';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -7,11 +7,16 @@ export const AuthCallbackPage = () => {
     const { login } = useAuth();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
+    const hasProcessedLogin = useRef(false);
 
     useEffect(() => {
+        // Prevent multiple executions
+        if (hasProcessedLogin.current) return;
+
         const token = searchParams.get('token');
 
         if (token) {
+            hasProcessedLogin.current = true;
             login(token)
                 .then(() => {
                     toast.success('Successfully logged in!');
