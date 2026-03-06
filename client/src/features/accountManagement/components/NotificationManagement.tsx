@@ -10,19 +10,34 @@ import {
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, Loader2, Save, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import * as z from "zod";
+
+const notificationSchema = z.object({
+    chatId: z.string().min(1, "Chat ID is required"),
+});
+
+type NotificationForm = z.infer<typeof notificationSchema>;
 
 export const NotificationManagement = () => {
     const queryClient = useQueryClient();
-    const [chatIdInput, setChatIdInput] = useState("");
     const [isEditing, setIsEditing] = useState(false);
 
     const { data: settings, isLoading } = useQuery({
         queryKey: ["notificationSettings"],
         queryFn: notificationSettingsApi.getTelegramSettings,
+    });
+
+    const { register, handleSubmit, reset } = useForm<NotificationForm>({
+        resolver: zodResolver(notificationSchema),
+        values: {
+            chatId: settings?.chatId || ""
+        }
     });
 
     const updateMutation = useMutation({
@@ -42,17 +57,18 @@ export const NotificationManagement = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["notificationSettings"] });
             toast.success("Notification settings removed");
-            setChatIdInput("");
+            reset({ chatId: "" });
         },
         onError: () => {
             toast.error("Failed to remove settings");
         },
     });
 
-    const handleSave = () => {
-        if (!chatIdInput.trim()) return;
+    const onSubmit = (data: NotificationForm) => {
+        const trimmedChatId = data.chatId.trim();
+        if (!trimmedChatId) return;
         updateMutation.mutate({
-            chatId: chatIdInput,
+            chatId: trimmedChatId,
             isActive: settings?.isActive ?? true,
         });
     };
@@ -72,16 +88,8 @@ export const NotificationManagement = () => {
     };
 
     const startEditing = () => {
-        setChatIdInput(settings?.chatId || "");
         setIsEditing(true);
     };
-
-    // Initialize input when settings load
-    useEffect(() => {
-        if (settings?.chatId && !isEditing) {
-            setChatIdInput(settings.chatId);
-        }
-    }, [settings, isEditing]);
 
     const hasSettings = !!settings && !!settings.chatId;
 
@@ -132,18 +140,17 @@ export const NotificationManagement = () => {
                             Configure Telegram
                         </Button>
                     ) : isEditing ? (
-                        <div className="flex items-center gap-2">
+                        <form onSubmit={handleSubmit(onSubmit)} className="flex items-center gap-2">
                             <Input
                                 placeholder="Enter Telegram Chat ID"
-                                value={chatIdInput}
-                                onChange={(e) => setChatIdInput(e.target.value)}
+                                {...register("chatId")}
                                 className="h-8 text-sm flex-1"
                             />
                             <Button
+                                type="submit"
                                 size="sm"
                                 className="h-8 w-8 p-0"
-                                onClick={handleSave}
-                                disabled={updateMutation.isPending || !chatIdInput.trim()}
+                                disabled={updateMutation.isPending}
                             >
                                 {updateMutation.isPending ? (
                                     <Loader2 className="h-3 w-3 animate-spin" />
@@ -152,14 +159,18 @@ export const NotificationManagement = () => {
                                 )}
                             </Button>
                             <Button
+                                type="button"
                                 size="sm"
                                 variant="ghost"
                                 className="h-8 w-8 p-0"
-                                onClick={() => setIsEditing(false)}
+                                onClick={() => {
+                                    reset();
+                                    setIsEditing(false);
+                                }}
                             >
                                 <span className="text-xs">✕</span>
                             </Button>
-                        </div>
+                        </form>
                     ) : (
                         <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/40 p-2 rounded-md">
                             <span className="flex-1 font-mono text-xs">Chat ID: {settings?.chatId}</span>

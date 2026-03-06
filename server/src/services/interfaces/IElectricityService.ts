@@ -38,6 +38,11 @@ export interface IElectricityService {
         skipCache?: boolean
     ): Promise<ElectricityUsageResponse>;
 
+    getUsageDataForUser(
+        userId: string,
+        skipCache?: boolean
+    ): Promise<ElectricityUsageResponse | null>;
+
     getSingleAccountUsage(
         username: string,
         password: string | undefined,

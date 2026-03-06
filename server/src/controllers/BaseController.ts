@@ -1,3 +1,4 @@
+import ApiError from '@helpers/ApiError';
 import { ResponseBuilder } from '@helpers/ResponseBuilder';
 import { AuthenticatedRequest } from '@interfaces/Auth';
 import { Request, Response } from 'express';
@@ -54,20 +55,11 @@ export abstract class BaseController {
             .sendError();
     }
 
-    protected validateUser(req: Request | AuthenticatedRequest, res: Response): string | null {
+    protected getValidatedUserId(req: Request | AuthenticatedRequest): string {
         const authReq = req as AuthenticatedRequest;
         if (!authReq.user?.userId) {
-            this.unauthorized(res);
-            return null;
+            throw new ApiError(httpStatus.UNAUTHORIZED, 'Authentication required');
         }
         return authReq.user.userId;
-    }
-
-    protected async handleRequest(res: Response, action: () => Promise<void>): Promise<void> {
-        try {
-            await action();
-        } catch (error) {
-            this.fail(res, error);
-        }
     }
 }

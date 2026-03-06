@@ -2,8 +2,11 @@ import { useNicknameManager } from "@/common/hooks/useNicknameManager";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TableCell } from "@/components/ui/table";
-import { Check, Edit2, X } from "lucide-react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Check, Edit2, Loader2, X } from "lucide-react";
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 
 interface NicknameEditorProps {
     accountId: string;
@@ -11,23 +14,33 @@ interface NicknameEditorProps {
     location: string;
 }
 
+const nicknameSchema = z.object({
+    nickname: z.string().max(50, "Maximum 50 characters")
+});
+
+type NicknameForm = z.infer<typeof nicknameSchema>;
+
 export const NicknameEditor = ({ accountId, currentDisplayName, location }: NicknameEditorProps) => {
     const [isEditing, setIsEditing] = useState(false);
-    const [nickname, setNickname] = useState(currentDisplayName === location ? "" : currentDisplayName);
     const { setNicknameMutation, deleteNicknameMutation, isRefreshing } = useNicknameManager();
 
-    const handleSave = () => {
-        const trimmedNickname = nickname.trim();
+    const { register, handleSubmit, reset, formState: { errors } } = useForm<NicknameForm>({
+        resolver: zodResolver(nicknameSchema),
+        defaultValues: {
+            nickname: currentDisplayName === location ? "" : currentDisplayName
+        }
+    });
+
+    const onSubmit = (data: NicknameForm) => {
+        const trimmedNickname = data.nickname.trim();
         if (trimmedNickname === "") {
-            // If nickname is empty, delete it
             deleteNicknameMutation.mutate(accountId, {
                 onSuccess: () => {
-                    setNickname("");
+                    reset({ nickname: "" });
                     setIsEditing(false);
                 }
             });
         } else {
-            // Set the nickname
             setNicknameMutation.mutate({ accountId, nickname: trimmedNickname }, {
                 onSuccess: () => {
                     setIsEditing(false);
@@ -37,14 +50,12 @@ export const NicknameEditor = ({ accountId, currentDisplayName, location }: Nick
     };
 
     const handleCancel = () => {
-        setNickname(currentDisplayName === location ? "" : currentDisplayName);
+        reset({ nickname: currentDisplayName === location ? "" : currentDisplayName });
         setIsEditing(false);
     };
 
     const handleKeyPress = (e: React.KeyboardEvent) => {
-        if (e.key === "Enter") {
-            handleSave();
-        } else if (e.key === "Escape") {
+        if (e.key === "Escape") {
             handleCancel();
         }
     };
@@ -52,26 +63,41 @@ export const NicknameEditor = ({ accountId, currentDisplayName, location }: Nick
     if (isEditing) {
         return (
             <TableCell className="w-[200px] min-w-[200px] px-4 py-4">
-                <div className="flex items-center gap-2">
-                    <Input
-                        value={nickname}
-                        onChange={(e) => setNickname(e.target.value)}
-                        onKeyDown={handleKeyPress}
-                        placeholder={location}
-                        className="h-8 text-sm"
-                        maxLength={50}
-                        autoFocus
-                    />
+                <form 
+                    onSubmit={handleSubmit(onSubmit)} 
+                    className="flex items-center gap-2"
+                >
+                    <div className="relative">
+                        <Input
+                            {...register("nickname")}
+                            onKeyDown={handleKeyPress}
+                            placeholder={location}
+                            className="h-8 text-sm"
+                            maxLength={50}
+                            autoFocus
+                            disabled={setNicknameMutation.isPending || deleteNicknameMutation.isPending || isRefreshing}
+                        />
+                        {errors.nickname && (
+                            <span className="absolute -bottom-4 left-0 text-[10px] text-destructive">
+                                {errors.nickname.message}
+                            </span>
+                        )}
+                    </div>
                     <Button
+                        type="submit"
                         size="sm"
                         variant="ghost"
-                        onClick={handleSave}
                         disabled={setNicknameMutation.isPending || deleteNicknameMutation.isPending || isRefreshing}
                         className="h-8 w-8 p-0"
                     >
-                        <Check className="h-4 w-4" />
+                        {(setNicknameMutation.isPending || deleteNicknameMutation.isPending) ? (
+                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                        ) : (
+                            <Check className="h-4 w-4" />
+                        )}
                     </Button>
                     <Button
+                        type="button"
                         size="sm"
                         variant="ghost"
                         onClick={handleCancel}
@@ -80,7 +106,7 @@ export const NicknameEditor = ({ accountId, currentDisplayName, location }: Nick
                     >
                         <X className="h-4 w-4" />
                     </Button>
-                </div>
+                </form>
             </TableCell>
         );
     }

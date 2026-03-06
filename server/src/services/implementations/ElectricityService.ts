@@ -1,5 +1,6 @@
 import logger from '@helpers/Logger';
 import { ElectricityProvider, ProviderCredential } from '@interfaces/Shared';
+import { getCredentialsFromDatabase } from '@utility/accountCredentialParser';
 import { normalizeAccountType } from '@utility/accountTypeNormalizer';
 import {
     ElectricityUsageData,
@@ -68,6 +69,19 @@ export class ElectricityService implements IElectricityService {
             minRecharge: account.minRecharge,
             displayName: nicknames[account.accountId] || account.location || '',
         }));
+    }
+
+    async getUsageDataForUser(
+        userId: string,
+        skipCache = false
+    ): Promise<ElectricityUsageResponse | null> {
+        const credentials = await getCredentialsFromDatabase(userId);
+        
+        if (credentials.length === 0) {
+            return null;
+        }
+
+        return this.getUsageData(credentials, skipCache);
     }
 
     async getUsageData(

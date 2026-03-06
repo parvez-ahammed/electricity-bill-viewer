@@ -34,6 +34,10 @@ export const AccountParamsSchema = z.object({
     id: z.string().uuid('Invalid account ID format'),
 });
 
+export const SetNicknameSchema = z.object({
+    nickname: z.string().min(1, 'Nickname is required and must be a non-empty string').trim(),
+});
+
 // Validation schemas for middleware
 export const createAccountValidation: IZodValidationSchema = {
     body: CreateAccountSchema,
@@ -46,6 +50,11 @@ export const updateAccountValidation: IZodValidationSchema = {
 
 export const accountParamsValidation: IZodValidationSchema = {
     params: AccountParamsSchema,
+};
+
+export const setNicknameValidation: IZodValidationSchema = {
+    params: AccountParamsSchema,
+    body: SetNicknameSchema,
 };
 
 export const providerParamsValidation: IZodValidationSchema = {

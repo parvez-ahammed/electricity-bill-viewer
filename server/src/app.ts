@@ -1,5 +1,6 @@
 import { applyGlobalMiddlewares } from '@middlewares/ApplyGlobalMiddlewares';
 import express, { Express } from 'express';
+import 'express-async-errors';
 
 import routes from '@routes/routes';
 

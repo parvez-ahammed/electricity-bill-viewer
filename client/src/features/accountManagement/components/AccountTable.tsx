@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Check, Edit2, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import * as z from "zod";
 import { useAccounts } from "../hooks/useAccounts";
 
 interface AccountTableProps {
@@ -20,6 +22,16 @@ type FormData = {
     clientSecret?: string;
 };
 
+const getSchema = (provider: ElectricityProvider) => z.object({
+    username: z.string().min(1, { message: "Username is required" }),
+    password: provider === "DPDC" 
+        ? z.string().min(1, { message: "Password is required for DPDC" }) 
+        : z.string().optional(),
+    clientSecret: provider === "DPDC" 
+        ? z.string().min(1, { message: "Client Secret is required for DPDC" }) 
+        : z.string().optional(),
+});
+
 export const AccountTable = ({ accounts, provider }: AccountTableProps) => {
     const { updateAccount, deleteAccount, forceDeleteAccount, isUpdating, isDeleting } = useAccounts();
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -31,7 +43,9 @@ export const AccountTable = ({ accounts, provider }: AccountTableProps) => {
         formState: { errors },
         reset,
         setValue,
-    } = useForm<FormData>();
+    } = useForm<FormData>({
+        resolver: zodResolver(getSchema(provider))
+    });
 
     const startEdit = (account: Account) => {
         setEditingId(account.id);
@@ -118,9 +132,7 @@ export const AccountTable = ({ accounts, provider }: AccountTableProps) => {
                                 <>
                                     <TableCell className="py-1">
                                         <Input
-                                            {...register("username", { 
-                                                required: "Username is required" 
-                                            })}
+                                            {...register("username")}
                                             className="h-7 text-sm"
                                             disabled={isUpdating}
                                         />
@@ -133,9 +145,7 @@ export const AccountTable = ({ accounts, provider }: AccountTableProps) => {
                                     {provider === "DPDC" && (
                                         <TableCell className="py-1">
                                             <PasswordInput
-                                                {...register("password", { 
-                                                    required: "Password is required for DPDC" 
-                                                })}
+                                                {...register("password")}
                                                 className="h-7 text-sm"
                                                 disabled={isUpdating}
                                             />
@@ -149,9 +159,7 @@ export const AccountTable = ({ accounts, provider }: AccountTableProps) => {
                                     {provider === "DPDC" && (
                                         <TableCell className="py-1">
                                             <Input
-                                                {...register("clientSecret", {
-                                                    required: "Client Secret is required for DPDC"
-                                                })}
+                                                {...register("clientSecret")}
                                                 className="h-7 text-sm"
                                                 disabled={isUpdating}
                                             />

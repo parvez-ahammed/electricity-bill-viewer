@@ -8,8 +8,11 @@ import { PasswordInput } from "@/components/ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import * as z from "zod";
 import { useAccounts } from "../hooks/useAccounts";
 
 interface AddAccountFormProps {
@@ -24,6 +27,16 @@ type FormData = {
     clientSecret?: string;
 };
 
+const getSchema = (provider: ElectricityProvider) => z.object({
+    username: z.string().min(1, { message: "Username is required" }),
+    password: provider === "DPDC" 
+        ? z.string().min(1, { message: "Password is required for DPDC" }) 
+        : z.string().optional(),
+    clientSecret: provider === "DPDC" 
+        ? z.string().min(1, { message: "Client Secret is required for DPDC" }) 
+        : z.string().optional(),
+});
+
 export const AddAccountForm = ({ provider, onCancel, onSuccess }: AddAccountFormProps) => {
     const { createAccount, isCreating } = useAccounts();
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -33,7 +46,14 @@ export const AddAccountForm = ({ provider, onCancel, onSuccess }: AddAccountForm
         handleSubmit,
         formState: { errors },
         reset,
-    } = useForm<FormData>();
+    } = useForm<FormData>({
+        resolver: zodResolver(getSchema(provider)),
+        defaultValues: {
+            username: "",
+            password: "",
+            clientSecret: "",
+        }
+    });
 
     const onSubmit = async (data: FormData) => {
         setIsSubmitting(true);
@@ -63,6 +83,7 @@ export const AddAccountForm = ({ provider, onCancel, onSuccess }: AddAccountForm
             onSuccess();
         } catch (error) {
             console.error("Failed to create account:", error);
+            toast.error("Failed to create account");
         } finally {
             setIsSubmitting(false);
         }
@@ -79,9 +100,7 @@ export const AddAccountForm = ({ provider, onCancel, onSuccess }: AddAccountForm
                         </Label>
                         <Input
                             id={`username-${provider}`}
-                            {...register("username", { 
-                                required: "Username is required" 
-                            })}
+                            {...register("username")}
                             placeholder="Enter username"
                             className="h-8 text-sm"
                             disabled={isSubmitting || isCreating}
@@ -101,9 +120,7 @@ export const AddAccountForm = ({ provider, onCancel, onSuccess }: AddAccountForm
                             </Label>
                             <PasswordInput
                                 id={`password-${provider}`}
-                                {...register("password", { 
-                                    required: provider === "DPDC" ? "Password is required for DPDC" : false 
-                                })}
+                                {...register("password")}
                                 placeholder="Enter password"
                                 className="h-8 text-sm"
                                 disabled={isSubmitting || isCreating}
@@ -124,9 +141,7 @@ export const AddAccountForm = ({ provider, onCancel, onSuccess }: AddAccountForm
                             </Label>
                             <Input
                                 id={`clientSecret-${provider}`}
-                                {...register("clientSecret", {
-                                    required: "Client Secret is required for DPDC"
-                                })}
+                                {...register("clientSecret")}
                                 placeholder="Enter client secret"
                                 className="h-8 text-sm"
                                 disabled={isSubmitting || isCreating}

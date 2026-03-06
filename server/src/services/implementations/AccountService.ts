@@ -1,8 +1,10 @@
+import ApiError from '@helpers/ApiError';
 import { AccountRecord, CreateAccountRequest, UpdateAccountRequest } from '@interfaces/Account';
 import { ElectricityProvider } from '@interfaces/Shared';
 import { AccountRepository } from '../../repositories/AccountRepository';
 import { IAccountRepository } from '../../repositories/interfaces/IAccountRepository';
 import { IAccountService } from '../interfaces/IAccountService';
+import { cacheService } from './RedisCacheService';
 
 export class AccountService implements IAccountService {
     private accountRepository: IAccountRepository;
@@ -47,6 +49,38 @@ export class AccountService implements IAccountService {
     async getAllAccountsSystem(): Promise<AccountRecord[]> {
         const accounts = await this.accountRepository.findAllSystem();
         return accounts.map(account => this.mapToAccountRecord(account));
+    }
+
+    async setAccountNickname(accountId: string, userId: string, nickname: string): Promise<boolean> {
+        const account = await this.getAccountById(accountId, userId);
+        if (!account) {
+            throw new ApiError(404, 'Account not found');
+        }
+        const success = await cacheService.setAccountNickname(accountId, nickname);
+        if (!success) {
+            throw new ApiError(500, 'Failed to set nickname');
+        }
+        return true;
+    }
+
+    async getAccountNickname(accountId: string, userId: string): Promise<string | null> {
+        const account = await this.getAccountById(accountId, userId);
+        if (!account) {
+            throw new ApiError(404, 'Account not found');
+        }
+        return await cacheService.getAccountNickname(accountId);
+    }
+
+    async deleteAccountNickname(accountId: string, userId: string): Promise<boolean> {
+        const account = await this.getAccountById(accountId, userId);
+        if (!account) {
+            throw new ApiError(404, 'Account not found');
+        }
+        const success = await cacheService.deleteAccountNickname(accountId);
+        if (!success) {
+            throw new ApiError(500, 'Failed to delete nickname');
+        }
+        return true;
     }
 
     private mapToAccountRecord(account: any): AccountRecord {

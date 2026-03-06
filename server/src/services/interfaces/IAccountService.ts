@@ -9,4 +9,7 @@ export interface IAccountService {
     forceDeleteAccount(id: string, userId: string): Promise<boolean>;
     getAccountsByProvider(provider: string, userId: string): Promise<AccountRecord[]>;
     getAllAccountsSystem(): Promise<AccountRecord[]>;
+    setAccountNickname(accountId: string, userId: string, nickname: string): Promise<boolean>;
+    getAccountNickname(accountId: string, userId: string): Promise<string | null>;
+    deleteAccountNickname(accountId: string, userId: string): Promise<boolean>;
 }

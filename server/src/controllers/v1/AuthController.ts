@@ -45,18 +45,13 @@ export class AuthController extends BaseController {
 
 
     getCurrentUser = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-        await this.handleRequest(res, async () => {
-             if (!req.user) {
-                this.unauthorized(res, 'User not authenticated');
-                return;
-            }
+        const userId = this.getValidatedUserId(req);
 
-            // User info is already in the JWT payload
-            this.ok(res, {
-                userId: req.user.userId,
-                email: req.user.email,
-            }, 'User information retrieved successfully');
-        });
+        // User info is already in the JWT payload
+        this.ok(res, {
+            userId: userId,
+            email: req.user?.email,
+        }, 'User information retrieved successfully');
     };
 
     logout = (req: Request, res: Response): void => {

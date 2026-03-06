@@ -5,6 +5,7 @@ import {
     accountParamsValidation,
     createAccountValidation,
     providerParamsValidation,
+    setNicknameValidation,
     updateAccountValidation
 } from '../../schemas/AccountSchemas';
 
@@ -25,8 +26,8 @@ router.delete('/:id/force', validate(accountParamsValidation), accountController
 router.get('/provider/:provider', validate(providerParamsValidation), accountController.getAccountsByProvider);
 
 // Nickname management
-router.put('/:accountId/nickname', accountController.setAccountNickname);
-router.get('/:accountId/nickname', accountController.getAccountNickname);
-router.delete('/:accountId/nickname', accountController.deleteAccountNickname);
+router.put('/:id/nickname', validate(setNicknameValidation), accountController.setAccountNickname);
+router.get('/:id/nickname', validate(accountParamsValidation), accountController.getAccountNickname);
+router.delete('/:id/nickname', validate(accountParamsValidation), accountController.deleteAccountNickname);
 
 export default router;
