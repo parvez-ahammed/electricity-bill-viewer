@@ -28,6 +28,17 @@ export class AuthService {
         });
     }
 
+    async getCallbackRedirectUrl(code: string): Promise<string> {
+        const frontendUrl = process.env.FRONTEND_URL!;
+        try {
+            const { token } = await this.handleGoogleCallback(code);
+            return `${frontendUrl}/auth/callback?token=${token}`;
+        } catch (error) {
+            console.error('Google OAuth callback error:', error);
+            return `${frontendUrl}/login?error=google`;
+        }
+    }
+
     async handleGoogleCallback(code: string): Promise<{ user: User; token: string }> {
         try {
             // Exchange authorization code for tokens

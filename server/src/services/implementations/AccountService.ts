@@ -18,9 +18,12 @@ export class AccountService implements IAccountService {
         return this.mapToAccountRecord(account);
     }
 
-    async getAccountById(id: string, userId: string): Promise<AccountRecord | null> {
+    async getAccountById(id: string, userId: string): Promise<AccountRecord> {
         const account = await this.accountRepository.findByIdAndUserId(id, userId);
-        return account ? this.mapToAccountRecord(account) : null;
+        if (!account) {
+            throw new ApiError(404, 'Account not found');
+        }
+        return this.mapToAccountRecord(account);
     }
 
     async getAllAccounts(userId: string): Promise<AccountRecord[]> {
@@ -28,17 +31,28 @@ export class AccountService implements IAccountService {
         return accounts.map(account => this.mapToAccountRecord(account));
     }
 
-    async updateAccount(id: string, userId: string, data: UpdateAccountRequest): Promise<AccountRecord | null> {
+    async updateAccount(id: string, userId: string, data: UpdateAccountRequest): Promise<AccountRecord> {
         const account = await this.accountRepository.update(id, userId, data);
-        return account ? this.mapToAccountRecord(account) : null;
+        if (!account) {
+            throw new ApiError(404, 'Account not found');
+        }
+        return this.mapToAccountRecord(account);
     }
 
     async deleteAccount(id: string, userId: string): Promise<boolean> {
-        return await this.accountRepository.delete(id, userId);
+        const deleted = await this.accountRepository.delete(id, userId);
+        if (!deleted) {
+            throw new ApiError(404, 'Account not found');
+        }
+        return true;
     }
 
     async forceDeleteAccount(id: string, userId: string): Promise<boolean> {
-        return await this.accountRepository.forceDelete(id, userId);
+        const deleted = await this.accountRepository.forceDelete(id, userId);
+        if (!deleted) {
+            throw new ApiError(404, 'Account not found');
+        }
+        return true;
     }
 
     async getAccountsByProvider(provider: string, userId: string): Promise<AccountRecord[]> {

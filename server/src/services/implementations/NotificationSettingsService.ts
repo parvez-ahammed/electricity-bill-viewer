@@ -1,3 +1,4 @@
+import ApiError from '@helpers/ApiError';
 import { TelegramNotificationSettings } from '../../entities/TelegramNotificationSettings';
 import { TelegramNotificationSettingsRepository } from '../../repositories/TelegramNotificationSettingsRepository';
 import { INotificationSettingsService } from '../interfaces/INotificationSettingsService';
@@ -18,7 +19,11 @@ export class NotificationSettingsService implements INotificationSettingsService
     }
 
     async deleteTelegramSettings(userId: string): Promise<boolean> {
-        return this.repository.deleteUserSettings(userId);
+        const deleted = await this.repository.deleteUserSettings(userId);
+        if (!deleted) {
+            throw new ApiError(404, 'Settings not found or could not be deleted');
+        }
+        return true;
     }
 
     async getAllActiveSettings(): Promise<TelegramNotificationSettings[]> {

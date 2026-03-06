@@ -2,9 +2,9 @@ import { AccountRecord, CreateAccountRequest, UpdateAccountRequest } from '@inte
 
 export interface IAccountService {
     createAccount(data: CreateAccountRequest, userId: string): Promise<AccountRecord>;
-    getAccountById(id: string, userId: string): Promise<AccountRecord | null>;
+    getAccountById(id: string, userId: string): Promise<AccountRecord>;
     getAllAccounts(userId: string): Promise<AccountRecord[]>;
-    updateAccount(id: string, userId: string, data: UpdateAccountRequest): Promise<AccountRecord | null>;
+    updateAccount(id: string, userId: string, data: UpdateAccountRequest): Promise<AccountRecord>;
     deleteAccount(id: string, userId: string): Promise<boolean>;
     forceDeleteAccount(id: string, userId: string): Promise<boolean>;
     getAccountsByProvider(provider: string, userId: string): Promise<AccountRecord[]>;

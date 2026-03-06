@@ -1,6 +1,7 @@
+import ApiError from '@helpers/ApiError';
 import { AuthenticatedRequest } from '@interfaces/Auth';
-import { AuthService } from '@services/AuthService';
 import { Request, Response } from 'express';
+import { AuthService } from '../../services/implementations/AuthService';
 import { BaseController } from '../BaseController';
 
 export class AuthController extends BaseController {
@@ -12,35 +13,19 @@ export class AuthController extends BaseController {
     }
 
     googleLogin = (req: Request, res: Response): void => {
-        try {
-            const authUrl = this.authService.getAuthUrl();
-            res.redirect(authUrl);
-        } catch (error) {
-            console.error('Error generating Google auth URL:', error);
-            this.fail(res, 'Failed to initiate Google authentication');
-        }
+        const authUrl = this.authService.getAuthUrl();
+        res.redirect(authUrl);
     };
 
     googleCallback = async (req: Request, res: Response): Promise<void> => {
-        try {
-            const { code } = req.query;
+        const { code } = req.query;
 
-            if (!code || typeof code !== 'string') {
-                res.status(400).json({ message: 'Authorization code is required' });
-                return;
-            }
-
-            // Use AuthService to handle the complete OAuth flow
-            const { user, token } = await this.authService.handleGoogleCallback(code);
-
-            // Redirect to frontend with the JWT token
-            const frontendUrl = process.env.FRONTEND_URL!;
-            res.redirect(`${frontendUrl}/auth/callback?token=${token}`);
-        } catch (error) {
-            console.error('Google OAuth callback error:', error);
-            const frontendUrl = process.env.FRONTEND_URL!;
-            res.redirect(`${frontendUrl}/login?error=google`);
+        if (!code || typeof code !== 'string') {
+            throw new ApiError(400, 'Authorization code is required');
         }
+
+        const redirectUrl = await this.authService.getCallbackRedirectUrl(code);
+        res.redirect(redirectUrl);
     };
 
 

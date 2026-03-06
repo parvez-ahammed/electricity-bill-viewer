@@ -34,12 +34,6 @@ export class AccountController extends BaseController {
         const userId = this.getValidatedUserId(req);
         const { id } = req.params;
         const account = await this.accountService.getAccountById(id, userId);
-
-        if (!account) {
-            this.notFound(res, 'Account not found');
-            return;
-        }
-
         const response = this.mapToResponse(account);
         this.ok(res, response, 'Account retrieved successfully');
     };
@@ -55,12 +49,6 @@ export class AccountController extends BaseController {
         const userId = this.getValidatedUserId(req);
         const { id } = req.params;
         const account = await this.accountService.updateAccount(id, userId, req.body);
-
-        if (!account) {
-            this.notFound(res, 'Account not found');
-            return;
-        }
-
         const response = this.mapToResponse(account);
         this.ok(res, response, 'Account updated successfully');
     };
@@ -68,26 +56,14 @@ export class AccountController extends BaseController {
     deleteAccount = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
         const userId = this.getValidatedUserId(req);
         const { id } = req.params;
-        const deleted = await this.accountService.deleteAccount(id, userId);
-
-        if (!deleted) {
-            this.notFound(res, 'Account not found');
-            return;
-        }
-
+        await this.accountService.deleteAccount(id, userId);
         this.ok(res, {}, 'Account deleted successfully');
     };
 
     forceDeleteAccount = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
         const userId = this.getValidatedUserId(req);
         const { id } = req.params;
-        const deleted = await this.accountService.forceDeleteAccount(id, userId);
-
-        if (!deleted) {
-            this.notFound(res, 'Account not found');
-            return;
-        }
-
+        await this.accountService.forceDeleteAccount(id, userId);
         this.ok(res, {}, 'Corrupted account deleted successfully');
     };
 
