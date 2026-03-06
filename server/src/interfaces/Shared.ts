@@ -15,6 +15,7 @@ export interface DPDCAccountDetails {
     lastPayDateOnSa: string;
     flatNameOrLocation?: string;
     provider?: string;
+    displayName?: string;
 }
 
 export enum ElectricityProvider {
@@ -43,6 +44,7 @@ export interface ProviderAccountDetails {
     location: string;
     mobileNumber: string;
     minRecharge: string | null;
+    displayName?: string;
 }
 
 export interface ProviderAccountResult {

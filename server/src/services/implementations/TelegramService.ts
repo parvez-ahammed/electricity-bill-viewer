@@ -131,7 +131,7 @@ export class TelegramService implements ITelegramService {
             message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
 
             providerAccounts.forEach((account, index) => {
-                const label = account.location || account.customerNumber || 'N/A';
+                const label = account.displayName || account.location || account.customerNumber || 'N/A';
                 message += `\n<b>${label}</b>\n`;
                 message += `🔢 Customer No: ${account.customerNumber || 'N/A'}\n`;
                 message += `💰 Balance: <b>৳${account.balanceRemaining || '0'}</b>\n`;
