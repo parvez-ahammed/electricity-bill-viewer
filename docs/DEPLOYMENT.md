@@ -189,6 +189,9 @@ docker ps
 - [ ] Configure ALLOWED_ORIGINS for CORS
 - [ ] Use HTTPS in production
 - [ ] Don't commit .env files
+- [ ] Set strong `JWT_SECRET` for production
+- [ ] Set strong `ENCRYPTION_KEY` for production
+- [ ] Configure `GOOGLE_REDIRECT_URI` to production domain
 - [ ] Rotate Telegram tokens regularly
 - [ ] Enable Redis password (optional)
 - [ ] Review nginx security headers

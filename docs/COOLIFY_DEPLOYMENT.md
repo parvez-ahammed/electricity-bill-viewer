@@ -37,16 +37,28 @@ REDIS_PORT=6379
 
 # Redis
 REDIS_TTL=86400
-# Encryption Key for Database Security (Required for production)
-# Generate a strong random key for production: openssl rand -base64 32
-ENCRYPTION_KEY=your-super-secret-encryption-key-change-this-in-production
+
+# Encryption Key for Database Security (Required)
+# Generate a strong random key: openssl rand -base64 32
+ENCRYPTION_KEY=your-generated-encryption-key
+
+# Google OAuth (Required)
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GOOGLE_REDIRECT_URI=https://yourdomain.com/api/v1/auth/google/callback
+
+# JWT (Required)
+JWT_SECRET=your_strong_jwt_secret
+JWT_EXPIRES_IN=7d
+
+# Frontend URL
+FRONTEND_URL=https://yourdomain.com
 
 # Telegram (optional)
 TELEGRAM_BOT_TOKEN=your_bot_token
-TELEGRAM_CHAT_ID=your_chat_id
 
 # CORS (add your domain)
-ALLOWED_ORIGINS=https://yourdomain.com,http://localhost:5173
+ALLOWED_ORIGINS=https://yourdomain.com
 ```
 
 ### 4. Deploy

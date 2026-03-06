@@ -33,7 +33,7 @@ export const BalanceCardView = ({ account, index }: BalanceCardViewProps) => {
                 <div className="mb-2 flex items-center justify-between gap-2">
                     <div className="min-w-0 flex-1">
                         <h4 className="truncate text-sm font-semibold">
-                            {account.customerName}
+                            {account.flatNameOrLocation || account.location || "-"}
                         </h4>
                     </div>
                     <ProviderChip provider={account.provider || "-"} />

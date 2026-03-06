@@ -53,6 +53,7 @@ For production deployment, see `docker-compose.prod.yml` and the deployment docs
 
 ### Getting Started
 - [docs/README.md](./docs/README.md) — Documentation index
+- [docs/AUTHENTICATION.md](./docs/AUTHENTICATION.md) — Google OAuth + JWT authentication
 - [docs/ACCOUNT_MANAGEMENT.md](./docs/ACCOUNT_MANAGEMENT.md) — Account management system
 - [docs/DPDC_SETUP.md](./docs/DPDC_SETUP.md) — DPDC client secret discovery
 - [docs/CONFIGURATION.md](./docs/CONFIGURATION.md) — Environment configuration

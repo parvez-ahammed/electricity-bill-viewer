@@ -1,268 +1,173 @@
 # Backend Agent Documentation
 
 ## Project Overview
-This is a Node.js + TypeScript backend API server that provides authentication services using Google OAuth and manages electricity bill payment data. The server uses Express.js framework with TypeORM for database operations.
+Node.js + TypeScript backend API server for Bill Barta. Provides Google OAuth authentication, encrypted account management for DPDC/NESCO electricity providers, balance fetching, Telegram notifications, and Redis caching.
 
 ## Tech Stack
-- Node.js with TypeScript
-- Express.js for HTTP server
-- TypeORM for database ORM
-- SQLite for database (development)
-- PostgreSQL support (production)
-- Google OAuth 2.0 for authentication
-- JWT for token-based authentication
-- Redis for caching (optional)
+- Node.js 22, TypeScript, Express.js
+- TypeORM + SQLite (dual databases: `accounts.db`, `auth.db`)
+- Google OAuth 2.0 + JWT (jsonwebtoken)
+- Redis for caching
+- Zod for validation
+- Winston + winston-loki for logging
+- node-cron for scheduled tasks
+- Cheerio + Axios for web scraping (NESCO)
+- crypto-js for AES encryption
 
 ## Project Structure
 ```
-server/
-├── src/
-│   ├── configs/
-│   │   ├── database.ts        # Database configuration
-│   │   └── redis.ts           # Redis cache configuration
-│   ├── controllers/
-│   │   ├── v1/
-│   │   │   ├── AuthController.ts    # Authentication endpoints
-│   │   │   └── BillController.ts    # Bill management endpoints
-│   │   └── BaseController.ts        # Base controller with common methods
-│   ├── entities/
-│   │   └── User.ts            # User entity model
-│   ├── interfaces/
-│   │   └── Auth.ts            # Authentication interfaces
-│   ├── middlewares/
-│   │   └── AuthMiddleware.ts  # JWT authentication middleware
-│   ├── repositories/
-│   │   └── UserRepository.ts  # User data access layer
-│   ├── routes/
-│   │   └── v1/
-│   │       └── auth.routes.ts # Authentication routes
-│   ├── services/
-│   │   ├── implementations/
-│   │   │   ├── AuthService.ts      # Authentication business logic
-│   │   │   └── JwtService.ts       # JWT token operations
-│   │   └── interfaces/             # Service interfaces
-│   └── server.ts              # Application entry point
-├── scripts/                   # Utility scripts (DPDC, NESCO)
-└── docs/                      # Documentation
+server/src/
+├── app.ts                          # Express app creation
+├── index.ts                        # Server entry point (DB init, scheduler, listen)
+├── configs/
+│   ├── config.ts                   # Zod-validated env config (appConfig export)
+│   ├── constants.ts                # App-wide constants
+│   ├── cors.ts                     # CORS configuration
+│   ├── database.ts                 # Dual DataSource setup (AppDataSource + AuthDataSource)
+│   ├── rateLimitter.ts             # Express rate limiter config
+│   ├── redis.ts                    # Redis client setup
+│   └── winston.ts                  # Winston logger config
+├── controllers/
+│   ├── BaseController.ts           # ok, fail, unauthorized, notFound, serverError, clientError, handleRequest, validateUser
+│   └── v1/
+│       ├── AuthController.ts       # googleLogin, googleCallback, getCurrentUser, logout
+│       ├── AccountController.ts    # CRUD + forceDelete + nickname management
+│       ├── ElectricityController.ts # getUsageData
+│       ├── TelegramController.ts   # sendBalances
+│       └── NotificationSettingsController.ts # getSettings, updateSettings, deleteSettings
+├── entities/
+│   ├── Account.ts                  # id, userId, provider, credentials (JSON), timestamps
+│   ├── User.ts                     # id (Google ID), name, email, createdAt
+│   └── TelegramNotificationSettings.ts # id, chatId, userId, isActive, timestamps
+├── helpers/
+│   ├── ApiError.ts                 # Custom error class
+│   ├── Logger.ts                   # Logger singleton
+│   ├── ResponseBuilder.ts         # Standard response builder
+│   ├── Winston.ts                  # Winston transport setup
+│   └── fetchHelper.ts             # HTTP fetch utility
+├── interfaces/
+│   ├── Account.ts                  # ProviderCredentials types
+│   ├── Auth.ts                     # AuthenticatedRequest, JwtPayload
+│   ├── Shared.ts                   # ElectricityProvider enum, shared types
+│   └── IZodValidationSchema.ts     # Validation schema interface
+├── middlewares/
+│   ├── AuthMiddleware.ts           # JWT verification, attaches user to req
+│   ├── ValidationMiddleware.ts     # Zod schema validation (body, params, query)
+│   ├── LatencyLoggerMiddleware.ts  # Optional per-request timing
+│   ├── ApplyGlobalMiddlewares.ts   # Helmet, CORS, compression, body parser, rate limiter
+│   └── ApplyGlobalErrorHandler.ts  # Centralized error handler
+├── repositories/
+│   ├── AccountRepository.ts        # CRUD + findByProvider + findByUserId + encryption/decryption
+│   ├── UserRepository.ts           # findByGoogleId, findByEmail, findById, create
+│   ├── TelegramNotificationSettingsRepository.ts # find, upsert, delete by userId
+│   └── interfaces/                 # Repository interfaces
+├── routes/v1/
+│   ├── index.ts                    # Route registration (public vs protected groups)
+│   ├── auth.routes.ts              # /google, /google/callback, /me, /logout
+│   ├── account.routes.ts           # CRUD + /force + /provider/:provider + nickname routes
+│   ├── electricity.routes.ts       # /usage
+│   ├── telegram.routes.ts          # /send-balances
+│   └── notificationSettings.route.ts # /telegram GET/POST/PUT/PATCH/DELETE
+├── schemas/
+│   └── AccountSchemas.ts           # Create/Update account + params Zod schemas
+├── services/
+│   ├── implementations/
+│   │   ├── AuthService.ts          # getAuthUrl, handleGoogleCallback, findOrCreateUser, generateJWT, verifyToken
+│   │   ├── JwtService.ts           # sign, verify, decode
+│   │   ├── AccountService.ts       # Account CRUD business logic
+│   │   ├── ElectricityService.ts   # Orchestrates DPDC + NESCO fetching for all accounts
+│   │   ├── DPDCService.ts          # DPDC API integration (bearer token → login → fetch data)
+│   │   ├── NESCOService.ts         # NESCO web scraping (Cheerio-based)
+│   │   ├── RedisCacheService.ts    # Redis get/set/delete with TTL, graceful fallback
+│   │   ├── TelegramService.ts      # Telegram Bot API integration, message formatting
+│   │   ├── NotificationSettingsService.ts # Telegram settings CRUD
+│   │   └── SchedulerService.ts     # node-cron daily balance notification at 12 PM BST
+│   └── interfaces/                 # Service interfaces
+└── utility/
+    ├── encryption.ts               # AES encrypt/decrypt using ENCRYPTION_KEY
+    ├── accountCredentialParser.ts   # Parse provider-specific credentials
+    ├── accountTypeNormalizer.ts     # Normalize account types
+    ├── dateFormatter.ts            # Date formatting utilities
+    ├── headers.ts                  # HTTP header utilities
+    └── handleRepositoryCall.ts     # Repository error wrapper
 ```
 
-## Authentication Architecture
+## Route Organization
 
-### Google OAuth Flow
-1. Client requests `/api/v1/auth/google`
-2. Server generates Google OAuth URL and redirects
-3. User authenticates with Google
-4. Google redirects to `/api/v1/auth/google/callback?code=<auth_code>`
-5. Server exchanges code for Google tokens
-6. Server fetches user profile from Google
-7. Server finds or creates user in database
-8. Server generates JWT token
-9. Server redirects to frontend with token: `${FRONTEND_URL}/auth/callback?token=<jwt>`
+Routes in `routes/v1/index.ts` are split into two groups:
 
-### JWT Authentication
-- Tokens are signed with `JWT_SECRET` environment variable
-- Default expiration: 7 days (configurable via `JWT_EXPIRES_IN`)
-- Tokens contain: `userId` and `email`
-- Protected routes require `Authorization: Bearer <token>` header
+**Public** (no auth middleware):
+- `/auth` → `auth.routes.ts`
 
-## Key Components
+**Protected** (JWT auth middleware applied):
+- `/electricity` → `electricity.routes.ts`
+- `/telegram` → `telegram.routes.ts`
+- `/accounts` → `account.routes.ts`
+- `/notification-settings` → `notificationSettings.route.ts`
 
-### AuthService (`src/services/implementations/AuthService.ts`)
-Handles authentication business logic:
-- `getAuthUrl()`: Generates Google OAuth URL
-- `handleGoogleCallback(code)`: Processes OAuth callback
-- `findOrCreateUser(profile)`: Finds existing user or creates new one
-- `generateJWT(user)`: Creates JWT token for user
-- `verifyToken(token)`: Validates JWT and returns user
+## Database Architecture
 
-### JwtService (`src/services/implementations/JwtService.ts`)
-JWT token operations:
-- `sign(payload)`: Creates signed JWT token
-- `verify(token)`: Validates and decodes token
-- `decode(token)`: Decodes token without verification
+Two separate SQLite databases via TypeORM:
 
-### AuthMiddleware (`src/middlewares/AuthMiddleware.ts`)
-Protects routes requiring authentication:
-- Extracts Bearer token from Authorization header
-- Verifies token validity
-- Attaches user payload to request object
-- Returns 401 for invalid/missing tokens
+| DataSource | Database | Entities |
+|-----------|----------|----------|
+| `AppDataSource` | `data/accounts.db` | `Account`, `TelegramNotificationSettings` |
+| `AuthDataSource` | `data/auth.db` | `User` |
 
-### UserRepository (`src/repositories/UserRepository.ts`)
-Data access layer for User entity:
-- `findByGoogleId(googleId)`: Find user by Google ID
-- `findByEmail(email)`: Find user by email
-- `findById(id)`: Find user by ID
-- `create(data)`: Create new user
-
-## Database Schema
-
-### User Entity
-```typescript
-{
-  id: string;          // Google ID (primary key)
-  name: string;        // User's full name
-  email: string;       // User's email (unique)
-  createdAt: Date;     // Account creation timestamp
-}
-```
-
-## API Endpoints
-
-### Authentication Routes (`/api/v1/auth`)
-
-#### `GET /google`
-Initiates Google OAuth flow
-- Redirects to Google authentication page
-- No authentication required
-
-#### `GET /google/callback`
-Handles Google OAuth callback
-- Query params: `code` (authorization code)
-- Exchanges code for user data
-- Redirects to frontend with JWT token
-- No authentication required
-
-#### `GET /me`
-Get current authenticated user
-- Requires: Bearer token
-- Returns: User object (userId, email)
-- Status: 200 OK or 401 Unauthorized
-
-#### `POST /logout`
-Logout endpoint (stateless)
-- JWT is stateless, so logout is client-side
-- Returns: Success message
-- Status: 200 OK
+`userId` in Account/TelegramNotificationSettings references `User.id` as a plain string (cross-database, no FK constraint).
 
 ## Environment Variables
-Required in `.env`:
-```
-# Server
-PORT=3000
-NODE_ENV=development
 
-# Frontend
-FRONTEND_URL=http://localhost:5173
+See `server/.env.example` for the full list. Key variables:
 
-# Database
-DB_TYPE=sqlite
-DB_DATABASE=./data/database.sqlite
+| Variable | Required | Description |
+|----------|:--------:|-------------|
+| `PORT` | ✅ | Server port (default: 3000) |
+| `NODE_ENV` | ✅ | `development` / `production` / `test` |
+| `FRONTEND_URL` | ✅ | Frontend URL for CORS + OAuth redirects |
+| `GOOGLE_CLIENT_ID` | ✅ | Google OAuth client ID |
+| `GOOGLE_CLIENT_SECRET` | ✅ | Google OAuth client secret |
+| `GOOGLE_REDIRECT_URI` | ✅ | Must match Google Console exactly |
+| `JWT_SECRET` | ✅ | JWT signing secret |
+| `JWT_EXPIRES_IN` | ❌ | Token expiry (default: `7d`) |
+| `ENCRYPTION_KEY` | ✅ | AES encryption key for credentials |
+| `TELEGRAM_BOT_TOKEN` | ❌ | Telegram bot token |
+| `REDIS_HOST` | ❌ | Redis hostname (default: `localhost`) |
+| `REDIS_PORT` | ❌ | Redis port (default: `6379`) |
+| `REDIS_TTL` | ❌ | Cache TTL in seconds (default: `86400`) |
+| `ENABLE_LATENCY_LOGGER` | ❌ | Enable request timing logs (default: `false`) |
 
-# Google OAuth
-GOOGLE_CLIENT_ID=your_client_id
-GOOGLE_CLIENT_SECRET=your_client_secret
-GOOGLE_REDIRECT_URI=http://localhost:3000/api/v1/auth/google/callback
+## Path Aliases (tsconfig.json)
 
-# JWT
-JWT_SECRET=your_secret_key_change_in_production
-JWT_EXPIRES_IN=7d
-
-# Redis (optional)
-REDIS_HOST=localhost
-REDIS_PORT=6379
-```
-
-## Middleware Stack
-1. CORS (configured for frontend URL)
-2. Body parser (JSON)
-3. Request logging
-4. Route handlers
-5. Error handling middleware
-
-## Error Handling
-- BaseController provides standard response methods:
-  - `ok(res, data, message)`: 200 success response
-  - `fail(res, message)`: 400 bad request
-  - `unauthorized(res, message)`: 401 unauthorized
-  - `notFound(res, message)`: 404 not found
-  - `serverError(res, error)`: 500 internal error
-
-## Security Considerations
-1. JWT tokens are stateless (cannot be revoked server-side)
-2. Tokens expire after configured duration
-3. HTTPS required in production
-4. CORS configured to allow only frontend origin
-5. Environment variables for sensitive data
-6. Google OAuth scopes limited to profile and email
+| Alias | Maps To |
+|-------|---------|
+| `@routes/*` | `src/routes/*` |
+| `@configs/*` | `src/configs/*` |
+| `@controllers/*` | `src/controllers/*` |
+| `@services/*` | `src/services/implementations/*` |
+| `@repositories/*` | `src/repositories/*` |
+| `@middlewares/*` | `src/middlewares/*` |
+| `@interfaces/*` | `src/interfaces/*` |
+| `@helpers/*` | `src/helpers/*` |
+| `@utility/*` | `src/utility/*` |
+| `@entities/*` | `src/entities/*` |
 
 ## Development Commands
 ```bash
 npm install          # Install dependencies
-npm run dev          # Start development server with hot reload
-npm run build        # Compile TypeScript to JavaScript
-npm start            # Start production server
-npm run typeorm      # Run TypeORM CLI commands
+npm run start:dev    # Dev server with nodemon + ts-node
+npm run build        # Compile TypeScript (tsc + tsc-alias)
+npm start            # Run compiled JS
+npm run lint         # ESLint
+npm run format       # Prettier
 ```
 
-## Database Migrations
-```bash
-npm run typeorm migration:generate -- -n MigrationName
-npm run typeorm migration:run
-npm run typeorm migration:revert
-```
+## Key Patterns
 
-## Caching Strategy
-- Redis cache for frequently accessed data
-- Cache keys prefixed by data type
-- TTL configured per data type
-- Cache invalidation on data updates
-
-## Logging
-- Request/response logging in development
-- Error logging to console
-- Production: Consider external logging service
-
-## Testing
-- Unit tests for services
-- Integration tests for API endpoints
-- Test authentication flows
-- Mock Google OAuth in tests
-
-## Deployment
-- Build with `npm run build`
-- Set production environment variables
-- Use PostgreSQL for production database
-- Configure Redis for caching
-- Use process manager (PM2) for Node.js
-- Set up reverse proxy (nginx)
-- Enable HTTPS with SSL certificates
-
-## Best Practices
-1. Use dependency injection for services
-2. Keep controllers thin, business logic in services
-3. Use repositories for data access
-4. Validate input data
-5. Handle errors gracefully
-6. Use TypeScript types consistently
-7. Follow RESTful API conventions
-8. Document API endpoints
-9. Use environment variables for configuration
-10. Implement proper logging
-
-## Known Issues & Considerations
-
-### JWT Stateless Nature
-Since JWT tokens are stateless, they cannot be invalidated server-side. Consider:
-- Short token expiration times
-- Refresh token mechanism
-- Token blacklist (requires Redis/database)
-
-### Google OAuth Redirect URI
-The redirect URI must match exactly in:
-- Google Cloud Console configuration
-- Environment variable `GOOGLE_REDIRECT_URI`
-- OAuth client initialization
-
-## Monitoring
-- Monitor API response times
-- Track authentication success/failure rates
-- Monitor database connection pool
-- Track Redis cache hit rates
-- Set up alerts for errors
-
-## API Documentation
-- Consider adding Swagger/OpenAPI documentation
-- Document request/response schemas
-- Provide example requests
-- Document error responses
+1. **Controller → Service → Repository**: Controllers delegate to services; services handle business logic; repositories handle data access.
+2. **BaseController**: All controllers extend `BaseController` for standard response methods and `handleRequest` wrapper.
+3. **Zod validation**: `ValidationMiddleware` validates `body`, `params`, and `query` against Zod schemas before reaching controllers.
+4. **Encryption**: `utility/encryption.ts` encrypts/decrypts credential fields using AES with `ENCRYPTION_KEY`.
+5. **Config validation**: All env vars validated at startup via Zod schema in `configs/config.ts`.
+6. **Singleton pattern**: `SchedulerService` and Redis client use singleton initialization.
+7. **Graceful Redis fallback**: `RedisCacheService` continues without caching if Redis is unavailable.

@@ -11,6 +11,8 @@ Bill Barta now uses a database-driven account management system instead of envir
 - 🔄 **Multi-Provider Support**: DPDC and NESCO accounts in one system
 - 🛡️ **Corruption Handling**: Graceful handling of encryption key changes
 - ✅ **Validation**: Zod schema validation for all account operations
+- 🏷️ **Nicknames**: Assign custom display names to accounts
+- 🔒 **Auth Protected**: All endpoints require JWT authentication
 
 ## Database Schema
 
@@ -19,6 +21,7 @@ Accounts are stored in SQLite database with the following structure:
 ```typescript
 interface Account {
     id: string;              // UUID primary key
+    userId: string;          // Owner's Google ID (from auth)
     provider: 'DPDC' | 'NESCO';
     credentials: {
         // DPDC accounts
@@ -33,6 +36,8 @@ interface Account {
     updatedAt: Date;
 }
 ```
+
+> ⚠️ All account management API endpoints require JWT authentication. See [AUTHENTICATION.md](./AUTHENTICATION.md) for details.
 
 ## Adding Accounts
 
@@ -164,6 +169,11 @@ NESCO_CUSTOMER_NUMBER=number
 ### Provider-Specific
 - `GET /api/v1/accounts/provider/DPDC` - Get DPDC accounts
 - `GET /api/v1/accounts/provider/NESCO` - Get NESCO accounts
+
+### Nickname Management
+- `PUT /api/v1/accounts/:accountId/nickname` - Set/update account nickname
+- `GET /api/v1/accounts/:accountId/nickname` - Get account nickname
+- `DELETE /api/v1/accounts/:accountId/nickname` - Remove account nickname
 
 ## Validation
 
