@@ -18,7 +18,6 @@ export const useTelegram = () => {
                 toast.error(result.error || result.message || 'Failed to send balances to Telegram');
             }
         } catch (error) {
-            console.error('Error sending to Telegram:', error);
             toast.error('Failed to send balances to Telegram');
         } finally {
             setTimeout(() => setIsSendingTelegram(false), 1000);

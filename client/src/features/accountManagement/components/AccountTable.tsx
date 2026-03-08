@@ -90,7 +90,6 @@ export const AccountTable = ({ accounts, provider }: AccountTableProps) => {
             setEditingId(null);
             reset();
         } catch (error) {
-            console.error("Failed to update account:", error);
             toast.error("Failed to update account");
         }
     };

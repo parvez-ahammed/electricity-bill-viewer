@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "sonner";
 
 export const useRefresh = () => {
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -14,8 +15,7 @@ export const useRefresh = () => {
                 await window.refreshElectricityData();
             }
         } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error("Error refreshing data:", error);
+            toast.error("Failed to refresh data");
         } finally {
             // Keep spinning for a bit to show feedback
             setTimeout(() => setIsRefreshing(false), 1000);

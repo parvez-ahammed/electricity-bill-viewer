@@ -103,20 +103,21 @@ export class RedisCacheService {
         try {
             const client = await redisClient.getClient();
             logger.debug(`[RedisCache] Deleting keys with pattern: ${pattern}`);
-            const keys = await client.keys(pattern);
 
-            if (keys.length === 0) {
-                logger.debug(
-                    `[RedisCache] No keys found for pattern: ${pattern}`
-                );
-                return 0;
+            let deletedCount = 0;
+
+            for await (const key of client.scanIterator({ MATCH: pattern, COUNT: 100 })) {
+                await client.del(key);
+                deletedCount++;
             }
 
-            await client.del(keys);
-            logger.info(
-                `[RedisCache] Deleted ${keys.length} keys for pattern: ${pattern}`
-            );
-            return keys.length;
+            if (deletedCount === 0) {
+                logger.debug(`[RedisCache] No keys found for pattern: ${pattern}`);
+            } else {
+                logger.info(`[RedisCache] Deleted ${deletedCount} keys for pattern: ${pattern}`);
+            }
+
+            return deletedCount;
         } catch (error) {
             logger.error('Redis Cache Delete Pattern Error:' + error);
             return 0;

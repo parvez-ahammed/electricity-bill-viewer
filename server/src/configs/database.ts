@@ -1,4 +1,5 @@
 import { User } from '@entities/User';
+import logger from '@helpers/Logger';
 import fs from 'fs';
 import path from 'path';
 import { DataSource } from 'typeorm';
@@ -19,20 +20,20 @@ const getDataDirectory = (): string => {
             if (!fs.existsSync(dirPath)) {
                 fs.mkdirSync(dirPath, { recursive: true });
             }
-            
+
             // Test write permissions
             const testFile = path.join(dirPath, '.write-test');
             fs.writeFileSync(testFile, 'test');
             fs.unlinkSync(testFile);
-            
-            console.log(`Using data directory: ${dirPath}`);
+
+            logger.info(`Using data directory: ${dirPath}`);
             return dirPath;
         } catch (error) {
-            console.warn(`Cannot use directory ${dirPath}:`, error instanceof Error ? error.message : error);
+            logger.warn(`Cannot use directory ${dirPath}: ${error instanceof Error ? error.message : String(error)}`);
             continue;
         }
     }
-    
+
     throw new Error('No writable directory found for database storage');
 };
 
@@ -64,12 +65,12 @@ export const AuthDataSource = new DataSource({
 export const initializeDatabase = async (): Promise<void> => {
     try {
         await AppDataSource.initialize();
-        console.log('Account database connection initialized successfully');
-        
+        logger.info('Account database connection initialized successfully');
+
         await AuthDataSource.initialize();
-        console.log('Auth database connection initialized successfully');
+        logger.info('Auth database connection initialized successfully');
     } catch (error) {
-        console.error('Error during database initialization:', error);
+        logger.error(`Error during database initialization: ${error instanceof Error ? error.message : String(error)}`);
         throw error;
     }
 };

@@ -18,7 +18,7 @@ export const useNicknameManager = () => {
                 await window.refreshElectricityData();
             }
         } catch (error) {
-            console.error("Error refreshing data:", error);
+            toast.error("Failed to refresh data");
         } finally {
             // Keep spinning for a bit to show feedback (same as navbar)
             setTimeout(() => setIsRefreshing(false), 1000);
@@ -33,9 +33,8 @@ export const useNicknameManager = () => {
             toast.success("Nickname updated successfully");
             await handleRefresh();
         },
-        onError: (error) => {
+        onError: () => {
             toast.error("Failed to update nickname");
-            console.error("Error updating nickname:", error);
         },
     });
 
@@ -46,9 +45,8 @@ export const useNicknameManager = () => {
             await handleRefresh();
             toast.success("Nickname removed successfully");
         },
-        onError: (error) => {
+        onError: () => {
             toast.error("Failed to remove nickname");
-            console.error("Error removing nickname:", error);
         },
     });
 

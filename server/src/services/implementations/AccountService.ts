@@ -33,6 +33,19 @@ export class AccountService implements IAccountService {
     }
 
     async updateAccount(id: string, userId: string, data: UpdateAccountRequest): Promise<AccountRecord> {
+        // Verify the account exists and validate credential shape matches provider
+        const existing = await this.accountRepository.findByIdAndUserId(id, userId);
+        if (!existing) {
+            throw new ApiError(404, 'Account not found');
+        }
+
+        // Prevent credential shape mismatch (e.g. NESCO credentials on a DPDC account)
+        if (existing.provider === ElectricityProvider.DPDC) {
+            if (!('password' in data.credentials) || !('clientSecret' in data.credentials)) {
+                throw new ApiError(400, 'DPDC accounts require password and clientSecret');
+            }
+        }
+
         const account = await this.accountRepository.update(id, userId, data);
         if (!account) {
             throw new ApiError(404, 'Account not found');

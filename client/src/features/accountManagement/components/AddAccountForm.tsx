@@ -82,7 +82,6 @@ export const AddAccountForm = ({ provider, onCancel, onSuccess }: AddAccountForm
             reset();
             onSuccess();
         } catch (error) {
-            console.error("Failed to create account:", error);
             toast.error("Failed to create account");
         } finally {
             setIsSubmitting(false);
