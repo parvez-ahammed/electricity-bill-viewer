@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Check, Edit2, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import * as z from "zod";
 import { useAccounts } from "../hooks/useAccounts";
 
@@ -90,6 +91,7 @@ export const AccountTable = ({ accounts, provider }: AccountTableProps) => {
             reset();
         } catch (error) {
             console.error("Failed to update account:", error);
+            toast.error("Failed to update account");
         }
     };
 

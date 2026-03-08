@@ -1,4 +1,5 @@
 import ApiError from '@helpers/ApiError';
+import logger from '@helpers/Logger';
 import { ResponseBuilder } from '@helpers/ResponseBuilder';
 import { AuthenticatedRequest } from '@interfaces/Auth';
 import { Request, Response } from 'express';
@@ -47,7 +48,7 @@ export abstract class BaseController {
 
     protected fail(res: Response, error: unknown | Error): void {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        console.error(error);
+        logger.error(error instanceof Error ? error : `Unhandled controller error: ${errorMessage}`);
         new ResponseBuilder(res)
             .setStatus(httpStatus.INTERNAL_SERVER_ERROR)
             .setMessage('Internal server error')

@@ -10,7 +10,13 @@ export interface NESCOCredentials {
     username: string;
 }
 
-export type ProviderCredentials = DPDCCredentials | NESCOCredentials;
+export interface CorruptedCredentials {
+    username: string;
+    _isCorrupted: true;
+    _originalId: string;
+}
+
+export type ProviderCredentials = DPDCCredentials | NESCOCredentials | CorruptedCredentials;
 
 export interface AccountRecord {
     id: string;

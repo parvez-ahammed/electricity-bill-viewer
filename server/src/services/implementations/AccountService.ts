@@ -1,6 +1,7 @@
 import ApiError from '@helpers/ApiError';
 import { AccountRecord, CreateAccountRequest, UpdateAccountRequest } from '@interfaces/Account';
 import { ElectricityProvider } from '@interfaces/Shared';
+import { Account } from '../../entities/Account';
 import { AccountRepository } from '../../repositories/AccountRepository';
 import { IAccountRepository } from '../../repositories/interfaces/IAccountRepository';
 import { IAccountService } from '../interfaces/IAccountService';
@@ -97,7 +98,7 @@ export class AccountService implements IAccountService {
         return true;
     }
 
-    private mapToAccountRecord(account: any): AccountRecord {
+    private mapToAccountRecord(account: Account): AccountRecord {
         return {
             id: account.id,
             userId: account.userId,

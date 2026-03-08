@@ -1,5 +1,7 @@
+import ApiError from '@helpers/ApiError';
 import logger from '@helpers/Logger';
 import { Request, Response } from 'express';
+import httpStatus from 'http-status';
 import { TelegramService } from '../../services/implementations/TelegramService';
 import { BaseController } from '../BaseController';
 
@@ -13,10 +15,8 @@ export class TelegramController extends BaseController {
         } catch (error) {
             this.telegramService = null;
             logger.warn(
-                'Telegram service not configured:' +
-                    (error instanceof Error
-                        ? error.message
-                        : 'Unknown error')
+                'Telegram service not configured: ' +
+                    (error instanceof Error ? error.message : 'Unknown error')
             );
         }
     }
@@ -25,7 +25,10 @@ export class TelegramController extends BaseController {
         const userId = this.getValidatedUserId(req);
 
         if (!this.telegramService) {
-            throw new Error('Telegram service not configured. Please set TELEGRAM_BOT_TOKEN environment variable.');
+            throw new ApiError(
+                httpStatus.SERVICE_UNAVAILABLE,
+                'Telegram service not configured. Please set TELEGRAM_BOT_TOKEN environment variable.'
+            );
         }
 
         const skipCache = req.headers['x-skip-cache'] === 'true';
@@ -35,7 +38,7 @@ export class TelegramController extends BaseController {
         if (result.success) {
             this.ok(res, result, result.message);
         } else {
-            throw new Error(result.error || result.message);
+            throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, result.error || result.message);
         }
     };
 }

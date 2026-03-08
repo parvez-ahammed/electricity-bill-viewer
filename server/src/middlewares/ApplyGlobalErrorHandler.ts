@@ -1,4 +1,5 @@
 import ApiError from '@helpers/ApiError';
+import logger from '@helpers/Logger';
 import { Express, NextFunction, Request, Response } from 'express';
 import httpStatus from 'http-status';
 
@@ -21,10 +22,18 @@ export const applyGlobalErrorHandler = (app: Express) => {
             next: NextFunction
         ): void => {
             if (err instanceof ApiError) {
-                res.status(err.statusCode).json({ message: err.message });
+                res.status(err.statusCode).json({
+                    status: 'error',
+                    message: err.message,
+                    data: {},
+                });
             } else {
-                console.error('Unhandled error:', err);
-                res.status(500).json({ message: 'Internal Server Error' });
+                logger.error(err instanceof Error ? err : `Unhandled error: ${String(err)}`);
+                res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+                    status: 'error',
+                    message: 'Internal Server Error',
+                    data: {},
+                });
             }
         }
     );
