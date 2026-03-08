@@ -7,13 +7,16 @@ export class JwtService {
 
     static sign(payload: JwtPayload): string {
         return jwt.sign(payload as object, this.SECRET, {
+            algorithm: 'HS256',
             expiresIn: this.EXPIRES_IN,
         } as jwt.SignOptions);
     }
 
     static verify(token: string): JwtPayload {
         try {
-            return jwt.verify(token, this.SECRET) as JwtPayload;
+            return jwt.verify(token, this.SECRET, {
+                algorithms: ['HS256'],
+            }) as JwtPayload;
         } catch (error) {
             throw new Error('Invalid or expired token');
         }

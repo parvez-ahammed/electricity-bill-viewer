@@ -9,7 +9,7 @@ import { initializeScheduler } from './services/implementations/SchedulerService
 logger.info('Hello from Bill Barta API!');
 
 const server: http.Server = http.createServer(app);
-const schedulerService = initializeScheduler();
+const schedulerService = appConfig.telegram.botToken ? initializeScheduler() : null;
 
 async function startServer() {
     try {
@@ -18,8 +18,12 @@ async function startServer() {
         server.listen(appConfig.port, '0.0.0.0', () => {
             logger.info(`Server is running on http://localhost:${appConfig.port}`);
 
-            // Start the daily balance notification scheduler
-            schedulerService.startDailyBalanceNotification();
+            // Start the daily balance notification scheduler (only if Telegram is configured)
+            if (schedulerService) {
+                schedulerService.startDailyBalanceNotification();
+            } else {
+                logger.info('Telegram bot token not configured — scheduler disabled');
+            }
         });
     } catch (error) {
         logger.error('Failed to start server: ' + error);
@@ -30,7 +34,7 @@ async function startServer() {
 // Graceful shutdown
 process.on('SIGTERM', () => {
     logger.info('SIGTERM signal received: closing HTTP server');
-    schedulerService.stop();
+    schedulerService?.stop();
     server.close(() => {
         logger.info('HTTP server closed');
     });
@@ -38,7 +42,7 @@ process.on('SIGTERM', () => {
 
 process.on('SIGINT', () => {
     logger.info('SIGINT signal received: closing HTTP server');
-    schedulerService.stop();
+    schedulerService?.stop();
     server.close(() => {
         logger.info('HTTP server closed');
     });

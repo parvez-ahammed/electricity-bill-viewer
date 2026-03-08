@@ -215,8 +215,8 @@ export const AccountTable = ({ accounts, provider }: AccountTableProps) => {
                                     )}
                                     {provider === "DPDC" && 'clientSecret' in account.credentials && (
                                         <TableCell className="font-mono text-sm py-2">
-                                            {account.credentials.clientSecret ? 
-                                                `${account.credentials.clientSecret.substring(0, 8)}...` : 
+                                            {account.credentials.clientSecret ?
+                                                "•".repeat(12) :
                                                 'Not set'
                                             }
                                         </TableCell>

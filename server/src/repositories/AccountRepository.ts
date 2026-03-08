@@ -1,6 +1,6 @@
 import { AppDataSource } from '@configs/database';
 import logger from '@helpers/Logger';
-import { CorruptedCredentials, CreateAccountRequest, UpdateAccountRequest } from '@interfaces/Account';
+import { CorruptedCredentials, CreateAccountRequest, ProviderCredentials, UpdateAccountRequest } from '@interfaces/Account';
 import { ElectricityProvider } from '@interfaces/Shared';
 import { EncryptionService } from '@utility/encryption';
 import { Repository } from 'typeorm';
@@ -14,42 +14,14 @@ export class AccountRepository implements IAccountRepository {
         this.repository = AppDataSource.getRepository(Account);
     }
 
-    async create(data: CreateAccountRequest, userId: string): Promise<Account> {
-        // Encrypt sensitive credentials before saving
-        const encryptedCredentials = EncryptionService.encryptCredentials(data.credentials);
-
-        const account = this.repository.create({
-            userId,
-            provider: data.provider,
-            credentials: encryptedCredentials,
-        });
-
-        const savedAccount = await this.repository.save(account);
-
-        // Return account with decrypted credentials for immediate use
-        return {
-            ...savedAccount,
-            credentials: data.credentials, // Return original unencrypted credentials
-        };
-    }
-
-    async findByIdAndUserId(id: string, userId: string): Promise<Account | null> {
-        const account = await this.repository.findOne({
-            where: { id, userId },
-        });
-
-        if (!account) {
-            return null;
-        }
-
+    private decryptOrMarkCorrupted(account: Account): Account {
         try {
-            // Decrypt credentials before returning
             return {
                 ...account,
                 credentials: EncryptionService.decryptCredentials(account.credentials),
             };
         } catch (error) {
-            logger.error(`Failed to decrypt account ${id}: ${error instanceof Error ? error.message : String(error)}`);
+            logger.error(`Failed to decrypt account ${account.id}: ${error instanceof Error ? error.message : String(error)}`);
             const corrupted: CorruptedCredentials = {
                 username: '[CORRUPTED DATA]',
                 _isCorrupted: true,
@@ -59,57 +31,66 @@ export class AccountRepository implements IAccountRepository {
         }
     }
 
+    private decryptAccountList(accounts: Account[], logCorrupted = false): Account[] {
+        const result: Account[] = [];
+        const corruptedIds: string[] = [];
+
+        for (const account of accounts) {
+            const decrypted = this.decryptOrMarkCorrupted(account);
+            result.push(decrypted);
+
+            if ('_isCorrupted' in decrypted.credentials) {
+                corruptedIds.push(account.id);
+            }
+        }
+
+        if (logCorrupted && corruptedIds.length > 0) {
+            logger.warn(`Found ${corruptedIds.length} corrupted account(s): ${corruptedIds.join(', ')}`);
+        }
+
+        return result;
+    }
+
+    private returnWithOriginalCredentials(account: Account, originalCredentials: ProviderCredentials): Account {
+        return { ...account, credentials: originalCredentials };
+    }
+
+    async create(data: CreateAccountRequest, userId: string): Promise<Account> {
+        const encryptedCredentials = EncryptionService.encryptCredentials(data.credentials);
+
+        const account = this.repository.create({
+            userId,
+            provider: data.provider,
+            credentials: encryptedCredentials,
+        });
+
+        const savedAccount = await this.repository.save(account);
+        return this.returnWithOriginalCredentials(savedAccount, data.credentials);
+    }
+
+    async findByIdAndUserId(id: string, userId: string): Promise<Account | null> {
+        const account = await this.repository.findOne({ where: { id, userId } });
+        if (!account) return null;
+        return this.decryptOrMarkCorrupted(account);
+    }
+
     async findAllByUserId(userId: string): Promise<Account[]> {
         const accounts = await this.repository.find({
             where: { userId },
             order: { createdAt: 'DESC' },
         });
-
-        const validAccounts: Account[] = [];
-        const corruptedAccountIds: string[] = [];
-
-        for (const account of accounts) {
-            try {
-                validAccounts.push({
-                    ...account,
-                    credentials: EncryptionService.decryptCredentials(account.credentials),
-                });
-            } catch (error) {
-                logger.error(`Failed to decrypt account ${account.id}: ${error instanceof Error ? error.message : String(error)}`);
-                corruptedAccountIds.push(account.id);
-                const corrupted: CorruptedCredentials = {
-                    username: '[CORRUPTED DATA]',
-                    _isCorrupted: true,
-                    _originalId: account.id,
-                };
-                validAccounts.push({ ...account, credentials: corrupted });
-            }
-        }
-
-        if (corruptedAccountIds.length > 0) {
-            logger.warn(`Found ${corruptedAccountIds.length} corrupted account(s): ${corruptedAccountIds.join(', ')}`);
-        }
-
-        return validAccounts;
+        return this.decryptAccountList(accounts, true);
     }
 
     async update(id: string, userId: string, data: UpdateAccountRequest): Promise<Account | null> {
         const account = await this.repository.findOne({ where: { id, userId } });
-        if (!account) {
-            return null;
-        }
+        if (!account) return null;
 
-        // Encrypt new credentials before saving
         const encryptedCredentials = EncryptionService.encryptCredentials(data.credentials);
         account.credentials = encryptedCredentials;
 
         const updatedAccount = await this.repository.save(account);
-
-        // Return account with decrypted credentials
-        return {
-            ...updatedAccount,
-            credentials: data.credentials, // Return original unencrypted credentials
-        };
+        return this.returnWithOriginalCredentials(updatedAccount, data.credentials);
     }
 
     async delete(id: string, userId: string): Promise<boolean> {
@@ -136,53 +117,13 @@ export class AccountRepository implements IAccountRepository {
             where: { provider, userId },
             order: { createdAt: 'DESC' },
         });
-
-        const validAccounts: Account[] = [];
-
-        for (const account of accounts) {
-            try {
-                validAccounts.push({
-                    ...account,
-                    credentials: EncryptionService.decryptCredentials(account.credentials),
-                });
-            } catch (error) {
-                logger.error(`Failed to decrypt account ${account.id}: ${error instanceof Error ? error.message : String(error)}`);
-                const corrupted: CorruptedCredentials = {
-                    username: '[CORRUPTED DATA]',
-                    _isCorrupted: true,
-                    _originalId: account.id,
-                };
-                validAccounts.push({ ...account, credentials: corrupted });
-            }
-        }
-
-        return validAccounts;
+        return this.decryptAccountList(accounts);
     }
 
     async findAllSystem(): Promise<Account[]> {
         const accounts = await this.repository.find({
             order: { createdAt: 'DESC' },
         });
-
-        const validAccounts: Account[] = [];
-
-        for (const account of accounts) {
-            try {
-                validAccounts.push({
-                    ...account,
-                    credentials: EncryptionService.decryptCredentials(account.credentials),
-                });
-            } catch (error) {
-                logger.error(`Failed to decrypt account ${account.id}: ${error instanceof Error ? error.message : String(error)}`);
-                const corrupted: CorruptedCredentials = {
-                    username: '[CORRUPTED DATA]',
-                    _isCorrupted: true,
-                    _originalId: account.id,
-                };
-                validAccounts.push({ ...account, credentials: corrupted });
-            }
-        }
-
-        return validAccounts;
+        return this.decryptAccountList(accounts);
     }
 }

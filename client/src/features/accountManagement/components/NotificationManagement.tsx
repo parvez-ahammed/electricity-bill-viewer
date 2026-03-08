@@ -1,4 +1,14 @@
 import { notificationSettingsApi } from "@/common/apis/notificationSettings.api";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -27,6 +37,7 @@ type NotificationForm = z.infer<typeof notificationSchema>;
 export const NotificationManagement = () => {
     const queryClient = useQueryClient();
     const [isEditing, setIsEditing] = useState(false);
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
     const { data: settings, isLoading } = useQuery({
         queryKey: ["notificationSettings"],
@@ -82,9 +93,8 @@ export const NotificationManagement = () => {
     };
 
     const handleDelete = () => {
-        if (confirm("Are you sure you want to remove Telegram notifications?")) {
-            deleteMutation.mutate();
-        }
+        deleteMutation.mutate();
+        setShowDeleteDialog(false);
     };
 
     const startEditing = () => {
@@ -94,119 +104,142 @@ export const NotificationManagement = () => {
     const hasSettings = !!settings && !!settings.chatId;
 
     return (
-        <Card className="border-none pt-2 pb-0 shadow-none sm:border sm:shadow-none mt-4">
-            <CardHeader className="hidden px-0 py-2 sm:block sm:px-0 sm:py-3">
-                <CardTitle className="text-base sm:text-lg">
-                    Notification Management
-                </CardTitle>
-                <CardDescription className="text-xs sm:text-sm">
-                    Configure Telegram alerts for all your accounts
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0 sm:pb-4">
-                <div className="bg-card rounded-lg border p-4 space-y-4">
-                    <div className="flex items-center justify-between">
-                        <div className="space-y-1">
-                            <h4 className="text-sm font-medium leading-none">Telegram Notifications</h4>
-                            <p className="text-xs text-muted-foreground">
-                                Receive daily balance updates for all accounts on Telegram.
-                            </p>
+        <>
+            <Card className="border-none pt-2 pb-0 shadow-none sm:border sm:shadow-none mt-4">
+                <CardHeader className="hidden px-0 py-2 sm:block sm:px-0 sm:py-3">
+                    <CardTitle className="text-base sm:text-lg">
+                        Notification Management
+                    </CardTitle>
+                    <CardDescription className="text-xs sm:text-sm">
+                        Configure Telegram alerts for all your accounts
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="p-0 sm:pb-4">
+                    <div className="bg-card rounded-lg border p-4 space-y-4">
+                        <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                                <h4 className="text-sm font-medium leading-none">Telegram Notifications</h4>
+                                <p className="text-xs text-muted-foreground">
+                                    Receive daily balance updates for all accounts on Telegram.
+                                </p>
+                            </div>
+                            {hasSettings && (
+                                <div className="flex items-center space-x-2">
+                                    <span className="text-xs text-muted-foreground">Active</span>
+                                    <Switch
+                                        checked={settings.isActive}
+                                        onCheckedChange={handleToggle}
+                                        disabled={updateMutation.isPending || isLoading}
+                                    />
+                                </div>
+                            )}
                         </div>
-                        {hasSettings && (
-                            <div className="flex items-center space-x-2">
-                                <span className="text-xs text-muted-foreground">Active</span>
-                                <Switch
-                                    checked={settings.isActive}
-                                    onCheckedChange={handleToggle}
-                                    disabled={updateMutation.isPending || isLoading}
+
+                        <Separator />
+
+                        {isLoading ? (
+                            <div className="flex items-center justify-center py-4">
+                                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                            </div>
+                        ) : !hasSettings && !isEditing ? (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-fit text-xs h-8"
+                                onClick={startEditing}
+                            >
+                                Configure Telegram
+                            </Button>
+                        ) : isEditing ? (
+                            <form onSubmit={handleSubmit(onSubmit)} className="flex items-center gap-2">
+                                <Input
+                                    placeholder="Enter Telegram Chat ID"
+                                    {...register("chatId")}
+                                    className="h-8 text-sm flex-1"
                                 />
+                                <Button
+                                    type="submit"
+                                    size="sm"
+                                    className="h-8 w-8 p-0"
+                                    disabled={updateMutation.isPending}
+                                >
+                                    {updateMutation.isPending ? (
+                                        <Loader2 className="h-3 w-3 animate-spin" />
+                                    ) : (
+                                        <Save className="h-3 w-3" />
+                                    )}
+                                </Button>
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-8 w-8 p-0"
+                                    onClick={() => {
+                                        reset();
+                                        setIsEditing(false);
+                                    }}
+                                >
+                                    <span className="text-xs">✕</span>
+                                </Button>
+                            </form>
+                        ) : (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/40 p-2 rounded-md">
+                                <span className="flex-1 font-mono text-xs">Chat ID: {settings?.chatId}</span>
+                                <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-6 w-6 p-0 hover:bg-muted"
+                                    onClick={startEditing}
+                                >
+                                    <span className="text-xs">✏️</span>
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-6 w-6 p-0 hover:text-destructive hover:bg-destructive/10"
+                                    onClick={() => setShowDeleteDialog(true)}
+                                    disabled={deleteMutation.isPending}
+                                >
+                                    {deleteMutation.isPending ? (
+                                        <Loader2 className="h-3 w-3 animate-spin" />
+                                    ) : (
+                                        <Trash2 className="h-3 w-3" />
+                                    )}
+                                </Button>
+                            </div>
+                        )}
+
+                        {/* Status Indicator if not active but set */}
+                        {hasSettings && !settings.isActive && (
+                            <div className="text-xs text-amber-500 flex items-center gap-1 bg-amber-50 dark:bg-amber-950/20 p-2 rounded-md">
+                                <AlertCircle className="h-3 w-3" />
+                                Notifications are currently paused
                             </div>
                         )}
                     </div>
-                    
-                    <Separator />
+                </CardContent>
+            </Card>
 
-                    {isLoading ? (
-                        <div className="flex items-center justify-center py-4">
-                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                        </div>
-                    ) : !hasSettings && !isEditing ? (
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-fit text-xs h-8"
-                            onClick={startEditing}
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Remove Telegram Notifications</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to remove Telegram notifications? You will no longer receive daily balance updates.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleDelete}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
-                            Configure Telegram
-                        </Button>
-                    ) : isEditing ? (
-                        <form onSubmit={handleSubmit(onSubmit)} className="flex items-center gap-2">
-                            <Input
-                                placeholder="Enter Telegram Chat ID"
-                                {...register("chatId")}
-                                className="h-8 text-sm flex-1"
-                            />
-                            <Button
-                                type="submit"
-                                size="sm"
-                                className="h-8 w-8 p-0"
-                                disabled={updateMutation.isPending}
-                            >
-                                {updateMutation.isPending ? (
-                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                ) : (
-                                    <Save className="h-3 w-3" />
-                                )}
-                            </Button>
-                            <Button
-                                type="button"
-                                size="sm"
-                                variant="ghost"
-                                className="h-8 w-8 p-0"
-                                onClick={() => {
-                                    reset();
-                                    setIsEditing(false);
-                                }}
-                            >
-                                <span className="text-xs">✕</span>
-                            </Button>
-                        </form>
-                    ) : (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/40 p-2 rounded-md">
-                            <span className="flex-1 font-mono text-xs">Chat ID: {settings?.chatId}</span>
-                            <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-6 w-6 p-0 hover:bg-muted"
-                                onClick={startEditing}
-                            >
-                                <span className="text-xs">✏️</span>
-                            </Button>
-                            <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-6 w-6 p-0 hover:text-destructive hover:bg-destructive/10"
-                                onClick={handleDelete}
-                                disabled={deleteMutation.isPending}
-                            >
-                                {deleteMutation.isPending ? (
-                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                ) : (
-                                    <Trash2 className="h-3 w-3" />
-                                )}
-                            </Button>
-                        </div>
-                    )}
-
-                    {/* Status Indicator if not active but set */}
-                    {hasSettings && !settings.isActive && (
-                        <div className="text-xs text-amber-500 flex items-center gap-1 bg-amber-50 dark:bg-amber-950/20 p-2 rounded-md">
-                            <AlertCircle className="h-3 w-3" />
-                            Notifications are currently paused
-                        </div>
-                    )}
-                </div>
-            </CardContent>
-        </Card>
+                            Remove
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </>
     );
 };

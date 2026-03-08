@@ -24,8 +24,8 @@ const envSchema = z
         // Telegram Bot Configuration
         TELEGRAM_BOT_TOKEN: z.string().optional(),
 
-        // Encryption key for sensitive data
-        ENCRYPTION_KEY: z.string().optional(),
+        // Encryption key for sensitive data (min 32 chars for AES-256 security)
+        ENCRYPTION_KEY: z.string().min(32, 'ENCRYPTION_KEY must be at least 32 characters for AES-256 security').optional(),
     })
     .passthrough();
 
