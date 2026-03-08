@@ -11,9 +11,15 @@ export function getNESCOHeaders(): Record<string, string> {
         'sec-fetch-site': 'same-origin',
     };
 } // Utility to generate DPDC API headers for both bearer and login endpoints
+interface DPDCConfig {
+    ACCEPT_LANGUAGE: string;
+    TENANT_CODE: string;
+    CLIENT_ID: string;
+    CLIENT_SECRET: string;
+}
+
 interface DPDCHeaderOptions {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    config: any;
+    config: DPDCConfig;
     accessToken?: string;
     cookie: string;
     referer: string;

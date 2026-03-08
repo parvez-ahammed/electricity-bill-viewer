@@ -1,13 +1,10 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { Response } from 'express';
 
 export class ResponseBuilder {
     private res: Response;
     private statusCode: number;
     private message: string;
-
-    private data: any;
+    private data: unknown;
 
     constructor(res: Response) {
         this.res = res;
@@ -26,7 +23,7 @@ export class ResponseBuilder {
         return this;
     }
 
-    setData(data: any) {
+    setData(data: unknown) {
         this.data = data;
         return this;
     }

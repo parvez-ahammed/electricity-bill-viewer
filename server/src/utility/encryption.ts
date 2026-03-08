@@ -1,5 +1,6 @@
 import { appConfig } from '@configs/config';
 import logger from '@helpers/Logger';
+import { ProviderCredentials } from '@interfaces/Account';
 import CryptoJS from 'crypto-js';
 
 /**
@@ -10,89 +11,66 @@ export class EncryptionService {
     private static secretKey: string;
 
     static {
-        // Use environment variable or fallback to a default key (not recommended for production)
         this.secretKey = appConfig.encryptionKey || 'default-encryption-key-change-in-production';
-        
-        if (this.secretKey === 'default-encryption-key-change-in-production') {
-            logger.warn('Using default encryption key. Please set ENCRYPTION_KEY environment variable for production.');
+
+        if (!appConfig.encryptionKey) {
+            if (appConfig.nodeEnv === 'production') {
+                throw new Error('ENCRYPTION_KEY must be set in production. Refusing to start with default key.');
+            }
+            logger.warn('Using default encryption key. Set ENCRYPTION_KEY for production.');
         }
     }
 
-    /**
-     * Encrypt a plain text string
-     * @param plainText - The text to encrypt
-     * @returns Encrypted string
-     */
     static encrypt(plainText: string): string {
         try {
-            const encrypted = CryptoJS.AES.encrypt(plainText, this.secretKey).toString();
-            return encrypted;
+            return CryptoJS.AES.encrypt(plainText, this.secretKey).toString();
         } catch (error) {
-            logger.error('Failed to encrypt data:');
+            logger.error('Failed to encrypt data');
             throw new Error('Encryption failed');
         }
     }
 
-    /**
-     * Decrypt an encrypted string
-     * @param encryptedText - The encrypted text to decrypt
-     * @returns Decrypted plain text string
-     */
     static decrypt(encryptedText: string): string {
         try {
             const decrypted = CryptoJS.AES.decrypt(encryptedText, this.secretKey);
             const plainText = decrypted.toString(CryptoJS.enc.Utf8);
-            
+
             if (!plainText) {
                 throw new Error('Failed to decrypt - invalid encrypted data or wrong key');
             }
-            
+
             return plainText;
         } catch (error) {
-            logger.error('Failed to decrypt data:');
+            logger.error('Failed to decrypt data');
             throw new Error('Decryption failed');
         }
     }
 
-    /**
-     * Encrypt credentials object
-     * @param credentials - Credentials object with sensitive data
-     * @returns Credentials object with encrypted sensitive fields
-     */
-    static encryptCredentials(credentials: any): any {
+    static encryptCredentials(credentials: ProviderCredentials): ProviderCredentials {
         const encrypted = { ...credentials };
-        
-        // Encrypt password if it exists
-        if (credentials.password) {
-            encrypted.password = this.encrypt(credentials.password);
+
+        if ('password' in encrypted && encrypted.password) {
+            encrypted.password = this.encrypt(encrypted.password);
         }
-        
-        // Encrypt client secret if it exists
-        if (credentials.clientSecret) {
-            encrypted.clientSecret = this.encrypt(credentials.clientSecret);
+
+        if ('clientSecret' in encrypted && encrypted.clientSecret) {
+            encrypted.clientSecret = this.encrypt(encrypted.clientSecret);
         }
-        
+
         return encrypted;
     }
 
-    /**
-     * Decrypt credentials object
-     * @param encryptedCredentials - Credentials object with encrypted sensitive data
-     * @returns Credentials object with decrypted sensitive fields
-     */
-    static decryptCredentials(encryptedCredentials: any): any {
-        const decrypted = { ...encryptedCredentials };
-        
-        // Decrypt password if it exists
-        if (encryptedCredentials.password) {
-            decrypted.password = this.decrypt(encryptedCredentials.password);
+    static decryptCredentials(credentials: ProviderCredentials): ProviderCredentials {
+        const decrypted = { ...credentials };
+
+        if ('password' in decrypted && decrypted.password) {
+            decrypted.password = this.decrypt(decrypted.password);
         }
-        
-        // Decrypt client secret if it exists
-        if (encryptedCredentials.clientSecret) {
-            decrypted.clientSecret = this.decrypt(encryptedCredentials.clientSecret);
+
+        if ('clientSecret' in decrypted && decrypted.clientSecret) {
+            decrypted.clientSecret = this.decrypt(decrypted.clientSecret);
         }
-        
+
         return decrypted;
     }
 }

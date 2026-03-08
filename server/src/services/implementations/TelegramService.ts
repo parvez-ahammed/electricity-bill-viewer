@@ -1,6 +1,7 @@
 import { appConfig } from '@configs/config';
 import logger from '@helpers/Logger';
 import { ProviderAccountDetails } from '@interfaces/Shared';
+import { toProviderCredential } from '@utility/accountCredentialParser';
 import { ITelegramService } from '../interfaces/ITelegramService';
 import { AccountService } from './AccountService';
 import { ElectricityService } from './ElectricityService';
@@ -192,12 +193,7 @@ export class TelegramService implements ITelegramService {
                     }
 
                     // 4. Map credentials
-                    const credentials = userAccounts.map(account => ({
-                        username: account.credentials.username,
-                        password: 'password' in account.credentials ? account.credentials.password : undefined,
-                        clientSecret: 'clientSecret' in account.credentials ? account.credentials.clientSecret : undefined,
-                        provider: account.provider,
-                    }));
+                    const credentials = userAccounts.map(toProviderCredential);
 
                     // 5. Fetch usage data
                     const usageResult = await this.electricityService.getUsageData(credentials, skipCache);
@@ -285,12 +281,7 @@ export class TelegramService implements ITelegramService {
                 };
             }
 
-            const credentials = userAccounts.map(account => ({
-                username: account.credentials.username,
-                password: 'password' in account.credentials ? account.credentials.password : undefined,
-                clientSecret: 'clientSecret' in account.credentials ? account.credentials.clientSecret : undefined,
-                provider: account.provider,
-            }));
+            const credentials = userAccounts.map(toProviderCredential);
 
             const usageResult = await this.electricityService.getUsageData(credentials, skipCache);
 
