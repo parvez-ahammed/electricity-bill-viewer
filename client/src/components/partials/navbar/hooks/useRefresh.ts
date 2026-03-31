@@ -14,7 +14,7 @@ export const useRefresh = () => {
             ) {
                 await window.refreshElectricityData();
             }
-        } catch (error) {
+        } catch {
             toast.error("Failed to refresh data");
         } finally {
             // Keep spinning for a bit to show feedback

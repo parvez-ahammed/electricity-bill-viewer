@@ -2,17 +2,19 @@ import {
     CreateAccountRequest,
     DPDCCredentials,
     ElectricityProvider,
-    NESCOCredentials
+    NESCOCredentials,
 } from "@/common/apis/accounts.api";
-import { PasswordInput } from "@/components/ui";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
+
+import { PasswordInput } from "@/components/ui";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
 import { useAccounts } from "../hooks/useAccounts";
 
 interface AddAccountFormProps {
@@ -27,17 +29,28 @@ type FormData = {
     clientSecret?: string;
 };
 
-const getSchema = (provider: ElectricityProvider) => z.object({
-    username: z.string().min(1, { message: "Username is required" }),
-    password: provider === "DPDC" 
-        ? z.string().min(1, { message: "Password is required for DPDC" }) 
-        : z.string().optional(),
-    clientSecret: provider === "DPDC" 
-        ? z.string().min(1, { message: "Client Secret is required for DPDC" }) 
-        : z.string().optional(),
-});
+const getSchema = (provider: ElectricityProvider) =>
+    z.object({
+        username: z.string().min(1, { message: "Username is required" }),
+        password:
+            provider === "DPDC"
+                ? z
+                      .string()
+                      .min(1, { message: "Password is required for DPDC" })
+                : z.string().optional(),
+        clientSecret:
+            provider === "DPDC"
+                ? z
+                      .string()
+                      .min(1, { message: "Client Secret is required for DPDC" })
+                : z.string().optional(),
+    });
 
-export const AddAccountForm = ({ provider, onCancel, onSuccess }: AddAccountFormProps) => {
+export const AddAccountForm = ({
+    provider,
+    onCancel,
+    onSuccess,
+}: AddAccountFormProps) => {
     const { createAccount, isCreating } = useAccounts();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -52,15 +65,15 @@ export const AddAccountForm = ({ provider, onCancel, onSuccess }: AddAccountForm
             username: "",
             password: "",
             clientSecret: "",
-        }
+        },
     });
 
     const onSubmit = async (data: FormData) => {
         setIsSubmitting(true);
-        
+
         try {
             let credentials;
-            
+
             if (provider === "DPDC") {
                 credentials = {
                     username: data.username,
@@ -81,7 +94,7 @@ export const AddAccountForm = ({ provider, onCancel, onSuccess }: AddAccountForm
             createAccount(request);
             reset();
             onSuccess();
-        } catch (error) {
+        } catch {
             toast.error("Failed to create account");
         } finally {
             setIsSubmitting(false);
@@ -89,12 +102,15 @@ export const AddAccountForm = ({ provider, onCancel, onSuccess }: AddAccountForm
     };
 
     return (
-        <div className="border border-dashed rounded p-3 bg-muted/20">
+        <div className="bg-muted/20 rounded border border-dashed p-3">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                     {/* Username */}
                     <div className="space-y-1">
-                        <Label htmlFor={`username-${provider}`} className="text-xs">
+                        <Label
+                            htmlFor={`username-${provider}`}
+                            className="text-xs"
+                        >
                             Username *
                         </Label>
                         <Input
@@ -105,7 +121,7 @@ export const AddAccountForm = ({ provider, onCancel, onSuccess }: AddAccountForm
                             disabled={isSubmitting || isCreating}
                         />
                         {errors.username && (
-                            <p className="text-xs text-destructive">
+                            <p className="text-destructive text-xs">
                                 {errors.username.message}
                             </p>
                         )}
@@ -114,7 +130,10 @@ export const AddAccountForm = ({ provider, onCancel, onSuccess }: AddAccountForm
                     {/* Password (DPDC only) */}
                     {provider === "DPDC" && (
                         <div className="space-y-1">
-                            <Label htmlFor={`password-${provider}`} className="text-xs">
+                            <Label
+                                htmlFor={`password-${provider}`}
+                                className="text-xs"
+                            >
                                 Password *
                             </Label>
                             <PasswordInput
@@ -125,7 +144,7 @@ export const AddAccountForm = ({ provider, onCancel, onSuccess }: AddAccountForm
                                 disabled={isSubmitting || isCreating}
                             />
                             {errors.password && (
-                                <p className="text-xs text-destructive">
+                                <p className="text-destructive text-xs">
                                     {errors.password.message}
                                 </p>
                             )}
@@ -135,7 +154,10 @@ export const AddAccountForm = ({ provider, onCancel, onSuccess }: AddAccountForm
                     {/* Client Secret (DPDC mandatory) */}
                     {provider === "DPDC" && (
                         <div className="space-y-1">
-                            <Label htmlFor={`clientSecret-${provider}`} className="text-xs">
+                            <Label
+                                htmlFor={`clientSecret-${provider}`}
+                                className="text-xs"
+                            >
                                 Client Secret *
                             </Label>
                             <Input
@@ -146,7 +168,7 @@ export const AddAccountForm = ({ provider, onCancel, onSuccess }: AddAccountForm
                                 disabled={isSubmitting || isCreating}
                             />
                             {errors.clientSecret && (
-                                <p className="text-xs text-destructive">
+                                <p className="text-destructive text-xs">
                                     {errors.clientSecret.message}
                                 </p>
                             )}

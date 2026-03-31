@@ -15,10 +15,14 @@ export const useTelegram = () => {
                     `Account balances sent to Telegram successfully! (${result.sentAccounts} accounts)`
                 );
             } else {
-                toast.error(result.error || result.message || 'Failed to send balances to Telegram');
+                toast.error(
+                    result.error ||
+                        result.message ||
+                        "Failed to send balances to Telegram"
+                );
             }
-        } catch (error) {
-            toast.error('Failed to send balances to Telegram');
+        } catch {
+            toast.error("Failed to send balances to Telegram");
         } finally {
             setTimeout(() => setIsSendingTelegram(false), 1000);
         }
