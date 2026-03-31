@@ -1,3 +1,4 @@
+import logger from '@helpers/Logger';
 import { JwtPayload } from '@interfaces/Auth';
 import jwt from 'jsonwebtoken';
 
@@ -17,7 +18,9 @@ export class JwtService {
             return jwt.verify(token, this.SECRET, {
                 algorithms: ['HS256'],
             }) as JwtPayload;
+
         } catch (error) {
+            logger.error(error);
             throw new Error('Invalid or expired token');
         }
     }
@@ -26,6 +29,7 @@ export class JwtService {
         try {
             return jwt.decode(token) as JwtPayload;
         } catch (error) {
+            logger.error(error);
             return null;
         }
     }

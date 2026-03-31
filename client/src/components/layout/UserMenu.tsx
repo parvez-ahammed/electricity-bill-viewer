@@ -1,4 +1,4 @@
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -6,10 +6,10 @@ import {
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { useAuth } from '@/context/AuthContext';
-import { LogOut, User } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+} from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/context/AuthContext";
+import { LogOut, User } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export const UserMenu = () => {
     const { user, logout } = useAuth();
@@ -17,7 +17,7 @@ export const UserMenu = () => {
 
     const handleLogout = () => {
         logout();
-        navigate('/login');
+        navigate("/login");
     };
 
     if (!user) return null;

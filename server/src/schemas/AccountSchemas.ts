@@ -31,7 +31,7 @@ export const UpdateAccountSchema = z.object({
 });
 
 export const AccountParamsSchema = z.object({
-    id: z.string().uuid('Invalid account ID format'),
+    id: z.string().min(1, 'Invalid account ID format'),
 });
 
 export const SetNicknameSchema = z.object({

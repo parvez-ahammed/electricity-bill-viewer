@@ -104,6 +104,7 @@ export class AuthService {
             const payload = JwtService.verify(token);
             return await this.userRepository.findById(payload.userId);
         } catch (error) {
+            logger.error(`Token verification error: ${error instanceof Error ? error.message : String(error)}`);
             return null;
         }
     }

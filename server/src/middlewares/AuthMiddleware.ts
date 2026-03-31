@@ -1,3 +1,4 @@
+import logger from '@helpers/Logger';
 import { AuthenticatedRequest } from '@interfaces/Auth';
 import { JwtService } from '@services/JwtService';
 import { NextFunction, Response } from 'express';
@@ -20,6 +21,7 @@ export const authMiddleware = (req: AuthenticatedRequest, res: Response, next: N
         req.user = payload;
         next();
     } catch (error) {
+        logger.error(`Authentication error: ${error instanceof Error ? error.message : String(error)}`);
         res.status(401).json({
             status: 'error',
             message: 'Invalid or expired token. Please login again.',

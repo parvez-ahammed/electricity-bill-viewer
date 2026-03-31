@@ -1,26 +1,26 @@
-import { GoogleLoginButton } from '@/components/auth/GoogleLoginButton';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { GoogleLoginButton } from "@/components/auth/GoogleLoginButton";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAuth } from '@/context/AuthContext';
-import { useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { toast } from 'sonner';
+import { useAuth } from "@/context/AuthContext";
+import { useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { toast } from "sonner";
 
 export const LoginPage = () => {
     const { isAuthenticated } = useAuth();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    const error = searchParams.get('error');
+    const error = searchParams.get("error");
 
     useEffect(() => {
         if (isAuthenticated) {
-            navigate('/');
+            navigate("/");
         }
     }, [isAuthenticated, navigate]);
 
     useEffect(() => {
-        if (error === 'authentication_failed') {
-            toast.error('Authentication failed. Please try again.');
+        if (error === "authentication_failed") {
+            toast.error("Authentication failed. Please try again.");
         }
     }, [error]);
 

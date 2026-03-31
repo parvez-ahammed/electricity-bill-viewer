@@ -2,7 +2,7 @@ import { API_ENDPOINTS } from "@/common/constants/api-endpoints.constant";
 import { HTTP_METHOD } from "@/common/constants/http.constant";
 import { apiRequest } from "@/lib/axios";
 
-export type ElectricityProvider = 'DPDC' | 'NESCO';
+export type ElectricityProvider = "DPDC" | "NESCO";
 
 export interface DPDCCredentials {
     username: string;

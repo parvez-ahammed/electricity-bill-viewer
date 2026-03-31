@@ -1,12 +1,12 @@
-import { config } from '@/common/constants/config.constant';
-import { Button } from '@/components/ui/button';
+import { config } from "@/common/constants/config.constant";
+import { Button } from "@/components/ui/button";
 
 
 interface GoogleLoginButtonProps {
-    mode?: 'login' | 'signup';
+    mode?: "login" | "signup";
 }
 
-export const GoogleLoginButton = ({ mode = 'login' }: GoogleLoginButtonProps) => {
+export const GoogleLoginButton = ({ mode = "login" }: GoogleLoginButtonProps) => {
 
     const handleGoogleLogin = () => {
         window.location.href =

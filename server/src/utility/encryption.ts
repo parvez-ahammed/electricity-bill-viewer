@@ -25,7 +25,7 @@ export class EncryptionService {
         try {
             return CryptoJS.AES.encrypt(plainText, this.secretKey).toString();
         } catch (error) {
-            logger.error('Failed to encrypt data');
+            logger.error(error);
             throw new Error('Encryption failed');
         }
     }
@@ -41,7 +41,7 @@ export class EncryptionService {
 
             return plainText;
         } catch (error) {
-            logger.error('Failed to decrypt data');
+            logger.error(error);
             throw new Error('Decryption failed');
         }
     }

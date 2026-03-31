@@ -11,8 +11,8 @@ export const neoBrutalismTheme = {
         muted: "#e8e8e8",
     },
     fonts: {
-        heading: '"Work Sans", sans-serif',
-        body: '"Space Mono", monospace',
+        heading: "\"Work Sans\", sans-serif",
+        body: "\"Space Mono\", monospace",
     },
     borders: {
         width: "3px",

@@ -1,7 +1,7 @@
-import { useAuth } from '@/context/AuthContext';
-import { useEffect, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { toast } from 'sonner';
+import { useAuth } from "@/context/AuthContext";
+import { useEffect, useRef } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { toast } from "sonner";
 
 export const AuthCallbackPage = () => {
     const { login, isAuthenticated } = useAuth();
@@ -11,8 +11,8 @@ export const AuthCallbackPage = () => {
 
     useEffect(() => {
         if (isAuthenticated) {
-            toast.success('Successfully logged in!');
-            navigate('/');
+            toast.success("Successfully logged in!");
+            navigate("/");
         }
     }, [isAuthenticated, navigate]);
 
@@ -20,18 +20,18 @@ export const AuthCallbackPage = () => {
         // Prevent multiple executions
         if (hasProcessedLogin.current) return;
 
-        const token = searchParams.get('token');
+        const token = searchParams.get("token");
 
         if (token) {
             hasProcessedLogin.current = true;
             login(token)
                 .catch(() => {
-                    toast.error('Failed to complete login');
-                    navigate('/login');
+                    toast.error("Failed to complete login");
+                    navigate("/login");
                 });
         } else {
-            toast.error('No authentication token received');
-            navigate('/login');
+            toast.error("No authentication token received");
+            navigate("/login");
         }
     }, [searchParams, login, navigate]);
 
