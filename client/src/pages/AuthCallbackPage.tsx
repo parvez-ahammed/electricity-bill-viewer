@@ -4,10 +4,17 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 export const AuthCallbackPage = () => {
-    const { login } = useAuth();
+    const { login, isAuthenticated } = useAuth();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const hasProcessedLogin = useRef(false);
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            toast.success('Successfully logged in!');
+            navigate('/');
+        }
+    }, [isAuthenticated, navigate]);
 
     useEffect(() => {
         // Prevent multiple executions
@@ -18,10 +25,6 @@ export const AuthCallbackPage = () => {
         if (token) {
             hasProcessedLogin.current = true;
             login(token)
-                .then(() => {
-                    toast.success('Successfully logged in!');
-                    navigate('/');
-                })
                 .catch(() => {
                     toast.error('Failed to complete login');
                     navigate('/login');

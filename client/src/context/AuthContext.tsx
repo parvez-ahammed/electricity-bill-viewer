@@ -47,8 +47,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         try {
             const userData: CurrentUser = await authApi.getCurrentUser();
             setUser(userData);
-        } catch {
+        } catch (error) {
             logout();
+            throw error;
         } finally {
             setIsLoading(false);
         }

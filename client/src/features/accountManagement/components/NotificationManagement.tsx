@@ -22,7 +22,7 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertCircle, Loader2, Save, Trash2 } from "lucide-react";
+import { AlertCircle, Edit2, Loader2, Save, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -188,15 +188,15 @@ export const NotificationManagement = () => {
                                 <Button
                                     size="sm"
                                     variant="ghost"
-                                    className="h-6 w-6 p-0 hover:bg-muted"
+                                    className="h-7 w-7 p-0 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
                                     onClick={startEditing}
                                 >
-                                    <span className="text-xs">✏️</span>
+                                    <Edit2 className="h-3 w-3" />
                                 </Button>
                                 <Button
                                     size="sm"
                                     variant="ghost"
-                                    className="h-6 w-6 p-0 hover:text-destructive hover:bg-destructive/10"
+                                    className="h-7 w-7 p-0 text-red-600 hover:bg-red-50 hover:text-red-700"
                                     onClick={() => setShowDeleteDialog(true)}
                                     disabled={deleteMutation.isPending}
                                 >
