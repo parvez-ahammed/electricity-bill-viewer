@@ -141,42 +141,43 @@ export const AccountTable = ({ accounts, provider }: AccountTableProps) => {
         setDeleteDialogId(null);
     };
 
-    if (accounts.length === 0) {
-        return (
-            <div className="text-muted-foreground py-4 text-center text-sm">
-                No {provider} accounts configured.
-            </div>
-        );
-    }
+    const colCount = provider === "DPDC" ? 4 : 2;
 
     return (
-        <>
+        <div className="w-full">
             <Table>
                 <TableHeader>
-                    <TableRow className="h-10">
-                        <TableHead className="py-2 text-xs">Username</TableHead>
+                    <TableRow className="h-10 border-b-[3px] border-[var(--color-neo-border)]">
+                        <TableHead className="py-2 text-xs font-black uppercase tracking-wider text-black neo-table-cell">Username</TableHead>
                         {provider === "DPDC" && (
-                            <TableHead className="py-2 text-xs">
+                            <TableHead className="py-2 text-xs font-black uppercase tracking-wider text-black neo-table-cell">
                                 Password
                             </TableHead>
                         )}
                         {provider === "DPDC" && (
-                            <TableHead className="py-2 text-xs">
+                            <TableHead className="py-2 text-xs font-black uppercase tracking-wider text-black neo-table-cell">
                                 Client Secret
                             </TableHead>
                         )}
-                        <TableHead className="w-[80px] py-2 text-xs">
+                        <TableHead className="w-[100px] min-w-[100px] py-2 text-xs font-black uppercase tracking-wider text-black neo-table-cell text-center">
                             Actions
                         </TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {accounts.map((account) => (
+                    {accounts.length === 0 ? (
+                        <TableRow className="h-20 bg-white/50">
+                            <TableCell colSpan={colCount} className="text-center py-8 font-bold italic text-black/60 neo-table-cell">
+                                NO {provider} ACCOUNTS CONFIGURED. ADD ONE ABOVE.
+                            </TableCell>
+                        </TableRow>
+                    ) : (
+                        accounts.map((account) => (
                         <TableRow key={account.id} className="h-12">
                             {editingId === account.id ? (
                                 // Edit mode
                                 <>
-                                    <TableCell className="py-1">
+                                    <TableCell className="py-1 neo-table-cell">
                                         <Input
                                             {...register("username")}
                                             className="h-7 text-sm"
@@ -189,7 +190,7 @@ export const AccountTable = ({ accounts, provider }: AccountTableProps) => {
                                         )}
                                     </TableCell>
                                     {provider === "DPDC" && (
-                                        <TableCell className="py-1">
+                                        <TableCell className="py-1 neo-table-cell">
                                             <PasswordInput
                                                 {...register("password")}
                                                 className="h-7 text-sm"
@@ -203,7 +204,7 @@ export const AccountTable = ({ accounts, provider }: AccountTableProps) => {
                                         </TableCell>
                                     )}
                                     {provider === "DPDC" && (
-                                        <TableCell className="py-1">
+                                        <TableCell className="py-1 neo-table-cell">
                                             <Input
                                                 {...register("clientSecret")}
                                                 className="h-7 text-sm"
@@ -219,25 +220,25 @@ export const AccountTable = ({ accounts, provider }: AccountTableProps) => {
                                             )}
                                         </TableCell>
                                     )}
-                                    <TableCell className="py-1">
-                                        <div className="flex items-center gap-1">
+                                    <TableCell className="py-1 neo-table-cell">
+                                        <div className="flex items-center justify-center gap-1">
                                             <Button
-                                                size="sm"
+                                                size="xs"
                                                 variant="ghost"
-                                                className="h-7 w-7 p-0 text-green-600 hover:bg-green-50 hover:text-green-700"
+                                                className="h-8 w-8 p-0 text-green-600 hover:bg-green-600 hover:text-white"
                                                 onClick={handleSubmit(onSubmit)}
                                                 disabled={isUpdating}
                                             >
-                                                <Check className="h-3 w-3" />
+                                                <Check className="h-4 w-4" />
                                             </Button>
                                             <Button
-                                                size="sm"
+                                                size="xs"
                                                 variant="ghost"
-                                                className="h-7 w-7 p-0 text-gray-600 hover:bg-gray-50 hover:text-gray-700"
+                                                className="h-8 w-8 p-0 text-gray-600 hover:bg-gray-600 hover:text-white"
                                                 onClick={cancelEdit}
                                                 disabled={isUpdating}
                                             >
-                                                <X className="h-3 w-3" />
+                                                <X className="h-4 w-4" />
                                             </Button>
                                         </div>
                                     </TableCell>
@@ -245,14 +246,14 @@ export const AccountTable = ({ accounts, provider }: AccountTableProps) => {
                             ) : (
                                 // View mode
                                 <>
-                                    <TableCell className="py-2 font-mono text-sm">
+                                    <TableCell className="py-2 font-mono text-sm font-bold neo-table-cell">
                                         <div className="flex items-center gap-2">
                                             {account.credentials.username}
                                             {"_isCorrupted" in
                                                 account.credentials &&
                                                 account.credentials
                                                     ._isCorrupted && (
-                                                    <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-800">
+                                                    <span className="inline-flex items-center bg-red-600 px-2 py-1 text-[10px] font-black uppercase text-white neo-border border-[2px]">
                                                         Corrupted
                                                     </span>
                                                 )}
@@ -260,26 +261,26 @@ export const AccountTable = ({ accounts, provider }: AccountTableProps) => {
                                     </TableCell>
                                     {provider === "DPDC" &&
                                         "password" in account.credentials && (
-                                            <TableCell className="py-2 font-mono text-sm">
+                                            <TableCell className="py-2 font-mono text-sm font-bold neo-table-cell">
                                                 {"•".repeat(8)}
                                             </TableCell>
                                         )}
                                     {provider === "DPDC" &&
                                         "clientSecret" in
                                             account.credentials && (
-                                            <TableCell className="py-2 font-mono text-sm">
+                                            <TableCell className="py-2 font-mono text-sm font-bold neo-table-cell">
                                                 {account.credentials
                                                     .clientSecret
                                                     ? "•".repeat(12)
                                                     : "Not set"}
                                             </TableCell>
                                         )}
-                                    <TableCell className="py-2">
-                                        <div className="flex items-center gap-1">
+                                    <TableCell className="py-2 neo-table-cell">
+                                        <div className="flex justify-center items-center gap-1">
                                             <Button
-                                                size="sm"
+                                                size="xs"
                                                 variant="ghost"
-                                                className="h-7 w-7 p-0 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                                                className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-600 hover:text-white"
                                                 onClick={() =>
                                                     startEdit(account)
                                                 }
@@ -300,12 +301,12 @@ export const AccountTable = ({ accounts, provider }: AccountTableProps) => {
                                                         : "Edit account"
                                                 }
                                             >
-                                                <Edit2 className="h-3 w-3" />
+                                                <Edit2 className="h-4 w-4" />
                                             </Button>
                                             <Button
-                                                size="sm"
+                                                size="xs"
                                                 variant="ghost"
-                                                className="h-7 w-7 p-0 text-red-600 hover:bg-red-50 hover:text-red-700"
+                                                className="h-8 w-8 p-0 text-red-600 hover:bg-red-600 hover:text-white"
                                                 onClick={() =>
                                                     setDeleteDialogId(
                                                         account.id
@@ -315,14 +316,15 @@ export const AccountTable = ({ accounts, provider }: AccountTableProps) => {
                                                     isUpdating || isDeleting
                                                 }
                                             >
-                                                <Trash2 className="h-3 w-3" />
+                                                <Trash2 className="h-4 w-4" />
                                             </Button>
                                         </div>
                                     </TableCell>
                                 </>
                             )}
                         </TableRow>
-                    ))}
+                        ))
+                    )}
                 </TableBody>
             </Table>
 
@@ -365,6 +367,6 @@ export const AccountTable = ({ accounts, provider }: AccountTableProps) => {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-        </>
+        </div>
     );
 };

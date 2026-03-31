@@ -62,7 +62,7 @@ export const NicknameEditor = ({ accountId, currentDisplayName, location }: Nick
 
     if (isEditing) {
         return (
-            <TableCell className="w-[200px] min-w-[200px] px-4 py-4">
+            <TableCell className="w-[200px] min-w-[200px] px-4 py-4 neo-table-cell">
                 <form 
                     onSubmit={handleSubmit(onSubmit)} 
                     className="flex items-center gap-2"
@@ -85,10 +85,10 @@ export const NicknameEditor = ({ accountId, currentDisplayName, location }: Nick
                     </div>
                     <Button
                         type="submit"
-                        size="sm"
+                        size="xs"
                         variant="ghost"
                         disabled={setNicknameMutation.isPending || deleteNicknameMutation.isPending || isRefreshing}
-                        className="h-8 w-8 p-0"
+                        className="h-8 w-8 p-0 text-green-600 hover:bg-green-600 hover:text-white"
                     >
                         {(setNicknameMutation.isPending || deleteNicknameMutation.isPending) ? (
                             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -98,11 +98,11 @@ export const NicknameEditor = ({ accountId, currentDisplayName, location }: Nick
                     </Button>
                     <Button
                         type="button"
-                        size="sm"
+                        size="xs"
                         variant="ghost"
                         onClick={handleCancel}
                         disabled={setNicknameMutation.isPending || deleteNicknameMutation.isPending || isRefreshing}
-                        className="h-8 w-8 p-0"
+                        className="h-8 w-8 p-0 text-gray-600 hover:bg-gray-600 hover:text-white"
                     >
                         <X className="h-4 w-4" />
                     </Button>
@@ -113,22 +113,22 @@ export const NicknameEditor = ({ accountId, currentDisplayName, location }: Nick
 
     return (
         <TableCell
-            className="w-[200px] min-w-[200px] px-4 py-4 group cursor-pointer"
+            className="w-[200px] min-w-[200px] px-4 py-4 group cursor-pointer neo-table-cell"
             title={currentDisplayName}
             onClick={() => setIsEditing(true)}
         >
             <div className="flex items-center justify-between">
-                <div className="truncate text-sm">{currentDisplayName}</div>
+                <div className="truncate text-sm font-bold text-[var(--color-neo-accent-2)]">{currentDisplayName}</div>
                 <Button
-                    size="sm"
+                    size="xs"
                     variant="ghost"
-                    className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-600 hover:text-white"
                     onClick={(e) => {
                         e.stopPropagation();
                         setIsEditing(true);
                     }}
                 >
-                    <Edit2 className="h-3 w-3" />
+                    <Edit2 className="h-4 w-4" />
                 </Button>
             </div>
         </TableCell>

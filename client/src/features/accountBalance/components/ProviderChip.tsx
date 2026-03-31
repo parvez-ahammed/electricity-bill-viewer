@@ -3,16 +3,16 @@ interface ProviderChipProps {
     provider: string;
 }
 
-const getProviderBadgeColor = (provider: string) => {
+const getProviderStyles = (provider: string) => {
     switch (provider.toUpperCase()) {
         case "DPDC":
-            return "bg-blue-100 text-blue-800";
+            return "bg-[var(--color-neo-primary)] text-white"; // Pink/Magenta
         case "NESCO":
-            return "bg-green-100 text-green-800";
+            return "bg-[var(--color-neo-accent)] text-black"; // Yellow/Gold
         case "DESCO":
-            return "bg-red-100 text-red-800";
+            return "bg-[var(--color-neo-accent-2)] text-black"; // Sky Blue
         default:
-            return "bg-gray-100 text-gray-800";
+            return "bg-black text-white";
     }
 };
 
@@ -21,7 +21,7 @@ export const ProviderChip = ({ provider }: ProviderChipProps) => {
 
     return (
         <span
-            className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${getProviderBadgeColor(providerUpper)}`}
+            className={`inline-flex px-3 py-1 text-[10px] font-black uppercase tracking-widest neo-border-2 ${getProviderStyles(providerUpper)}`}
         >
             {providerUpper}
         </span>

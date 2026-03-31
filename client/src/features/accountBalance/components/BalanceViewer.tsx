@@ -41,7 +41,7 @@ export const BalanceViewer = ({ accountsData }: BalanceTableProps) => {
 
             {/* Desktop Table View */}
             <div className="hidden w-full md:block">
-                <div className="border-border bg-card overflow-hidden rounded-xl border shadow-sm">
+                <div className="bg-transparent overflow-hidden">
                     <div className="table-scroll overflow-x-auto">
                         <Table className="w-full min-w-max">
                             <BalanceTableHeader />

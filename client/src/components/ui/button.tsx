@@ -4,26 +4,27 @@ import { type VariantProps, cva } from "class-variance-authority";
 import * as React from "react";
 
 const buttonVariants = cva(
-    "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-[color,box-shadow] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+    "inline-flex items-center justify-center whitespace-nowrap text-sm font-bold tracking-wide transition-all duration-200 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-5 shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 border-[3px] border-[var(--color-neo-border)] text-black shadow-neo hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-none active:translate-x-[4px] active:translate-y-[4px] active:shadow-none",
     {
         variants: {
             variant: {
                 default:
-                    "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
+                    "bg-[var(--color-neo-primary)] text-white shadow-neo",
                 destructive:
-                    "bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40",
+                    "bg-[var(--color-neo-destructive)] text-white shadow-neo",
                 outline:
-                    "border border-input bg-background shadow-xs hover:bg-accent hover:text-accent-foreground",
+                    "bg-white text-black hover:bg-[var(--color-neo-muted)] shadow-neo",
                 secondary:
-                    "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
-                ghost: "hover:bg-accent hover:text-accent-foreground",
-                link: "text-primary underline-offset-4 hover:underline",
+                    "bg-[var(--color-neo-accent)] text-black shadow-neo",
+                ghost: "border-transparent shadow-none hover:border-[var(--color-neo-border)] hover:bg-[var(--color-neo-bg)] hover:translate-x-0 hover:translate-y-0 hover:shadow-neo",
+                link: "border-transparent shadow-none hover:shadow-none hover:translate-x-0 hover:translate-y-0 text-black underline-offset-4 hover:underline",
             },
             size: {
-                default: "h-9 px-4 py-2 has-[>svg]:px-3",
-                sm: "h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5",
-                lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
-                icon: "size-9",
+                default: "h-10 px-3 md:px-5 gap-2",
+                sm: "h-8 px-2 md:px-3 gap-1.5 text-xs",
+                xs: "h-7 px-1.5 md:px-2 gap-1 text-[10px]",
+                lg: "h-12 px-6 md:px-8 gap-2.5 text-base",
+                icon: "size-10",
             },
         },
         defaultVariants: {

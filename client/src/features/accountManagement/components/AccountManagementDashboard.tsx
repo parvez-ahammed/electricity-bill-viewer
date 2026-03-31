@@ -60,13 +60,13 @@ export const AccountManagementDashboard = () => {
     }
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-1">
             {/* Show corruption help if needed */}
             {hasCorruptedAccounts && <CorruptionHelp />}
 
             {PROVIDERS.map((provider) => (
-                <Card key={provider.name} className="w-full gap-0 p-0">
-                    <CardHeader className="mb-0 pt-4 pb-0">
+                <Card key={provider.name} className="w-full gap-0 p-0 bg-transparent border-none shadow-none">
+                    <CardHeader className="mb-0 pt-4 pb-4 px-0">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <div
@@ -93,17 +93,17 @@ export const AccountManagementDashboard = () => {
                             </Button>
                         </div>
                     </CardHeader>
-                    <CardContent className="space-y-3 pt-0 pb-4">
+                    <CardContent className="px-0 space-y-3 pt-0 pb-4">
                         {/* Add Account Form */}
                         {showAddForm === provider.name && (
-                            <>
+                            <div className="mb-6 space-y-4">
                                 <AddAccountForm
                                     provider={provider.name}
                                     onCancel={() => setShowAddForm(null)}
                                     onSuccess={() => setShowAddForm(null)}
                                 />
-                                <Separator className="my-2" />
-                            </>
+                                <Separator className="my-4 h-[2px] bg-[var(--color-neo-border)]" />
+                            </div>
                         )}
 
                         {/* Existing Accounts */}

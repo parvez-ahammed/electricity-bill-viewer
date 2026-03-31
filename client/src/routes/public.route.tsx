@@ -30,7 +30,7 @@ export const publicRoutes: RouteObject[] = [
                 element: <MainLayout />,
                 children: [
                     { path: "", element: <HomePage /> },
-                    { path: "accounts", element: <AccountManagementPage /> },
+                    { path: "settings", element: <AccountManagementPage /> },
                 ],
             },
         ],

@@ -12,11 +12,11 @@ export const Navbar = () => {
     const { isRefreshing, handleRefresh } = useRefresh();
     const { isSendingTelegram, handleSendTelegram } = useTelegram();
     
-    // Check if we're on the account management page
-    const isAccountManagementPage = location.pathname === "/accounts";
+    // Check if we're on the settings page
+    const isSettingsPage = location.pathname === "/settings";
 
     return (
-        <header className="sticky top-0 z-20 border-y border-black bg-white/80 px-2 backdrop-blur-md supports-backdrop-filter:bg-white/70">
+        <header className="sticky top-0 z-20 border-b-[4px] border-black bg-[var(--color-neo-bg)]/95 px-2 backdrop-blur-md">
             <div className="container mx-auto max-w-7xl">
                 <div className="flex h-16 items-center justify-between">
                     <div className="flex items-center">
@@ -29,7 +29,7 @@ export const Navbar = () => {
 
                     <div className="flex items-center gap-2">
                         {/* Cache Refresh Button - Only show on dashboard */}
-                        {!isAccountManagementPage && (
+                        {!isSettingsPage && (
                             <Button
                                 onClick={handleRefresh}
                                 variant="outline"
@@ -46,7 +46,7 @@ export const Navbar = () => {
                         )}
 
                         {/* Telegram Send Button - Only show on dashboard */}
-                        {!isAccountManagementPage && (
+                        {!isSettingsPage && (
                             <Button
                                 onClick={handleSendTelegram}
                                 variant="outline"
@@ -64,16 +64,16 @@ export const Navbar = () => {
                             </Button>
                         )}
 
-                        {/* Account Management Button */}
-                        <Link to="/accounts">
+                        {/* Settings Button */}
+                        <Link to="/settings">
                             <Button
-                                variant={isAccountManagementPage ? "default" : "outline"}
+                                variant={isSettingsPage ? "default" : "outline"}
                                 size="sm"
                                 className="flex items-center gap-2"
-                                title="Account Management"
+                                title="Settings"
                             >
                                 <Settings className="h-4 w-4" />
-                                <span className="hidden sm:inline">Accounts</span>
+                                <span className="hidden sm:inline">Settings</span>
                             </Button>
                         </Link>
 

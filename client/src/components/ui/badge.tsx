@@ -4,18 +4,18 @@ import { type VariantProps, cva } from "class-variance-authority";
 import * as React from "react";
 
 const badgeVariants = cva(
-    "inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[color,box-shadow] overflow-hidden",
+    "inline-flex items-center justify-center rounded-none border-[2px] border-[var(--color-neo-border)] px-3 py-1 text-xs font-bold uppercase tracking-wide w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:ring-0 transition-all overflow-hidden shadow-neo-sm hover:-translate-y-[1px] hover:shadow-neo",
     {
         variants: {
             variant: {
                 default:
-                    "border-transparent bg-primary text-primary-foreground [a&]:hover:bg-primary/90",
+                    "bg-[var(--color-neo-primary)] text-white [a&]:hover:bg-[var(--color-neo-primary)]",
                 secondary:
-                    "border-transparent bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90",
+                    "bg-[var(--color-neo-accent)] text-black [a&]:hover:bg-[var(--color-neo-accent)]",
                 destructive:
-                    "border-transparent bg-destructive text-white [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40",
+                    "bg-[var(--color-neo-destructive)] text-white [a&]:hover:bg-[var(--color-neo-destructive)]",
                 outline:
-                    "text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
+                    "bg-white text-black [a&]:hover:bg-[var(--color-neo-muted)]",
             },
         },
         defaultVariants: {

@@ -1,9 +1,14 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
-:root {
-    font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&family=Work+Sans:ital,wght@0,400;0,600;0,800;1,400;1,600;1,800&display=swap');
 
-    background-color: #ffffff;
+:root {
+    font-family: "Work Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+    background-color: var(--color-neo-bg);
+    background-image: radial-gradient(rgba(26, 26, 26, 0.15) 1.5px, transparent 0);
+    background-size: 32px 32px;
+    color: var(--color-neo-text);
 
     font-synthesis: none;
     text-rendering: optimizeLegibility;
@@ -11,7 +16,19 @@
     -moz-osx-font-smoothing: grayscale;
     --color-black: #000000;
     --color-white: #ffffff;
-    --color-destructive-foreground: #e50046;
+    --color-destructive-foreground: #ffffff;
+    
+    /* Neo-Brutalism Theme Core */
+    --color-neo-bg: #f4f0ea;
+    --color-neo-text: #1a1a1a;
+    --color-neo-primary: #ff0055;
+    --color-neo-secondary: #00ffaa;
+    --color-neo-accent: #ffcc00;
+    --color-neo-accent-2: #33bbff;
+    --color-neo-border: #1a1a1a;
+    --color-neo-card: #ffffff;
+    --color-neo-destructive: #ff3333;
+    --color-neo-muted: #e8e8e8;
 }
 
 .logo {
@@ -43,29 +60,59 @@
 }
 
 @theme {
-    /* Theme colors */
+    /* Base theme colors */
     --color-white: var(--color-white);
-    --color-primary: var(--color-black);
-
-    --color-secondary: var(--color-secondary);
-    --color-tertiary: var(--color-tertiary);
-    --color-inverted: var(--color-white);
-    --color-disable: var(--color-tertiary);
-    --color-brand: var(--color-brand);
-    --color-success: var(--color-success);
-    --color-warning: var(--color-warning);
-    --color-danger: var(--color-danger);
-    --color-dark: var(--color-tertiary);
+    --color-black: var(--color-black);
+    --color-primary: var(--color-neo-primary);
+    --color-secondary: var(--color-neo-secondary);
+    --color-tertiary: var(--color-neo-accent);
+    --color-destructive: var(--color-neo-destructive);
+    --color-muted: var(--color-neo-muted);
+    
+    --color-inverted: var(--color-black);
+    --color-disable: var(--color-neo-muted);
+    --color-brand: var(--color-neo-primary);
+    --color-success: #00ffaa;
+    --color-warning: #ffcc00;
+    --color-danger: #ff0055;
+    --color-dark: var(--color-neo-text);
     --color-light: var(--color-white);
-    --color-background: var(--color-white);
-    --color-destructive-foreground: var(--color-destructive-foreground);
-    --color-primary-foreground: var(--color-white);
+    --color-background: var(--color-neo-bg);
+    --color-destructive-foreground: var(--color-white);
+    --color-primary-foreground: var(--color-neo-text);
+    --color-secondary-foreground: var(--color-neo-text);
+    --color-muted-foreground: #4a4a4a;
+
+    --font-heading: "Work Sans", sans-serif;
+    --font-body: "Space Mono", monospace;
+    
+    --radius-neo: 4px;
+    
+    --shadow-neo: 4px 4px 0px var(--color-neo-border);
+    --shadow-neo-lg: 8px 8px 0px var(--color-neo-border);
+    --shadow-neo-sm: 2px 2px 0px var(--color-neo-border);
+    
+    --shadow-neo-hover: 6px 6px 0px var(--color-neo-border);
+    --shadow-neo-hover-lg: 10px 10px 0px var(--color-neo-border);
+    
+    --shadow-neo-active: 0px 0px 0px transparent;
 }
 @layer utilities {
-    /* Add custom utilities or extend existing ones here */
+    .neo-border {
+        border: 3px solid var(--color-neo-border);
+    }
+    .neo-border-2 {
+        border: 2px solid var(--color-neo-border);
+    }
+    .neo-table-cell {
+        border-right: 3px solid var(--color-neo-border);
+    }
+    .neo-table-cell:last-child {
+        border-right: none;
+    }
 }
 div {
-    color: black;
+    color: var(--color-neo-text);
 }
 /* Override Tailwind Typography styles for markdown preview */
 

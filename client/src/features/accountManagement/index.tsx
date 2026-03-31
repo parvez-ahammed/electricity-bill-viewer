@@ -10,13 +10,13 @@ import { NotificationManagement } from "./components/NotificationManagement";
 
 export const AccountManagement = () => {
     return (
-        <div className="space-y-6">
-            <Card className="border-none pt-2 pb-0 shadow-none sm:border sm:shadow-none">
+        <div className="space-y-2 pt-4">
+            <Card className="border-none bg-transparent pt-2 pb-0 shadow-none mt-0">
                 <CardHeader className="hidden px-0 py-2 sm:block sm:px-0 sm:py-3">
-                    <CardTitle className="text-base sm:text-lg">
+                    <CardTitle className="text-lg sm:text-2xl font-black uppercase tracking-tighter">
                         Account Management
                     </CardTitle>
-                    <CardDescription className="text-xs sm:text-sm">
+                    <CardDescription className="text-sm font-bold text-black/60">
                         Manage your electricity provider accounts
                     </CardDescription>
                 </CardHeader>

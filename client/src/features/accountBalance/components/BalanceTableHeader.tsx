@@ -8,19 +8,19 @@ const COLUMN_WIDTHS: Record<string, string> = {
     "Customer Name": "w-[140px] min-w-[140px] max-w-[140px]",
     Provider: "w-[120px] min-w-[120px]",
     "Account Type": "w-[140px] min-w-[140px]",
-    Remaining: "w-[120px] min-w-[120px]",
-    Updated: "w-[120px] min-w-[120px]",
-    Recharged: "w-[120px] min-w-[120px]",
+    Remaining: "w-[100px] min-w-[100px]",
+    Updated: "w-[100px] min-w-[100px]",
+    Recharged: "w-[100px] min-w-[100px]",
 };
 
 export const BalanceTableHeader = () => {
     return (
-        <TableHeader className="bg-muted/50">
-            <TableRow className="hover:bg-muted/50">
+        <TableHeader>
+            <TableRow className="h-10 border-b-[3px] border-[var(--color-neo-border)]">
                 {TABLE_HEADERS.map((header) => (
                     <TableHead
                         key={header}
-                        className={`text-foreground px-4 font-semibold whitespace-nowrap ${COLUMN_WIDTHS[header] || ""}`}
+                        className={`py-2 text-xs font-black uppercase tracking-wider text-black neo-table-cell ${COLUMN_WIDTHS[header] || ""}`}
                     >
                         {header}
                     </TableHead>

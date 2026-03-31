@@ -4,8 +4,8 @@ import {
     AccordionItem,
     AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 
 import { PostBalanceDetails } from "../constants/balance.constant";
 import { formatDate } from "../utils/dateUtils";
@@ -23,8 +23,8 @@ export const BalanceCardView = ({ account }: BalanceCardViewProps) => {
         lastPaymentDate !== "-" ? formatDate(lastPaymentDate) : "-";
 
     return (
-        <Card className="overflow-hidden py-0 transition-all hover:shadow-md">
-            <CardContent className="p-3">
+        <Card className="overflow-hidden py-0 transition-all bg-transparent shadow-none border-none hover:shadow-none hover:translate-y-0">
+            <CardContent className="p-0">
                 {/* Header Section */}
                 <div className="mb-2 flex items-center justify-between gap-2">
                     <div className="min-w-0 flex-1">
@@ -41,107 +41,102 @@ export const BalanceCardView = ({ account }: BalanceCardViewProps) => {
                 {/* Balance Section with Accordion */}
                 <Accordion type="single" collapsible>
                     <AccordionItem value="details" className="border-none">
-                        <div className="bg-primary/5 rounded-lg p-2.5">
-                            <div className="flex items-center justify-between">
-                                <p className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
-                                    Current Balance
-                                </p>
-                                <p className="text-lg font-bold">
-                                    ৳ {account.balanceRemaining}
-                                </p>
-                            </div>
-                            <div className="mt-1 flex items-center justify-between">
-                                <p className="text-muted-foreground text-xs">
-                                    As of{" "}
-                                    {formatDate(account.balanceLatestDate)}
-                                </p>
-                                <AccordionTrigger className="text-muted-foreground hover:text-foreground py-0 text-xs font-medium hover:no-underline">
-                                    Details
-                                </AccordionTrigger>
-                            </div>
-                        </div>
-                        <AccordionContent className="space-y-2.5 pt-2">
-                            {/* Location */}
-                            <div>
-                                <p className="text-muted-foreground text-xs font-medium">
-                                    Location
-                                </p>
-                                <p className="mt-0.5 text-sm font-medium">
-                                    {account.flatNameOrLocation ||
-                                        account.location ||
-                                        "-"}
-                                </p>
-                            </div>
-
-                            {/* Divider */}
-                            <div className="border-border border-t" />
-
-                            {/* Customer Number & Type */}
-                            <div className="flex items-center justify-between">
-                                <div className="flex-1">
-                                    <p className="text-muted-foreground text-xs font-medium">
-                                        Customer Number
+                        <div className="bg-white border-[3px] border-[var(--color-neo-border)] shadow-neo">
+                            {/* Summary Trigger Part */}
+                            <div className="p-4">
+                                <div className="flex items-center justify-between">
+                                    <p className="text-black text-[10px] font-bold tracking-widest uppercase">
+                                        Current Balance
                                     </p>
-                                    <p className="mt-0.5 text-sm font-medium">
-                                        {account.customerNumber ||
-                                            account.accountId ||
+                                    <p className="text-2xl font-black text-[var(--color-neo-primary)]">
+                                        ৳ {account.balanceRemaining}
+                                    </p>
+                                </div>
+                                <div className="mt-2 flex items-center justify-between border-t-2 border-[var(--color-neo-border)] pt-2">
+                                    <p className="text-black/60 text-xs font-bold font-mono">
+                                        AS OF {formatDate(account.balanceLatestDate).toUpperCase()}
+                                    </p>
+                                    <AccordionTrigger className="text-black hover:text-[var(--color-neo-primary)] py-0 text-xs font-black uppercase hover:no-underline">
+                                        Details
+                                    </AccordionTrigger>
+                                </div>
+                            </div>
+                            
+                            {/* Expanded Content Part */}
+                            <AccordionContent className="space-y-2.5 px-4 pb-4 border-t-2 border-[var(--color-neo-border)] pt-4">
+                                {/* Location */}
+                                <div>
+                                    <p className="text-black/60 text-[10px] font-black uppercase tracking-wider">
+                                        Location
+                                    </p>
+                                    <p className="mt-0.5 text-sm font-bold">
+                                        {account.flatNameOrLocation ||
+                                            account.location ||
                                             "-"}
                                     </p>
                                 </div>
-                                <div className="flex-1 text-right">
-                                    <p className="text-muted-foreground text-xs font-medium">
-                                        Type
-                                    </p>
-                                    <Badge
-                                        variant="secondary"
-                                        className="mt-0.5 text-xs"
-                                    >
-                                        {account.accountType}
-                                    </Badge>
-                                </div>
-                            </div>
 
-                            {/* Divider */}
-                            <div className="border-border border-t" />
+                                <Separator className="h-[2px] bg-[var(--color-neo-border)] opacity-20" />
 
-                            {/* Recharged Info */}
-                            <div>
-                                <p className="text-muted-foreground text-xs font-medium">
-                                    Recharged
-                                </p>
-                                <div className="mt-0.5 flex items-center justify-between">
-                                    <p className="text-sm font-medium">
-                                        ৳ {account.lastPayAmtOnSa || "-"}
-                                    </p>
-                                    <p className="text-muted-foreground text-xs">
-                                        {formattedLastPaymentDate}
-                                    </p>
-                                </div>
-                            </div>
-
-                            {/* Connection Status */}
-                            {account.connectionStatus && (
-                                <>
-                                    <div className="border-border border-t" />
-                                    <div className="flex items-center justify-between">
-                                        <p className="text-muted-foreground text-xs font-medium">
-                                            Status
+                                {/* Customer Number & Type */}
+                                <div className="flex items-center justify-between">
+                                    <div className="flex-1">
+                                        <p className="text-black/60 text-[10px] font-black uppercase tracking-wider">
+                                            Customer Number
                                         </p>
-                                        <Badge
-                                            variant={
-                                                account.connectionStatus ===
-                                                "Active"
-                                                    ? "default"
-                                                    : "secondary"
-                                            }
-                                            className="text-xs"
-                                        >
-                                            {account.connectionStatus}
-                                        </Badge>
+                                        <p className="mt-0.5 text-sm font-bold font-mono">
+                                            {account.customerNumber ||
+                                                account.accountId ||
+                                                "-"}
+                                        </p>
                                     </div>
-                                </>
-                            )}
-                        </AccordionContent>
+                                    <div className="flex-1 text-right">
+                                        <p className="text-black/60 text-[10px] font-black uppercase tracking-wider">
+                                            Type
+                                        </p>
+                                        <div className="mt-1 inline-flex bg-[var(--color-neo-accent)] px-2 py-0.5 text-[10px] font-black uppercase neo-border-2">
+                                            {account.accountType}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <Separator className="h-[2px] bg-[var(--color-neo-border)] opacity-20" />
+
+                                {/* Recharged Info */}
+                                <div>
+                                    <p className="text-black/60 text-[10px] font-black uppercase tracking-wider">
+                                        Last Recharged
+                                    </p>
+                                    <div className="mt-0.5 flex items-center justify-between">
+                                        <p className="text-sm font-black text-green-700">
+                                            ৳ {account.lastPayAmtOnSa || "-"}
+                                        </p>
+                                        <p className="text-black/60 text-xs font-bold font-mono">
+                                            {formattedLastPaymentDate}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Connection Status */}
+                                {account.connectionStatus && (
+                                    <>
+                                        <Separator className="h-[2px] bg-[var(--color-neo-border)] opacity-20" />
+                                        <div className="flex items-center justify-between">
+                                            <p className="text-black/60 text-[10px] font-black uppercase tracking-wider">
+                                                Status
+                                            </p>
+                                            <div className={`mt-0.5 inline-flex px-2 py-0.5 text-[10px] font-black uppercase neo-border-2 ${
+                                                account.connectionStatus === "Active" 
+                                                ? "bg-[var(--color-neo-secondary)]" 
+                                                : "bg-[var(--color-neo-muted)]"
+                                            }`}>
+                                                {account.connectionStatus}
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+                            </AccordionContent>
+                        </div>
                     </AccordionItem>
                 </Accordion>
             </CardContent>

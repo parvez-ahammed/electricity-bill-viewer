@@ -27,7 +27,7 @@ export const AccountBalance = () => {
 
     if (loading) {
         return (
-            <Card className="border-none pt-4 pb-0 shadow-none sm:border sm:shadow-none">
+            <Card className="border-none bg-transparent pt-4 pb-0 shadow-none">
                 <CardContent className="p-0">
                     <div className="flex items-center justify-center py-8">
                         <div className="border-primary h-8 w-8 animate-spin rounded-full border-b-2"></div>
@@ -42,7 +42,7 @@ export const AccountBalance = () => {
 
     if (error) {
         return (
-            <Card className="border-none pt-4 pb-0 shadow-none sm:border sm:shadow-none">
+            <Card className="border-none bg-transparent pt-4 pb-0 shadow-none">
                 <CardContent className="p-0">
                     <div className="text-destructive flex items-center justify-center py-8">
                         <span>Error: {error}</span>
@@ -54,7 +54,7 @@ export const AccountBalance = () => {
 
     if (accountsData.length === 0) {
         return (
-            <Card className="border-none pt-4 pb-0 shadow-none sm:border sm:shadow-none">
+            <Card className="border-none bg-transparent pt-4 pb-0 shadow-none">
                 <CardContent className="p-0">
                     <div className="text-muted-foreground flex items-center justify-center py-8">
                         <span>No account data available</span>
@@ -65,12 +65,12 @@ export const AccountBalance = () => {
     }
 
     return (
-        <Card className="border-none pt-4 pb-0 shadow-none sm:border sm:shadow-none">
+        <Card className="border-none bg-transparent pt-4 pb-0 shadow-none sm:pt-4">
             <CardHeader className="hidden px-0 py-4 sm:block sm:px-0 sm:py-6">
-                <CardTitle className="text-lg sm:text-xl">
+                <CardTitle className="text-lg sm:text-2xl font-black uppercase tracking-tighter">
                     Account Balance Details
                 </CardTitle>
-                <CardDescription className="text-sm">
+                <CardDescription className="text-sm font-bold text-black/60">
                     View your electricity account information and balance
                 </CardDescription>
             </CardHeader>

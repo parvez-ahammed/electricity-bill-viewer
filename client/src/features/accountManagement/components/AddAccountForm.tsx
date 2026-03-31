@@ -102,14 +102,14 @@ export const AddAccountForm = ({
     };
 
     return (
-        <div className="bg-muted/20 rounded border border-dashed p-3">
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <div className="bg-white border-[3px] border-[var(--color-neo-border)] shadow-neo p-6 rounded-none">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-1">
                     {/* Username */}
-                    <div className="space-y-1">
+                    <div className="space-y-2">
                         <Label
                             htmlFor={`username-${provider}`}
-                            className="text-xs"
+                            className="text-xs font-black uppercase tracking-widest"
                         >
                             Username *
                         </Label>
@@ -132,7 +132,7 @@ export const AddAccountForm = ({
                         <div className="space-y-1">
                             <Label
                                 htmlFor={`password-${provider}`}
-                                className="text-xs"
+                                className="text-xs font-black uppercase tracking-widest"
                             >
                                 Password *
                             </Label>
@@ -156,7 +156,7 @@ export const AddAccountForm = ({
                         <div className="space-y-1">
                             <Label
                                 htmlFor={`clientSecret-${provider}`}
-                                className="text-xs"
+                                className="text-xs font-black uppercase tracking-widest"
                             >
                                 Client Secret *
                             </Label>

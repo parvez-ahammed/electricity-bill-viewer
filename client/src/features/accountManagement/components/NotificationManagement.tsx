@@ -105,17 +105,17 @@ export const NotificationManagement = () => {
 
     return (
         <>
-            <Card className="border-none pt-2 pb-0 shadow-none sm:border sm:shadow-none mt-4">
+            <Card className="border-none bg-transparent pt-2 pb-0 shadow-none mt-0">
                 <CardHeader className="hidden px-0 py-2 sm:block sm:px-0 sm:py-3">
-                    <CardTitle className="text-base sm:text-lg">
+                    <CardTitle className="text-lg sm:text-2xl font-black uppercase tracking-tighter">
                         Notification Management
                     </CardTitle>
-                    <CardDescription className="text-xs sm:text-sm">
+                    <CardDescription className="text-sm font-bold text-black/60">
                         Configure Telegram alerts for all your accounts
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="p-0 sm:pb-4">
-                    <div className="bg-card rounded-lg border p-4 space-y-4">
+                <CardContent className="p-0 sm:pb-4 text-black">
+                    <div className="bg-transparent space-y-4">
                         <div className="flex items-center justify-between">
                             <div className="space-y-1">
                                 <h4 className="text-sm font-medium leading-none">Telegram Notifications</h4>
@@ -125,7 +125,7 @@ export const NotificationManagement = () => {
                             </div>
                             {hasSettings && (
                                 <div className="flex items-center space-x-2">
-                                    <span className="text-xs text-muted-foreground">Active</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-black">Active</span>
                                     <Switch
                                         checked={settings.isActive}
                                         onCheckedChange={handleToggle}
@@ -143,9 +143,9 @@ export const NotificationManagement = () => {
                             </div>
                         ) : !hasSettings && !isEditing ? (
                             <Button
-                                variant="outline"
+                                variant="default"
                                 size="sm"
-                                className="w-fit text-xs h-8"
+                                className="w-fit text-[10px] uppercase font-black tracking-widest h-8"
                                 onClick={startEditing}
                             >
                                 Configure Telegram
@@ -183,37 +183,41 @@ export const NotificationManagement = () => {
                                 </Button>
                             </form>
                         ) : (
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/40 p-2 rounded-md">
-                                <span className="flex-1 font-mono text-xs">Chat ID: {settings?.chatId}</span>
-                                <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-7 w-7 p-0 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
-                                    onClick={startEditing}
-                                >
-                                    <Edit2 className="h-3 w-3" />
-                                </Button>
-                                <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-7 w-7 p-0 text-red-600 hover:bg-red-50 hover:text-red-700"
-                                    onClick={() => setShowDeleteDialog(true)}
-                                    disabled={deleteMutation.isPending}
-                                >
-                                    {deleteMutation.isPending ? (
-                                        <Loader2 className="h-3 w-3 animate-spin" />
-                                    ) : (
-                                        <Trash2 className="h-3 w-3" />
-                                    )}
-                                </Button>
+                            <div className="flex items-center gap-2 text-sm text-black bg-[var(--color-neo-accent-2)]/10 p-3 neo-border border-[2px]">
+                                <span className="flex-1 font-mono text-xs font-bold uppercase tracking-wider">
+                                    CHAT ID: {settings?.chatId}
+                                </span>
+                                <div className="flex gap-1">
+                                    <Button
+                                        size="xs"
+                                        variant="ghost"
+                                        className="h-8 w-8 text-blue-600 hover:bg-blue-600 hover:text-white"
+                                        onClick={startEditing}
+                                    >
+                                        <Edit2 className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                        size="xs"
+                                        variant="ghost"
+                                        className="h-8 w-8 text-red-600 hover:bg-red-600 hover:text-white"
+                                        onClick={() => setShowDeleteDialog(true)}
+                                        disabled={deleteMutation.isPending}
+                                    >
+                                        {deleteMutation.isPending ? (
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                        ) : (
+                                            <Trash2 className="h-4 w-4" />
+                                        )}
+                                    </Button>
+                                </div>
                             </div>
                         )}
 
                         {/* Status Indicator if not active but set */}
                         {hasSettings && !settings.isActive && (
-                            <div className="text-xs text-amber-500 flex items-center gap-1 bg-amber-50 dark:bg-amber-950/20 p-2 rounded-md">
+                            <div className="text-[10px] font-black uppercase tracking-widest text-black flex items-center gap-1 bg-[var(--color-neo-accent)] p-2 neo-border-2">
                                 <AlertCircle className="h-3 w-3" />
-                                Notifications are currently paused
+                                Notifications Paused
                             </div>
                         )}
                     </div>
