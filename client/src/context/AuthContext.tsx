@@ -1,5 +1,12 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { config } from '@/common/constants/config.constant';
+import { CurrentUser, authApi } from "@/common/apis/auth.api";
+import { STORAGE_KEYS } from "@/common/constants/storage.constant";
+import React, {
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useState,
+} from "react";
 
 interface User {
     userId: string;
@@ -17,57 +24,51 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+    children,
+}) => {
     const [user, setUser] = useState<User | null>(null);
     const [token, setToken] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Initialize auth state from localStorage
-    useEffect(() => {
-        const storedToken = localStorage.getItem('auth_token');
-        if (storedToken) {
-            setToken(storedToken);
-            fetchCurrentUser(storedToken);
-        } else {
-            setIsLoading(false);
-        }
+    const clearSessionStorageKeys = useCallback(() => {
+        localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+        localStorage.removeItem(STORAGE_KEYS.ELECTRICITY_BALANCE_DATA);
     }, []);
 
-    const fetchCurrentUser = async (authToken: string) => {
-        try {
-            const response = await fetch(`${config.backendApiUrl}/auth/me`, {
-                headers: {
-                    Authorization: `Bearer ${authToken}`,
-                },
-            });
+    const logout = useCallback(() => {
+        setUser(null);
+        setToken(null);
+        clearSessionStorageKeys();
+        setIsLoading(false);
+    }, [clearSessionStorageKeys]);
 
-            if (response.ok) {
-                const data = await response.json();
-                setUser(data.data);
-            } else {
-                // Token is invalid, clear it
-                logout();
-            }
-        } catch (error) {
-            console.error('Failed to fetch current user:', error);
+    const fetchCurrentUser = useCallback(async () => {
+        try {
+            const userData: CurrentUser = await authApi.getCurrentUser();
+            setUser(userData);
+        } catch {
             logout();
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [logout]);
+
+    // Initialize auth state from localStorage
+    useEffect(() => {
+        const storedToken = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+        if (storedToken) {
+            setToken(storedToken);
+            fetchCurrentUser();
+        } else {
+            setIsLoading(false);
+        }
+    }, [fetchCurrentUser]);
 
     const login = async (newToken: string) => {
         setToken(newToken);
-        localStorage.setItem('auth_token', newToken);
-        await fetchCurrentUser(newToken);
-    };
-
-    const logout = () => {
-        setUser(null);
-        setToken(null);
-        // Clear all localStorage to prevent data leakage between users
-        localStorage.clear();
-        setIsLoading(false);
+        localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, newToken);
+        await fetchCurrentUser();
     };
 
     const value: AuthContextType = {
@@ -79,13 +80,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading,
     };
 
-    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+    return (
+        <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+    );
 };
 
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (context === undefined) {
-        throw new Error('useAuth must be used within an AuthProvider');
+        throw new Error("useAuth must be used within an AuthProvider");
     }
     return context;
 };

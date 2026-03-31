@@ -1,6 +1,7 @@
 import { EMPTY_STRING } from "@/common/constants/app.constant";
+import { STORAGE_KEYS } from "@/common/constants/storage.constant";
 
-type CacheItems = "preferences";
+type CacheItems = typeof STORAGE_KEYS.PREFERENCES;
 
 export interface CacheService {
     save(key: CacheItems, val: string): Promise<void>;

@@ -3,15 +3,11 @@ import {
     ElectricityUsageResponse,
     electricityApi,
 } from "@/common/apis/electricity.api";
+import { STORAGE_KEYS } from "@/common/constants/storage.constant";
 import { useLocalStorage } from "@/common/hooks/useLocalStorage";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
-
-// Extended interface to track if data is from cache
-interface ExtendedElectricityUsageResponse extends ElectricityUsageResponse {
-    fromCache?: boolean;
-}
 
 import {
     CACHE_EXPIRY_DURATION,
@@ -19,6 +15,11 @@ import {
     CACHE_STALE_TIME,
     PostBalanceDetails,
 } from "../constants/balance.constant";
+
+// Extended interface to track if data is from cache
+interface ExtendedElectricityUsageResponse extends ElectricityUsageResponse {
+    fromCache?: boolean;
+}
 
 const transformAccountData = (
     account: ElectricityAccount
@@ -48,18 +49,18 @@ const transformAccountData = (
 };
 
 export const useBalanceData = () => {
-    const [skipCache] = useState(false);
+    const skipCache = false;
     const hasShownToast = useRef(false);
     const isRefreshing = useRef(false);
     const hasInitiallyLoaded = useRef(false);
-    const lastDataSource = useRef<'cache' | 'api' | null>(null);
+    const lastDataSource = useRef<"cache" | "api" | null>(null);
     const {
         value: cachedData,
         setValue: setCachedData,
         clearValue: clearCache,
         hasValidData,
     } = useLocalStorage<ElectricityUsageResponse | null>(
-        "electricity_balance_data",
+        STORAGE_KEYS.ELECTRICITY_BALANCE_DATA,
         null,
         {
             expiryDuration: CACHE_EXPIRY_DURATION,
@@ -67,27 +68,28 @@ export const useBalanceData = () => {
         }
     );
 
-    const { data, isLoading, error, refetch, isFetching } = useQuery<ExtendedElectricityUsageResponse>({
-        queryKey: ["electricityBalance", skipCache],
-        queryFn: async (): Promise<ExtendedElectricityUsageResponse> => {
-            // Determine if we should skip cache (either from state or refresh)
-            const shouldSkipCache = skipCache || isRefreshing.current;
+    const { data, isLoading, error, refetch, isFetching } =
+        useQuery<ExtendedElectricityUsageResponse>({
+            queryKey: ["electricityBalance", skipCache],
+            queryFn: async (): Promise<ExtendedElectricityUsageResponse> => {
+                // Determine if we should skip cache (either from state or refresh)
+                const shouldSkipCache = skipCache || isRefreshing.current;
 
-            // Check localStorage first if not skipping cache
-            if (!shouldSkipCache && hasValidData() && cachedData) {
-                // Mark as cached data to prevent success toast
-                // Don't reset hasShownToast for cached data
-                lastDataSource.current = 'cache';
-                return { ...cachedData, fromCache: true };
-            }
+                // Check localStorage first if not skipping cache
+                if (!shouldSkipCache && hasValidData() && cachedData) {
+                    // Mark as cached data to prevent success toast
+                    // Don't reset hasShownToast for cached data
+                    lastDataSource.current = "cache";
+                    return { ...cachedData, fromCache: true };
+                }
 
-            // Only reset toast flag when making actual API call
-            hasShownToast.current = false;
-            lastDataSource.current = 'api';
+                // Only reset toast flag when making actual API call
+                hasShownToast.current = false;
+                lastDataSource.current = "api";
 
-            // Fetch from API
-            try {
-                const response = await electricityApi.getUsageData(shouldSkipCache);
+                // Fetch from API
+                const response =
+                    await electricityApi.getUsageData(shouldSkipCache);
 
                 // Save to localStorage on successful fetch
                 if (response.success) {
@@ -96,19 +98,19 @@ export const useBalanceData = () => {
 
                 // Mark as fresh data
                 return { ...response, fromCache: false };
-            } catch (error: any) {
-                // Generic error handling is sufficient now that backend returns 200 for empty state
-                throw error;
-            }
-        },
-        staleTime: skipCache ? 0 : CACHE_STALE_TIME,
-        gcTime: CACHE_GC_TIME,
-        refetchOnWindowFocus: false,
-    });
+            },
+            staleTime: skipCache ? 0 : CACHE_STALE_TIME,
+            gcTime: CACHE_GC_TIME,
+            refetchOnWindowFocus: false,
+        });
 
     // Show toasts based on data
     useEffect(() => {
-        if (data && !hasShownToast.current && lastDataSource.current === 'api') {
+        if (
+            data &&
+            !hasShownToast.current &&
+            lastDataSource.current === "api"
+        ) {
             hasShownToast.current = true;
 
             if (data.success && data.accounts.length > 0) {
@@ -130,11 +132,11 @@ export const useBalanceData = () => {
                 // Show "no accounts" error for API data
                 toast.error("No electricity accounts found");
             }
-            
+
             // Mark that we've initially loaded data
             hasInitiallyLoaded.current = true;
         }
-    }, [data, skipCache]);
+    }, [data]);
 
     // Show error toast
     useEffect(() => {
@@ -147,20 +149,23 @@ export const useBalanceData = () => {
         }
     }, [error]);
 
-    const accountsData =
-        data?.accounts?.map(transformAccountData) ??
-        ([] as PostBalanceDetails[]);
+    const accountsData = useMemo(
+        () =>
+            data?.accounts?.map(transformAccountData) ??
+            ([] as PostBalanceDetails[]),
+        [data]
+    );
 
-    const refreshWithSkipCache = async () => {
+    const refreshWithSkipCache = useCallback(async () => {
         // Clear localStorage before fetching fresh data
         clearCache();
-        
+
         // Reset toast flag to allow showing success message for refresh
         hasShownToast.current = false;
-        
+
         // Set refresh flag to force skip cache without changing query key
         isRefreshing.current = true;
-        
+
         try {
             // Refetch with the current query key - this should only trigger ONE API call
             await refetch();
@@ -168,7 +173,7 @@ export const useBalanceData = () => {
             // Reset refresh flag
             isRefreshing.current = false;
         }
-    };
+    }, [clearCache, refetch]);
 
     return {
         accountsData,

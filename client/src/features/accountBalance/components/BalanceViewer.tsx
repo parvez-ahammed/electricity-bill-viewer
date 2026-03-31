@@ -11,6 +11,12 @@ interface BalanceTableProps {
 }
 
 export const BalanceViewer = ({ accountsData }: BalanceTableProps) => {
+    const getAccountKey = (account: PostBalanceDetails) => {
+        return [account.provider, account.accountId, account.customerNumber]
+            .filter(Boolean)
+            .join("-");
+    };
+
     if (accountsData.length === 0) {
         return (
             <div className="flex items-center justify-center py-8">
@@ -25,11 +31,10 @@ export const BalanceViewer = ({ accountsData }: BalanceTableProps) => {
         <>
             {/* Mobile Card View */}
             <div className="block space-y-4 md:hidden">
-                {accountsData.map((account, index) => (
+                {accountsData.map((account) => (
                     <BalanceCardView
-                        key={`${account.accountId}-${index}`}
+                        key={getAccountKey(account)}
                         account={account}
-                        index={index}
                     />
                 ))}
             </div>
@@ -43,7 +48,7 @@ export const BalanceViewer = ({ accountsData }: BalanceTableProps) => {
                             <TableBody>
                                 {accountsData.map((account, index) => (
                                     <BalanceTableRow
-                                        key={`${account.accountId}-${index}`}
+                                        key={getAccountKey(account)}
                                         account={account}
                                         index={index}
                                     />

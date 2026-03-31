@@ -1,26 +1,43 @@
-import { ElectricityProvider } from "@/common/apis/accounts.api";
+import { Account, ElectricityProvider } from "@/common/apis/accounts.api";
+import { Plus } from "lucide-react";
+import { useMemo, useState } from "react";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Plus } from "lucide-react";
-import { useState } from "react";
+
 import { useAccounts } from "../hooks/useAccounts";
+
 import { AccountTable } from "./AccountTable";
 import { AddAccountForm } from "./AddAccountForm";
 import { CorruptionHelp } from "./CorruptionHelp";
 
-const PROVIDERS: { name: ElectricityProvider; displayName: string; color: string }[] = [
+const PROVIDERS: {
+    name: ElectricityProvider;
+    displayName: string;
+    color: string;
+}[] = [
     { name: "DPDC", displayName: "DPDC", color: "bg-blue-500" },
     { name: "NESCO", displayName: "NESCO", color: "bg-green-500" },
 ];
 
+const isCorruptedAccount = (account: Account) => {
+    return (
+        "_isCorrupted" in account.credentials &&
+        Boolean(account.credentials._isCorrupted)
+    );
+};
+
 export const AccountManagementDashboard = () => {
     const { accounts, groupedAccounts, isLoading, error } = useAccounts();
-    const [showAddForm, setShowAddForm] = useState<ElectricityProvider | null>(null);
-    
+    const [showAddForm, setShowAddForm] = useState<ElectricityProvider | null>(
+        null
+    );
+
     // Check if there are any corrupted accounts
-    const hasCorruptedAccounts = accounts.some(account => 
-        '_isCorrupted' in account.credentials && account.credentials._isCorrupted
+    const hasCorruptedAccounts = useMemo(
+        () => accounts.some((account) => isCorruptedAccount(account)),
+        [accounts]
     );
 
     if (isLoading) {
@@ -45,35 +62,38 @@ export const AccountManagementDashboard = () => {
     return (
         <div className="space-y-4">
             {/* Show corruption help if needed */}
-            {hasCorruptedAccounts && (
-                <CorruptionHelp />
-            )}
-            
+            {hasCorruptedAccounts && <CorruptionHelp />}
+
             {PROVIDERS.map((provider) => (
-                <Card key={provider.name} className="w-full p-0 gap-0">
-                    <CardHeader className="pb-0 pt-4 mb-0">
+                <Card key={provider.name} className="w-full gap-0 p-0">
+                    <CardHeader className="mb-0 pt-4 pb-0">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                <div className={`w-2 h-2 rounded-full ${provider.color}`} />
+                                <div
+                                    className={`h-2 w-2 rounded-full ${provider.color}`}
+                                />
                                 <CardTitle className="text-base">
                                     {provider.displayName}
                                 </CardTitle>
-                                <span className="text-xs text-muted-foreground">
-                                    ({groupedAccounts[provider.name]?.length || 0})
+                                <span className="text-muted-foreground text-xs">
+                                    (
+                                    {groupedAccounts[provider.name]?.length ||
+                                        0}
+                                    )
                                 </span>
                             </div>
                             <Button
                                 size="sm"
                                 variant="outline"
                                 onClick={() => setShowAddForm(provider.name)}
-                                className="flex items-center gap-1 h-8 px-2 text-xs"
+                                className="flex h-8 items-center gap-1 px-2 text-xs"
                             >
                                 <Plus className="h-3 w-3" />
                                 Add
                             </Button>
                         </div>
                     </CardHeader>
-                    <CardContent className="pt-0 pb-4 space-y-3">
+                    <CardContent className="space-y-3 pt-0 pb-4">
                         {/* Add Account Form */}
                         {showAddForm === provider.name && (
                             <>

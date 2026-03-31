@@ -1,11 +1,24 @@
+import { lazy } from "react";
 import { RouteObject } from "react-router-dom";
-
-import { AccountManagementPage } from "@/pages/accountManagement.page";
-import { ErrorPage } from "@/pages/error.page";
-import { HomePage } from "@/pages/home.page";
 
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { MainLayout } from "@/components/layout/mainLayout";
+
+const AccountManagementPage = lazy(() =>
+    import("@/pages/accountManagement.page").then((module) => ({
+        default: module.AccountManagementPage,
+    }))
+);
+const ErrorPage = lazy(() =>
+    import("@/pages/error.page").then((module) => ({
+        default: module.ErrorPage,
+    }))
+);
+const HomePage = lazy(() =>
+    import("@/pages/home.page").then((module) => ({
+        default: module.HomePage,
+    }))
+);
 
 export const publicRoutes: RouteObject[] = [
     {
@@ -46,4 +59,3 @@ export const publicRoutes: RouteObject[] = [
         ),
     },
 ];
-

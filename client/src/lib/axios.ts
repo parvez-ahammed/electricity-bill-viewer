@@ -1,4 +1,5 @@
 import { HTTP_METHOD } from "@/common/constants/http.constant";
+import { STORAGE_KEYS } from "@/common/constants/storage.constant";
 import axios, { AxiosRequestConfig } from "axios";
 
 const axiosInstance = axios.create({
@@ -10,7 +11,7 @@ const axiosInstance = axios.create({
 // Request interceptor to add JWT token
 axiosInstance.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('auth_token');
+        const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -27,8 +28,8 @@ axiosInstance.interceptors.response.use(
     (error) => {
         if (error.response?.status === 401) {
             // Clear auth state and redirect to login
-            localStorage.removeItem('auth_token');
-            window.location.href = '/login';
+            localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+            window.location.href = "/login";
         }
         return Promise.reject(error);
     }

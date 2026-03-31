@@ -1,15 +1,38 @@
-import { Account, DPDCCredentials, ElectricityProvider, NESCOCredentials, UpdateAccountRequest } from "@/common/apis/accounts.api";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { PasswordInput } from "@/components/ui/password-input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+    Account,
+    DPDCCredentials,
+    ElectricityProvider,
+    NESCOCredentials,
+    UpdateAccountRequest,
+} from "@/common/apis/accounts.api";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Check, Edit2, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { toast } from "sonner";
 import * as z from "zod";
+
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+
 import { useAccounts } from "../hooks/useAccounts";
 
 interface AccountTableProps {
@@ -23,18 +46,31 @@ type FormData = {
     clientSecret?: string;
 };
 
-const getSchema = (provider: ElectricityProvider) => z.object({
-    username: z.string().min(1, { message: "Username is required" }),
-    password: provider === "DPDC" 
-        ? z.string().min(1, { message: "Password is required for DPDC" }) 
-        : z.string().optional(),
-    clientSecret: provider === "DPDC" 
-        ? z.string().min(1, { message: "Client Secret is required for DPDC" }) 
-        : z.string().optional(),
-});
+const getSchema = (provider: ElectricityProvider) =>
+    z.object({
+        username: z.string().min(1, { message: "Username is required" }),
+        password:
+            provider === "DPDC"
+                ? z
+                      .string()
+                      .min(1, { message: "Password is required for DPDC" })
+                : z.string().optional(),
+        clientSecret:
+            provider === "DPDC"
+                ? z
+                      .string()
+                      .min(1, { message: "Client Secret is required for DPDC" })
+                : z.string().optional(),
+    });
 
 export const AccountTable = ({ accounts, provider }: AccountTableProps) => {
-    const { updateAccount, deleteAccount, forceDeleteAccount, isUpdating, isDeleting } = useAccounts();
+    const {
+        updateAccount,
+        deleteAccount,
+        forceDeleteAccount,
+        isUpdating,
+        isDeleting,
+    } = useAccounts();
     const [editingId, setEditingId] = useState<string | null>(null);
     const [deleteDialogId, setDeleteDialogId] = useState<string | null>(null);
 
@@ -45,17 +81,17 @@ export const AccountTable = ({ accounts, provider }: AccountTableProps) => {
         reset,
         setValue,
     } = useForm<FormData>({
-        resolver: zodResolver(getSchema(provider))
+        resolver: zodResolver(getSchema(provider)),
     });
 
     const startEdit = (account: Account) => {
         setEditingId(account.id);
         setValue("username", account.credentials.username);
-        if ('password' in account.credentials) {
+        if ("password" in account.credentials) {
             setValue("password", account.credentials.password);
         }
-        if ('clientSecret' in account.credentials) {
-            setValue("clientSecret", account.credentials.clientSecret || '');
+        if ("clientSecret" in account.credentials) {
+            setValue("clientSecret", account.credentials.clientSecret || "");
         }
     };
 
@@ -67,37 +103,36 @@ export const AccountTable = ({ accounts, provider }: AccountTableProps) => {
     const onSubmit = async (data: FormData) => {
         if (!editingId) return;
 
-        try {
-            let credentials;
-            
-            if (provider === "DPDC") {
-                credentials = {
-                    username: data.username,
-                    password: data.password!,
-                    clientSecret: data.clientSecret!,
-                } as DPDCCredentials;
-            } else {
-                credentials = {
-                    username: data.username,
-                } as NESCOCredentials;
-            }
+        let credentials;
 
-            const request: UpdateAccountRequest = {
-                credentials,
-            };
-
-            updateAccount({ id: editingId, data: request });
-            setEditingId(null);
-            reset();
-        } catch (error) {
-            toast.error("Failed to update account");
+        if (provider === "DPDC") {
+            credentials = {
+                username: data.username,
+                password: data.password!,
+                clientSecret: data.clientSecret!,
+            } as DPDCCredentials;
+        } else {
+            credentials = {
+                username: data.username,
+            } as NESCOCredentials;
         }
+
+        const request: UpdateAccountRequest = {
+            credentials,
+        };
+
+        updateAccount({ id: editingId, data: request });
+        setEditingId(null);
+        reset();
     };
 
     const handleDelete = (accountId: string) => {
-        const account = accounts.find(acc => acc.id === accountId);
-        const isCorrupted = account && '_isCorrupted' in account.credentials && account.credentials._isCorrupted;
-        
+        const account = accounts.find((acc) => acc.id === accountId);
+        const isCorrupted =
+            account &&
+            "_isCorrupted" in account.credentials &&
+            account.credentials._isCorrupted;
+
         if (isCorrupted) {
             forceDeleteAccount(accountId);
         } else {
@@ -108,7 +143,7 @@ export const AccountTable = ({ accounts, provider }: AccountTableProps) => {
 
     if (accounts.length === 0) {
         return (
-            <div className="text-center py-4 text-muted-foreground text-sm">
+            <div className="text-muted-foreground py-4 text-center text-sm">
                 No {provider} accounts configured.
             </div>
         );
@@ -120,9 +155,19 @@ export const AccountTable = ({ accounts, provider }: AccountTableProps) => {
                 <TableHeader>
                     <TableRow className="h-10">
                         <TableHead className="py-2 text-xs">Username</TableHead>
-                        {provider === "DPDC" && <TableHead className="py-2 text-xs">Password</TableHead>}
-                        {provider === "DPDC" && <TableHead className="py-2 text-xs">Client Secret</TableHead>}
-                        <TableHead className="w-[80px] py-2 text-xs">Actions</TableHead>
+                        {provider === "DPDC" && (
+                            <TableHead className="py-2 text-xs">
+                                Password
+                            </TableHead>
+                        )}
+                        {provider === "DPDC" && (
+                            <TableHead className="py-2 text-xs">
+                                Client Secret
+                            </TableHead>
+                        )}
+                        <TableHead className="w-[80px] py-2 text-xs">
+                            Actions
+                        </TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -138,7 +183,7 @@ export const AccountTable = ({ accounts, provider }: AccountTableProps) => {
                                             disabled={isUpdating}
                                         />
                                         {errors.username && (
-                                            <p className="text-xs text-destructive mt-1">
+                                            <p className="text-destructive mt-1 text-xs">
                                                 {errors.username.message}
                                             </p>
                                         )}
@@ -151,7 +196,7 @@ export const AccountTable = ({ accounts, provider }: AccountTableProps) => {
                                                 disabled={isUpdating}
                                             />
                                             {errors.password && (
-                                                <p className="text-xs text-destructive mt-1">
+                                                <p className="text-destructive mt-1 text-xs">
                                                     {errors.password.message}
                                                 </p>
                                             )}
@@ -165,8 +210,11 @@ export const AccountTable = ({ accounts, provider }: AccountTableProps) => {
                                                 disabled={isUpdating}
                                             />
                                             {errors.clientSecret && (
-                                                <p className="text-xs text-destructive mt-1">
-                                                    {errors.clientSecret.message}
+                                                <p className="text-destructive mt-1 text-xs">
+                                                    {
+                                                        errors.clientSecret
+                                                            .message
+                                                    }
                                                 </p>
                                             )}
                                         </TableCell>
@@ -176,7 +224,7 @@ export const AccountTable = ({ accounts, provider }: AccountTableProps) => {
                                             <Button
                                                 size="sm"
                                                 variant="ghost"
-                                                className="h-7 w-7 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                                className="h-7 w-7 p-0 text-green-600 hover:bg-green-50 hover:text-green-700"
                                                 onClick={handleSubmit(onSubmit)}
                                                 disabled={isUpdating}
                                             >
@@ -185,7 +233,7 @@ export const AccountTable = ({ accounts, provider }: AccountTableProps) => {
                                             <Button
                                                 size="sm"
                                                 variant="ghost"
-                                                className="h-7 w-7 p-0 text-gray-600 hover:text-gray-700 hover:bg-gray-50"
+                                                className="h-7 w-7 p-0 text-gray-600 hover:bg-gray-50 hover:text-gray-700"
                                                 onClick={cancelEdit}
                                                 disabled={isUpdating}
                                             >
@@ -197,47 +245,75 @@ export const AccountTable = ({ accounts, provider }: AccountTableProps) => {
                             ) : (
                                 // View mode
                                 <>
-                                    <TableCell className="font-mono text-sm py-2">
+                                    <TableCell className="py-2 font-mono text-sm">
                                         <div className="flex items-center gap-2">
                                             {account.credentials.username}
-                                            {'_isCorrupted' in account.credentials && account.credentials._isCorrupted && (
-                                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                                    Corrupted
-                                                </span>
-                                            )}
+                                            {"_isCorrupted" in
+                                                account.credentials &&
+                                                account.credentials
+                                                    ._isCorrupted && (
+                                                    <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-800">
+                                                        Corrupted
+                                                    </span>
+                                                )}
                                         </div>
                                     </TableCell>
-                                    {provider === "DPDC" && 'password' in account.credentials && (
-                                        <TableCell className="font-mono text-sm py-2">
-                                            {"•".repeat(8)}
-                                        </TableCell>
-                                    )}
-                                    {provider === "DPDC" && 'clientSecret' in account.credentials && (
-                                        <TableCell className="font-mono text-sm py-2">
-                                            {account.credentials.clientSecret ?
-                                                "•".repeat(12) :
-                                                'Not set'
-                                            }
-                                        </TableCell>
-                                    )}
+                                    {provider === "DPDC" &&
+                                        "password" in account.credentials && (
+                                            <TableCell className="py-2 font-mono text-sm">
+                                                {"•".repeat(8)}
+                                            </TableCell>
+                                        )}
+                                    {provider === "DPDC" &&
+                                        "clientSecret" in
+                                            account.credentials && (
+                                            <TableCell className="py-2 font-mono text-sm">
+                                                {account.credentials
+                                                    .clientSecret
+                                                    ? "•".repeat(12)
+                                                    : "Not set"}
+                                            </TableCell>
+                                        )}
                                     <TableCell className="py-2">
                                         <div className="flex items-center gap-1">
                                             <Button
                                                 size="sm"
                                                 variant="ghost"
-                                                className="h-7 w-7 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                                onClick={() => startEdit(account)}
-                                                disabled={isUpdating || isDeleting || ('_isCorrupted' in account.credentials && account.credentials._isCorrupted)}
-                                                title={('_isCorrupted' in account.credentials && account.credentials._isCorrupted) ? "Cannot edit corrupted account" : "Edit account"}
+                                                className="h-7 w-7 p-0 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                                                onClick={() =>
+                                                    startEdit(account)
+                                                }
+                                                disabled={
+                                                    isUpdating ||
+                                                    isDeleting ||
+                                                    ("_isCorrupted" in
+                                                        account.credentials &&
+                                                        account.credentials
+                                                            ._isCorrupted)
+                                                }
+                                                title={
+                                                    "_isCorrupted" in
+                                                        account.credentials &&
+                                                    account.credentials
+                                                        ._isCorrupted
+                                                        ? "Cannot edit corrupted account"
+                                                        : "Edit account"
+                                                }
                                             >
                                                 <Edit2 className="h-3 w-3" />
                                             </Button>
                                             <Button
                                                 size="sm"
                                                 variant="ghost"
-                                                className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                                onClick={() => setDeleteDialogId(account.id)}
-                                                disabled={isUpdating || isDeleting}
+                                                className="h-7 w-7 p-0 text-red-600 hover:bg-red-50 hover:text-red-700"
+                                                onClick={() =>
+                                                    setDeleteDialogId(
+                                                        account.id
+                                                    )
+                                                }
+                                                disabled={
+                                                    isUpdating || isDeleting
+                                                }
                                             >
                                                 <Trash2 className="h-3 w-3" />
                                             </Button>
@@ -251,19 +327,27 @@ export const AccountTable = ({ accounts, provider }: AccountTableProps) => {
             </Table>
 
             {/* Delete Confirmation Dialog */}
-            <AlertDialog open={!!deleteDialogId} onOpenChange={() => setDeleteDialogId(null)}>
+            <AlertDialog
+                open={!!deleteDialogId}
+                onOpenChange={() => setDeleteDialogId(null)}
+            >
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Delete Account</AlertDialogTitle>
                         <AlertDialogDescription>
                             {(() => {
-                                const account = accounts.find(acc => acc.id === deleteDialogId);
-                                const isCorrupted = account && '_isCorrupted' in account.credentials && account.credentials._isCorrupted;
-                                
+                                const account = accounts.find(
+                                    (acc) => acc.id === deleteDialogId
+                                );
+                                const isCorrupted =
+                                    account &&
+                                    "_isCorrupted" in account.credentials &&
+                                    account.credentials._isCorrupted;
+
                                 if (isCorrupted) {
                                     return "This account appears to be corrupted (possibly due to encryption key changes). Deleting it will permanently remove the corrupted data. This action cannot be undone.";
                                 }
-                                
+
                                 return "Are you sure you want to delete this account? This action cannot be undone.";
                             })()}
                         </AlertDialogDescription>
@@ -271,7 +355,9 @@ export const AccountTable = ({ accounts, provider }: AccountTableProps) => {
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction
-                            onClick={() => deleteDialogId && handleDelete(deleteDialogId)}
+                            onClick={() =>
+                                deleteDialogId && handleDelete(deleteDialogId)
+                            }
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
                             {isDeleting ? "Deleting..." : "Delete"}

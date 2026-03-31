@@ -1,7 +1,18 @@
-import { PublicOnlyRoute } from '@/components/auth/PublicOnlyRoute';
-import { AuthCallbackPage } from '@/pages/AuthCallbackPage';
-import { LoginPage } from '@/pages/LoginPage';
-import { RouteObject } from 'react-router-dom';
+import { lazy } from "react";
+import { RouteObject } from "react-router-dom";
+
+import { PublicOnlyRoute } from "@/components/auth/PublicOnlyRoute";
+
+const AuthCallbackPage = lazy(() =>
+    import("@/pages/AuthCallbackPage").then((module) => ({
+        default: module.AuthCallbackPage,
+    }))
+);
+const LoginPage = lazy(() =>
+    import("@/pages/LoginPage").then((module) => ({
+        default: module.LoginPage,
+    }))
+);
 
 export const authRoutes: RouteObject[] = [
     {
@@ -9,14 +20,14 @@ export const authRoutes: RouteObject[] = [
         element: <PublicOnlyRoute />,
         children: [
             {
-                path: '/login',
+                path: "/login",
                 element: <LoginPage />,
             },
         ],
     },
     {
         // Auth callback must remain accessible for OAuth flow
-        path: '/auth/callback',
+        path: "/auth/callback",
         element: <AuthCallbackPage />,
     },
 ];

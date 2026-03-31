@@ -3,6 +3,10 @@ import { config } from "./config.constant";
 const API_PATH = config.backendApiUrl;
 
 export const API_ENDPOINTS = {
+    AUTH: {
+        ME: `${API_PATH}/auth/me`,
+        LOGOUT: `${API_PATH}/auth/logout`,
+    },
     ELECTRICITY: {
         USAGE: `${API_PATH}/electricity/usage`,
     },

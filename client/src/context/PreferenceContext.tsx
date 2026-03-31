@@ -1,5 +1,12 @@
+import { STORAGE_KEYS } from "@/common/constants/storage.constant";
 import { CacheService, CacheServiceFactory } from "@/lib/cache";
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+    createContext,
+    useContext,
+    useEffect,
+    useMemo,
+    useState,
+} from "react";
 
 export interface IPreferences {
     theme: string;
@@ -25,13 +32,18 @@ const defaultPreferences: IPreferences = {
 export const PreferencesProvider: React.FC<PreferencesProviderProps> = ({
     children,
 }) => {
-    const cacheService: CacheService = CacheServiceFactory.getCacheService();
+    const cacheService: CacheService = useMemo(
+        () => CacheServiceFactory.getCacheService(),
+        []
+    );
     const [preferences, setPreferences] = useState<IPreferences | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const loadPreferences = async () => {
-            const savedPreferences = await cacheService.get("preferences");
+            const savedPreferences = await cacheService.get(
+                STORAGE_KEYS.PREFERENCES
+            );
 
             if (savedPreferences) {
                 const parsedPref = JSON.parse(savedPreferences);
@@ -39,7 +51,7 @@ export const PreferencesProvider: React.FC<PreferencesProviderProps> = ({
             } else {
                 setPreferences(defaultPreferences);
                 cacheService.save(
-                    "preferences",
+                    STORAGE_KEYS.PREFERENCES,
                     JSON.stringify(defaultPreferences)
                 );
             }
@@ -48,13 +60,16 @@ export const PreferencesProvider: React.FC<PreferencesProviderProps> = ({
         };
 
         loadPreferences();
-    }, []);
+    }, [cacheService]);
 
     useEffect(() => {
         if (!loading && preferences) {
-            cacheService.save("preferences", JSON.stringify(preferences));
+            cacheService.save(
+                STORAGE_KEYS.PREFERENCES,
+                JSON.stringify(preferences)
+            );
         }
-    }, [preferences, loading]);
+    }, [cacheService, preferences, loading]);
 
     if (loading || !preferences) {
         return <></>;

@@ -1,6 +1,11 @@
+import { lazy } from "react";
 import { RouteObject } from "react-router-dom";
 
-import { ErrorPage } from "@/pages/error.page";
+const ErrorPage = lazy(() =>
+    import("@/pages/error.page").then((module) => ({
+        default: module.ErrorPage,
+    }))
+);
 
 export const notFoundRoutes: RouteObject[] = [
     {

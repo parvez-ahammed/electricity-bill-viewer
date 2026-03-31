@@ -1,36 +1,18 @@
-import { config } from '@/common/constants/config.constant';
+import { API_ENDPOINTS } from "@/common/constants/api-endpoints.constant";
+import { HTTP_METHOD } from "@/common/constants/http.constant";
+import { apiRequest } from "@/lib/axios";
 
-export interface GoogleLoginResponse {
-    success: boolean;
-    data: {
-        userId: string;
-        email: string;
-    };
+export interface CurrentUser {
+    userId: string;
+    email: string;
 }
 
 export const authApi = {
-    async getCurrentUser(): Promise<GoogleLoginResponse> {
-        const token = localStorage.getItem('auth_token');
-        const response = await fetch(`${config.backendApiUrl}/auth/me`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to fetch current user');
-        }
-
-        return response.json();
+    getCurrentUser: async (): Promise<CurrentUser> => {
+        return apiRequest<CurrentUser>(HTTP_METHOD.GET, API_ENDPOINTS.AUTH.ME);
     },
 
-    async logout(): Promise<void> {
-        const token = localStorage.getItem('auth_token');
-        await fetch(`${config.backendApiUrl}/auth/logout`, {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
+    logout: async (): Promise<void> => {
+        await apiRequest<void>(HTTP_METHOD.POST, API_ENDPOINTS.AUTH.LOGOUT);
     },
 };

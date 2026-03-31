@@ -14,26 +14,25 @@ import { ProviderChip } from "./ProviderChip";
 
 interface BalanceCardViewProps {
     account: PostBalanceDetails;
-    index: number;
 }
 
-export const BalanceCardView = ({ account, index }: BalanceCardViewProps) => {
+export const BalanceCardView = ({ account }: BalanceCardViewProps) => {
     const lastPaymentDate =
         account.lastPayDateOnSa || account.lastPaymentDate || "-";
     const formattedLastPaymentDate =
         lastPaymentDate !== "-" ? formatDate(lastPaymentDate) : "-";
 
     return (
-        <Card
-            key={`${account.accountId}-${index}`}
-            className="overflow-hidden py-0 transition-all hover:shadow-md"
-        >
+        <Card className="overflow-hidden py-0 transition-all hover:shadow-md">
             <CardContent className="p-3">
                 {/* Header Section */}
                 <div className="mb-2 flex items-center justify-between gap-2">
                     <div className="min-w-0 flex-1">
                         <h4 className="truncate text-sm font-semibold">
-                            {account.displayName || account.flatNameOrLocation || account.location || "-"}
+                            {account.displayName ||
+                                account.flatNameOrLocation ||
+                                account.location ||
+                                "-"}
                         </h4>
                     </div>
                     <ProviderChip provider={account.provider || "-"} />
@@ -84,7 +83,9 @@ export const BalanceCardView = ({ account, index }: BalanceCardViewProps) => {
                                         Customer Number
                                     </p>
                                     <p className="mt-0.5 text-sm font-medium">
-                                        {account.customerNumber || account.accountId || "-"}
+                                        {account.customerNumber ||
+                                            account.accountId ||
+                                            "-"}
                                     </p>
                                 </div>
                                 <div className="flex-1 text-right">
