@@ -13,7 +13,7 @@ export const GoogleLoginButton = ({ mode = "login" }: GoogleLoginButtonProps) =>
             `${config.backendUrl}/api/v1/auth/google`;
     };
 
-    const label = mode === 'signup' ? 'Create Account with Google' : 'Sign in with Google';
+    const label = mode === "signup" ? "Create Account with Google" : "Sign in with Google";
 
     return (
         <Button
