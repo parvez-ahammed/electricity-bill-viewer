@@ -17,6 +17,19 @@ View your DPDC and NESCO electricity bill balances in one dashboard — with aut
 
 ---
 
+## 📸 Screenshots
+
+<div align="center">
+  <img src="./docs/screenshots/dashboard.png" alt="Dashboard" width="800">
+  <p><em>Unified Dashboard for DPDC and NESCO Balances</em></p>
+  
+  <img src="./docs/screenshots/account_management.png" alt="Account Management" width="800">
+  <p><em>Secure Account Management Interface</em></p>
+</div>
+
+---
+
+
 ## ✨ Features
 
 - 🔐 **Secure Account Management** — AES-256 encrypted credential storage with corruption recovery
